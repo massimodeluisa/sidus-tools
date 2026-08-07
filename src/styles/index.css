@@ -1,0 +1,366 @@
+@import "tailwindcss";
+
+@theme {
+  /* Surfaces slightly lifted from pure black for card readability */
+  --color-bg: #050505;
+  --color-bg-elevated: #0e0e0e;
+  --color-surface: #141414;
+  --color-surface-hover: #1a1a1a;
+  --color-fg: #f2f2f2;
+  --color-muted: #8a8a8a;
+  --color-subtle: #5c5c5c;
+  --color-border: #222222;
+  --color-border-strong: #333333;
+  --color-accent: #d4d4d4;
+  --color-accent-fg: #0a0a0a;
+  --color-signal: #c4c8ce;
+  --color-ok: #6b8f71;
+  --color-warn: #b8a55a;
+  --color-danger: #a65d5d;
+  --color-grid: #161616;
+
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Fluid layout tokens: no fixed max-width shell */
+  --page-pad-x: clamp(1rem, 2.5vw + 0.5rem, 3.5rem);
+  --page-pad-y: clamp(2rem, 4vw, 5rem);
+  --page-gap: clamp(1rem, 1.5vw, 1.5rem);
+  --prose-measure: min(65ch, 100%);
+  --hero-title: clamp(2.25rem, 1.2rem + 4vw, 4.75rem);
+  --section-title: clamp(1.5rem, 1.1rem + 1.5vw, 2.25rem);
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    background: var(--color-bg);
+    /* Keep horizontal layout within the viewport under large text / zoom */
+    overflow-x: clip;
+    scroll-padding-top: var(--tool-sticky-stack, 0px);
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    max-width: 100%;
+    overflow-x: clip;
+    background: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-body);
+    font-feature-settings: "ss01" 1, "tnum" 1;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-fg) 22%, transparent);
+    color: var(--color-fg);
+  }
+}
+
+/* Utility: never force the page wider than the viewport (flex/grid children) */
+.sidus-contain {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Full-bleed horizontal padding; respects notched devices */
+.page-x {
+  padding-left: max(var(--page-pad-x), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--page-pad-x), env(safe-area-inset-right, 0px));
+}
+
+.page-y {
+  padding-top: var(--page-pad-y);
+  padding-bottom: var(--page-pad-y);
+}
+
+.page-shell {
+  width: 100%;
+  padding-left: max(var(--page-pad-x), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--page-pad-x), env(safe-area-inset-right, 0px));
+}
+
+/*
+ * Tool detail full-width: remaps --page-pad-x → --page-gap on the page root
+ * so .page-shell (content + sticky tool bar) share the same tight inset.
+ * Header/footer stay outside this subtree and keep marketing pad.
+ */
+[data-page-pad='gap'] {
+  --page-pad-x: var(--page-gap);
+}
+
+/* Readable line length only for prose: not layout width */
+.prose-measure {
+  max-width: var(--prose-measure);
+}
+
+/* Auto-fit grids that grow with the viewport */
+.grid-auto-cards {
+  display: grid;
+  gap: var(--page-gap);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16.5rem), 1fr));
+}
+
+.grid-auto-tools {
+  display: grid;
+  gap: var(--page-gap);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+}
+
+.grid-auto-stats {
+  display: grid;
+  gap: 1px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 640px) {
+  .grid-auto-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.grid-auto-highlights {
+  display: grid;
+  gap: 1px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 480px) {
+  .grid-auto-highlights {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid-auto-highlights {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.sidus-grid {
+  background-color: var(--color-bg);
+  /* Fixed attachment so flex/scroll doesn't "break" the grid alignment */
+  background-image:
+    linear-gradient(to right, var(--color-grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-grid) 1px, transparent 1px),
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(255, 255, 255, 0.04), transparent 55%);
+  background-size: 48px 48px, 48px 48px, 100% 100%;
+  background-attachment: local, local, scroll;
+  background-position: 0 0, 0 0, center top;
+}
+
+.sidus-scan {
+  position: relative;
+}
+.sidus-scan:after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(255, 255, 255, 0.012) 2px,
+    rgba(255, 255, 255, 0.012) 4px
+  );
+  mix-blend-mode: overlay;
+  opacity: 0.5;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Opacity-only: do not leave transform on the element (breaks sticky stacking). */
+@keyframes sidus-fade-up {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Hero tool carousel auto-advance progress */
+@keyframes carousel-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.animate-carousel-progress {
+  transform-origin: left center;
+  animation-name: carousel-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+.sidus-enter {
+  animation: sidus-fade-up 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Soft card lift: solid surface so page grid never bleeds through */
+.sidus-card {
+  isolation: isolate;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-fg) 3%, transparent);
+}
+
+.sidus-card-soft {
+  background-color: color-mix(in oklab, var(--color-surface) 92%, var(--color-fg));
+  border: 1px solid var(--color-border);
+}
+
+/* ── Home-alt motion lab (Firecrawl-class scroll energy) ─────────────── */
+.sidus-reveal {
+  opacity: 0;
+  transform: translateY(1.1rem);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1) var(--sidus-reveal-delay, 0ms),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1) var(--sidus-reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+.sidus-reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@keyframes sidus-scanline {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: translateY(220%);
+    opacity: 0;
+  }
+}
+
+.sidus-motion-scan {
+  position: relative;
+  overflow: hidden;
+}
+.sidus-motion-scan:after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 40%;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    color-mix(in oklab, var(--color-signal) 18%, transparent),
+    transparent
+  );
+  animation: sidus-scanline 4.8s ease-in-out infinite;
+}
+
+@keyframes sidus-border-pulse {
+  0%,
+  100% {
+    border-color: var(--color-border);
+  }
+  50% {
+    border-color: var(--color-border-strong);
+  }
+}
+
+.sidus-motion-border {
+  animation: sidus-border-pulse 3.2s ease-in-out infinite;
+}
+
+@keyframes sidus-tag-wave {
+  from {
+    opacity: 0;
+    transform: translateY(0.4rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Home feature card crafts: CSS motion path (SMIL arc loops were unreliable) */
+@keyframes sidus-orbit-run {
+  to {
+    offset-distance: 100%;
+  }
+}
+
+.sidus-motion-tag {
+  opacity: 0;
+  animation: sidus-tag-wave 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--sidus-tag-delay, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidus-enter {
+    animation: none;
+  }
+  .sidus-scan:after {
+    display: none;
+  }
+  .sidus-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .sidus-motion-scan:after {
+    display: none;
+  }
+  .sidus-motion-border {
+    animation: none;
+  }
+  .sidus-motion-tag {
+    opacity: 1;
+    animation: none;
+  }
+  /* Pause SVG SMIL orbit markers */
+  .orbit-diagram animateTransform {
+    display: none;
+  }
+  /* Home feature infographics: freeze SMIL craft motion when reduced-motion */
+  .sidus-enter animateMotion {
+    display: none;
+  }
+}
+
+/*
+ * iOS Safari: focus zoom when computed font-size of input/select/textarea < 16px.
+ * UNLAYERED + !important so this always beats Tailwind utilities (text-sm / text-xs)
+ * even inside @layer. Covers touch devices and narrow viewports (incl. landscape phones).
+ * Do not set maximum-scale=1 on the viewport — pinch-zoom must stay available.
+ */
+@media (hover: none), (pointer: coarse), (max-width: 1023px) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not([type='hidden']),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}

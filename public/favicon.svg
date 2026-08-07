@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" role="img" aria-label="SIDUS">
+  <style>
+    .stroke { stroke: #0a0a0b; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+    .fill { fill: #0a0a0b; stroke: none; }
+    @media (prefers-color-scheme: dark) {
+      .stroke { stroke: #f2f2f2; }
+      .fill { fill: #f2f2f2; }
+    }
+  </style>
+  <path class="stroke" d="M20.341 6.484A10 10 0 0 1 10.266 21.85"/>
+  <path class="stroke" d="M3.659 17.516A10 10 0 0 1 13.74 2.152"/>
+  <circle class="fill" cx="12" cy="12" r="3"/>
+  <circle class="fill" cx="19" cy="5" r="2"/>
+  <circle class="fill" cx="5" cy="19" r="2"/>
+</svg>

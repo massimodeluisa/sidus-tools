@@ -1,0 +1,42 @@
+# SIDUS: allow classic SEO and AI crawlers (educational open source)
+# Policy docs (CONVENTIONS, CONTRIBUTIONS, INDEX, LICENSE) live on GitHub, not here.
+# Keep Sitemap absolute. After catalog changes: update sitemap.xml + npm run llms:gen
+User-agent: *
+Allow: /
+
+# AI / LLM crawlers (explicit allow)
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: meta-externalagent
+Allow: /
+
+# Production absolute sitemap (robots.txt Sitemap directives must be absolute URLs)
+Sitemap: https://sidus.tools/sitemap.xml

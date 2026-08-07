@@ -1,0 +1,23 @@
+node_modules
+dist
+dist-ssr
+*.local
+.DS_Store
+.env
+.env.*
+!.env.example
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.log
+npm-debug.log*
+
+# Local development notes (not for public history)
+docs/IMPLEMENTATION_TODO.md
+docs/ENGINEERING_TOOLS_SURVEY.md
+docs/AGENCY_OPEN_SOURCE_SURVEY.md
+
+# Generated / review artifacts — never in public history
+docs/godbolt-matrix/
+docs/reviews/
+docs/**/*.log

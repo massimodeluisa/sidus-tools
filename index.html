@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!--
+      Favicon follows OS color scheme so the orbit mark stays visible:
+      light chrome → black mark; dark chrome → white mark.
+      SVG media queries + PNG media fallbacks (Safari tab bar).
+    -->
+    <link rel="icon" type="image/svg+xml" href="/favicon-dark.svg" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" type="image/svg+xml" href="/favicon-light.svg" media="(prefers-color-scheme: light)" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32-dark.png" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32-light.png" media="(prefers-color-scheme: light)" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16-dark.png" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16-light.png" media="(prefers-color-scheme: light)" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="SIDUS" />
+    <meta name="application-name" content="SIDUS" />
+    <meta name="msapplication-TileColor" content="#0a0a0b" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Open-source pure-SI space engineering calculators: orbits, propulsion, SGP4, launch, RF, and crew ECLSS."
+    />
+    <meta
+      name="keywords"
+      content="orbital mechanics, Hohmann, Lambert, SGP4, rocket equation, delta-v, ECLSS, space engineering tools, SIDUS, open source"
+    />
+    <meta name="author" content="Massimo De Luisa" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+    <meta name="theme-color" content="#0a0a0b" />
+    <link rel="canonical" href="https://sidus.tools/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="SIDUS" />
+    <meta property="og:title" content="SIDUS: Space Engineering Tools" />
+    <meta
+      property="og:description"
+      content="Open-source pure-SI calculators for orbits, propulsion, satellites, launch, RF, and crew life support."
+    />
+    <meta property="og:url" content="https://sidus.tools/" />
+    <meta property="og:image" content="https://sidus.tools/api/og?page=home&v=3" />
+    <meta property="og:image:secure_url" content="https://sidus.tools/api/og?page=home&v=3" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/png" />
+    <meta
+      property="og:image:alt"
+      content="SIDUS: open-source space engineering tools in pure SI"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="SIDUS: Space Engineering Tools" />
+    <meta
+      name="twitter:description"
+      content="Open-source pure-SI calculators for orbits, propulsion, satellites, launch, RF, and crew life support."
+    />
+    <meta name="twitter:image" content="https://sidus.tools/api/og?page=home&v=3" />
+    <meta
+      name="twitter:image:alt"
+      content="SIDUS: open-source space engineering tools in pure SI"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <title>SIDUS: Space Engineering Tools</title>
+    <!--
+      Critical paint: hide the SEO/AI HTML dump from human first paint (it lives
+      inside #root until React hydrates). Bots still parse the text in the DOM.
+      Without this, visitors see a raw text wiki while JS/CSS load.
+    -->
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #050505;
+        color: #f2f2f2;
+      }
+      #sidus-boot {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #050505;
+        color: #8a8a8a;
+        font-family: 'Space Grotesk', system-ui, sans-serif;
+        font-size: 11px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+      }
+      /* SEO bootstrap: in DOM for crawlers, not painted for humans */
+      #root > .sidus-ssr {
+        position: absolute !important;
+        width: 1px !important;
+        height: 1px !important;
+        padding: 0 !important;
+        margin: -1px !important;
+        overflow: hidden !important;
+        clip: rect(0, 0, 0, 0) !important;
+        white-space: nowrap !important;
+        border: 0 !important;
+      }
+    </style>
+    <noscript>
+      <style>
+        #sidus-boot {
+          display: none !important;
+        }
+        #root > .sidus-ssr {
+          position: static !important;
+          width: auto !important;
+          height: auto !important;
+          margin: 0 auto !important;
+          padding: 0 1rem !important;
+          max-width: 48rem !important;
+          overflow: visible !important;
+          clip: auto !important;
+          white-space: normal !important;
+          font-family: system-ui, sans-serif !important;
+          line-height: 1.55 !important;
+          color: #e8e8e8 !important;
+        }
+      </style>
+    </noscript>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://sidus.tools/#website",
+            "name": "SIDUS",
+            "url": "https://sidus.tools/",
+            "description": "Open-source space engineering calculators (pure SI).",
+            "inLanguage": "en",
+            "datePublished": "2026-01-01",
+            "dateModified": "2026-08-08",
+            "publisher": { "@id": "https://sidus.tools/#org" }
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://sidus.tools/#org",
+            "name": "SIDUS",
+            "url": "https://sidus.tools/",
+            "sameAs": ["https://github.com/massimodeluisa/sidus-tools", "https://massimo.deluisa.bio"]
+          },
+          {
+            "@type": "SoftwareApplication",
+            "name": "SIDUS Space Engineering Tools",
+            "applicationCategory": "EducationalApplication",
+            "operatingSystem": "Web",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "url": "https://sidus.tools/",
+            "license": "https://github.com/massimodeluisa/sidus-tools/blob/main/LICENSE",
+            "datePublished": "2026-01-01",
+            "dateModified": "2026-08-08",
+            "author": { "@type": "Person", "name": "Massimo De Luisa", "url": "https://massimo.deluisa.bio" }
+          },
+          {
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "What is SIDUS?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "SIDUS is an open-source educational site with pure-SI space engineering calculators for orbits, propulsion, satellites, launch, RF link budgets, and crew ECLSS. Math runs in the browser with no backend for formulas."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Is SIDUS affiliated with NASA, ESA, or SpaceX?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "No. SIDUS is an independent non-profit educational project and is not affiliated with NASA, ESA, SpaceX, Firefly, Roscosmos, CNSA, JAXA, ISRO, ASI, DLR, CNES, or any agency or company."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Can AI agents use SIDUS tools?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. Agents can read /llms.txt and tool pages. For executable math, connect any MCP client to the public endpoint https://sidus.tools/api/mcp: no local install required. Optional offline: run npm run mcp from a clone (stdio)."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <div id="sidus-boot" aria-hidden="true">SIDUS</div>
+    <!--
+      Non-JS bootstrap: AI crawlers that do not execute JavaScript (GPTBot, ClaudeBot, …)
+      must still see substantive English content in the raw HTML response.
+      Hidden from human first paint via critical CSS above; React replaces #root on hydrate.
+    -->
+    <div id="root">
+      <div class="sidus-ssr">
+      <header>
+        <nav aria-label="Primary">
+          <a href="/">Home</a> ·
+          <a href="/tools">Tools</a> ·
+          <a href="/resources">Resources</a> ·
+          <a href="/llms.txt">llms.txt</a> ·
+          <a href="https://github.com/massimodeluisa/sidus-tools">GitHub</a>
+        </nav>
+      </header>
+      <main>
+        <h1>SIDUS: Space Engineering Tools</h1>
+        <p>
+          Open-source educational calculators for <strong>orbital mechanics</strong>,
+          <strong>propulsion</strong>, <strong>satellite operations</strong>,
+          <strong>launch</strong>, <strong>RF link budgets</strong>, and
+          <strong>crew ECLSS</strong>. Math runs locally in pure SI units. Independent
+          non-profit project: <em>not affiliated</em> with NASA, ESA, SpaceX, Firefly, or
+          any agency or company.
+        </p>
+        <p>
+          As of 2026 the catalog ships <strong>84 live tools</strong> across
+          <strong>5 categories</strong> (orbital, propulsion, satellite, crew, utilities),
+          with multi-source bibliographies (typically ≥3 references per formula tool) and
+          multi-language code export. Earth gravitational parameter used in defaults is
+          <strong>μ ⊕ = 3.986004418×10¹⁴ m³/s²</strong> (WGS-84 / standard educational value);
+          Earth equatorial radius default is <strong>6 378 137 m</strong>.
+        </p>
+        <blockquote>
+          “Fundamentals of Astrodynamics and Applications” (Vallado) and
+          “Orbital Mechanics for Engineering Students” (Curtis) form the dual textbook backbone
+          for two-body maneuvers; NASA GRC and OCHMO briefs anchor propulsion and ECLSS education.
+          Algorithms are independent reimplementations, not flight software.
+        </blockquote>
+        <p>
+          Repository:
+          <a href="https://github.com/massimodeluisa/sidus-tools">github.com/massimodeluisa/sidus-tools</a>.
+          Agent index: <a href="/llms.txt">/llms.txt</a>.
+          Sitemap: <a href="/sitemap.xml">/sitemap.xml</a>.
+          Primary sources: <a href="/resources">/resources</a>.
+        </p>
+
+        <h2>Key facts (quick extract)</h2>
+        <table>
+          <thead>
+            <tr><th>Metric</th><th>Value</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Live tools</td><td>30</td></tr>
+            <tr><td>Categories</td><td>5 (orbital, propulsion, satellite, crew, utilities)</td></tr>
+            <tr><td>Default units</td><td>SI (m, s, kg, K, Pa, W)</td></tr>
+            <tr><td>License</td><td>MIT</td></tr>
+            <tr><td>Hosted math backend</td><td>None (browser-local + optional local MCP)</td></tr>
+            <tr><td>Locales</td><td>en, it, de, fr, es, ru, zh, ja</td></tr>
+          </tbody>
+        </table>
+
+        <h2>Tool catalog</h2>
+        <h3>Orbital &amp; mission design</h3>
+        <ul>
+          <li><a href="/tools/circular-orbit">Circular orbit</a>: velocity, period, energy</li>
+          <li><a href="/tools/hohmann">Hohmann transfer</a>: Δv and time of flight</li>
+          <li><a href="/tools/escape">Escape velocity</a></li>
+          <li><a href="/tools/bielliptic">Bielliptic transfer</a></li>
+          <li><a href="/tools/plane-change">Inclination change</a></li>
+          <li><a href="/tools/vis-viva">Vis-viva equation</a></li>
+          <li><a href="/tools/apsides">Apsides</a></li>
+          <li><a href="/tools/kepler-propagate">Kepler propagate</a>: universal variables</li>
+          <li><a href="/tools/lambert">Lambert solver</a></li>
+          <li><a href="/tools/rv-elements">State ↔ elements</a></li>
+          <li><a href="/tools/launch-azimuth">Launch azimuth</a></li>
+          <li><a href="/tools/sso">Sun-synchronous inclination</a></li>
+          <li><a href="/tools/phasing">Phasing maneuver</a></li>
+          <li><a href="/tools/cw-rendezvous">CW rendezvous (docking)</a></li>
+          <li><a href="/tools/bodies">Central bodies</a></li>
+        </ul>
+        <h3>Propulsion</h3>
+        <ul>
+          <li><a href="/tools/rocket-equation">Tsiolkovsky rocket equation</a></li>
+          <li><a href="/tools/multi-stage">Multi-stage Δv</a></li>
+        </ul>
+        <h3>Satellite &amp; RF</h3>
+        <ul>
+          <li><a href="/tools/sgp4">SGP4 / TLE</a></li>
+          <li><a href="/tools/look-angles">Look angles</a></li>
+          <li><a href="/tools/pass-predict">Pass predictor</a></li>
+          <li><a href="/tools/j2-drift">J2 nodal precession</a></li>
+          <li><a href="/tools/link-budget">RF link budget</a></li>
+        </ul>
+        <h3>Launch / aero</h3>
+        <ul>
+          <li><a href="/tools/dynamic-pressure">Dynamic pressure (max-q)</a>: ISA + q</li>
+        </ul>
+        <h3>Crew / ECLSS</h3>
+        <ul>
+          <li><a href="/tools/metabolic-load">Metabolic O₂ / CO₂ / heat</a></li>
+          <li><a href="/tools/cabin-atmosphere">Cabin atmosphere (partial pressures)</a></li>
+          <li><a href="/tools/lioh-scrubber">LiOH CO₂ scrubber</a></li>
+          <li><a href="/tools/cabin-leak">Cabin leak / depress time</a></li>
+          <li><a href="/tools/thermal-loop">Thermal coolant loop</a></li>
+        </ul>
+        <h3>Utilities</h3>
+        <ul>
+          <li><a href="/tools/plotter">Function plotter</a></li>
+          <li><a href="/tools/units">Unit converter</a></li>
+          <li><a href="/resources">Public sources</a></li>
+        </ul>
+
+        <h2>What are the primary references?</h2>
+        <ul>
+          <li><a href="https://celestrak.org/software/vallado-sw.php">Vallado</a>: Fundamentals of Astrodynamics and Applications</li>
+          <li><a href="https://www.elsevier.com/books/orbital-mechanics-for-engineering-students/curtis/978-0-08-097747-8">Curtis</a>: Orbital Mechanics for Engineering Students</li>
+          <li><a href="https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/">NASA Glenn Research Center</a>: ideal rocket &amp; dynamic pressure</li>
+          <li><a href="https://www.nasa.gov/wp-content/uploads/2023/12/ochmo-tb-004-carbon-dioxide.pdf">NASA OCHMO</a>: crew metabolic / CO₂ briefs</li>
+          <li><a href="https://www.nasa.gov/ohp/standards/">NASA-STD-3001 overview</a>: human spaceflight standards context</li>
+          <li><a href="https://github.com/shashwatak/satellite-js">satellite.js (MIT)</a>: SGP4 in browser</li>
+          <li><a href="https://celestrak.org/">CelesTrak</a>: TLE documentation and catalogs</li>
+          <li><a href="https://ssd.jpl.nasa.gov/horizons/">JPL Horizons</a>: Solar System body constants</li>
+        </ul>
+
+        <h2>How do AI agents use SIDUS?</h2>
+        <p>
+          Read <a href="/llms.txt">/llms.txt</a> for the machine index, crawl tool URLs under
+          <a href="/tools">/tools</a>, and cite linked sources on each page. For executable
+          physics without costing SIDUS hosting, run the public stdio MCP from the repository:
+          <code>npx tsx mcp/server.ts</code> (compute on the client machine only).
+        </p>
+        <h2>Is this flight software?</h2>
+        <p>
+          No. Models are educational: two-body, impulsive maneuvers, circular Clohessy-Wiltshire,
+          ideal rocket, ideal-gas cabin atmosphere, and ISA 0-32 km aero. ECLSS tools are not
+          medical or flight-rule certification. Full CR3BP, n-body SPICE, CFD, and CAD/PLM are
+          out of scope.
+        </p>
+        <h2>Example engineering checks (order of magnitude)</h2>
+        <ul>
+          <li>Circular LEO at 400 km: v ≈ 7.67 km/s, period ≈ 92.4 min (Earth defaults).</li>
+          <li>Hohmann LEO→GEO class transfers: multi-km/s total Δv; exact values depend on radii.</li>
+          <li>SSO mid-LEO: inclination typically near 97-99° for circular sun-synchronous designs.</li>
+          <li>Crew metabolic day-class O₂/CO₂ loads: ~0.8 kg O₂ and ~1 kg CO₂ per person per day (ISS-order OCHMO-style tables used educationally).</li>
+          <li>LiOH practical capacity default ≈ 0.85 kg CO₂ per kg LiOH (below pure stoichiometry ~0.92).</li>
+        </ul>
+        <h2>How is source quality enforced?</h2>
+        <p>
+          Each tool page lists linked references (Vallado, Curtis, NASA GRC, OCHMO, CelesTrak,
+          JPL Horizons, satellite.js, SMAD/Wertz for RF, etc.). Automated tests require every live
+          tool to declare at least two resolvable source IDs with HTTPS URLs. Tags are normalized
+          so partial-pressure labels (ppO₂ / ppCO₂) collapse to <code>atmosphere</code> and
+          cooling/TCS collapse to <code>thermal</code>.
+        </p>
+        <h2>Who is SIDUS for?</h2>
+        <p>
+          Students, hobbyists, and working engineers who need quick, transparent SI checks:
+          orbital Δv intuition, launch azimuth feasibility, SSO inclination, free-space RF
+          margin order-of-magnitude, and crew atmosphere / LiOH contingency teaching cases.
+          Results should always be cross-checked against mission design software and standards
+          before flight decisions.
+        </p>
+        <h2>What is deliberately out of scope?</h2>
+        <p>
+          Circular restricted three-body problem (CR3BP) design suites, full n-body SPICE
+          integration, porkchop plot products, low-thrust optimal control, ignition CFD,
+          structural FEA, CAD/PLM/MES, and operational medical certification of ECLSS
+          atmospheres. Those domains are documented in the engineering survey as deferred or
+          external industry tools.
+        </p>
+        <p>
+          Interactive pages use a shared ToolShell pattern: SI inputs, pure functions under
+          <code>src/lib/physics</code>, results cards, optional orbit/trajectory plots with
+          data-domain zoom, and code export snippets. Every tool page offers “Edit this page on
+          GitHub” (Supabase-docs style) so corrections are one click away for reviewers.
+        </p>
+        <h2>Disclaimer</h2>
+        <p>
+          Educational models only. Not flight software. Not a substitute for certified ECLSS,
+          range, or GNC analysis. Pure SI mathematics runs in the browser (or local MCP).
+        </p>
+        <p><noscript>JavaScript is recommended for interactive calculators; this HTML lists all tools for indexing and AI agents.</noscript></p>
+      </main>
+      <footer>
+        <p>
+          100% open source · non-profit · Made with ❤️ by
+          <a href="https://massimo.deluisa.bio">Massimo De Luisa</a>.
+          Edit on GitHub:
+          <a href="https://github.com/massimodeluisa/sidus-tools">massimodeluisa/sidus-tools</a>.
+        </p>
+      </footer>
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

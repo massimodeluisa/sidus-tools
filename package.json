@@ -1,0 +1,51 @@
+{
+  "name": "sidus-tools",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "mcp": "tsx mcp/server.ts",
+    "mcp:http": "tsx mcp/http-dev.ts",
+    "mcp:smoke": "tsx scripts/mcp-smoke.mjs",
+    "mcp:smoke:http": "node scripts/mcp-http-smoke.mjs",
+    "og:static": "node scripts/generate-static-og.mjs",
+    "godbolt:matrix": "tsx scripts/godbolt-matrix.ts",
+    "godbolt:matrix:all": "tsx scripts/godbolt-matrix.ts --all",
+    "llms:gen": "tsx scripts/generate-llms-txt.ts",
+    "docs:check": "node scripts/check-docs.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@vercel/og": "^1.0.1",
+    "clsx": "^2.1.1",
+    "i18next": "^26.3.6",
+    "lucide-react": "^1.30.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-i18next": "^17.0.11",
+    "react-router-dom": "^7.18.2",
+    "satellite.js": "^7.1.0",
+    "tailwind-merge": "^3.6.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^26.2.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.0.5",
+    "react-helmet-async": "^3.0.0",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.11",
+    "typescript": "~5.9.3",
+    "vite": "^8.2.1",
+    "vitest": "^4.1.10",
+    "@types/bun": "latest"
+  }
+}
