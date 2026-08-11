@@ -3,6 +3,8 @@
  * Positions from the library are in km; we expose SI (m, m/s) for the app.
  */
 
+// Use pure-JS surface (not package root): root re-exports WASM workers that
+// crash Node serverless (Vercel /api) and Vite worker IIFE builds.
 import {
   twoline2satrec,
   propagate,
@@ -13,8 +15,8 @@ import {
   degreesLat,
   degreesLong,
   degreesToRadians,
-  type SatRec,
-} from 'satellite.js'
+} from '../vendor/satellite-js-pure'
+import type { SatRec } from 'satellite.js'
 import type { Vec3 } from './vector'
 
 export type TleParseResult =

@@ -1,92 +1,40 @@
 /**
- * Public remote MCP endpoint (Streamable HTTP, stateless).
- *
- * Connect Claude Desktop / Cursor / any MCP client with:
- *   { "mcpServers": { "sidus": { "url": "https://sidus.tools/api/mcp" } } }
- *
- * No clone, no npm install on the client: pure-SI math runs on the edge of this deploy.
- * Educational models. Not flight software.
+ * Minimal MCP/health endpoint probe (Node classic handler).
+ * Full MCP catalog is re-attached once this path is proven live on Vercel.
  */
-import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js'
-import { createSidusMcpServer } from '../mcp/create-server'
-
-export const config = {
-  runtime: 'nodejs',
-  maxDuration: 30,
-}
-
-const CORS_HEADERS: Record<string, string> = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers':
+export default function handler(
+  req: { method?: string; headers: Record<string, string | string[] | undefined> },
+  res: {
+    statusCode: number
+    setHeader: (k: string, v: string) => void
+    end: (b?: string) => void
+  },
+) {
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS')
+  res.setHeader(
+    'Access-Control-Allow-Headers',
     'Content-Type, Accept, mcp-session-id, Last-Event-ID, mcp-protocol-version',
-  'Access-Control-Expose-Headers': 'mcp-session-id, mcp-protocol-version',
-  'Access-Control-Max-Age': '86400',
-}
+  )
 
-function withCors(res: Response): Response {
-  const headers = new Headers(res.headers)
-  for (const [k, v] of Object.entries(CORS_HEADERS)) headers.set(k, v)
-  return new Response(res.body, {
-    status: res.status,
-    statusText: res.statusText,
-    headers,
-  })
-}
+  if (req.method === 'OPTIONS') {
+    res.statusCode = 204
+    res.end()
+    return
+  }
 
-function discovery(): Response {
-  return withCors(
-    Response.json({
+  res.statusCode = 200
+  res.setHeader('Content-Type', 'application/json; charset=utf-8')
+  res.end(
+    JSON.stringify({
       name: 'sidus-tools',
       version: '1.0.0',
-      transport: 'streamable-http',
+      probe: 'minimal-node-handler',
       endpoint: '/api/mcp',
-      note: 'Public educational pure-SI MCP. Point your MCP client url at this path. No local install required.',
+      method: req.method ?? 'GET',
+      note: 'Minimal probe — full MCP catalog restores after Vercel runtime is confirmed.',
       disclaimer:
         'Educational pure-SI model (SIDUS). Not flight software. No affiliation with NASA, ESA, or SpaceX.',
-      docs: 'https://github.com/massimodeluisa/sidus-tools/tree/main/mcp',
     }),
   )
-}
-
-export default async function handler(req: Request): Promise<Response> {
-  if (req.method === 'OPTIONS') {
-    return withCors(new Response(null, { status: 204 }))
-  }
-
-  // Friendly browser / health GET without MCP Accept headers
-  const accept = req.headers.get('accept') ?? ''
-  const isMcp =
-    accept.includes('text/event-stream') ||
-    accept.includes('application/json') ||
-    req.method === 'POST' ||
-    req.method === 'DELETE'
-
-  if (req.method === 'GET' && !isMcp) {
-    return discovery()
-  }
-
-  try {
-    const transport = new WebStandardStreamableHTTPServerTransport({
-      // Stateless: works on serverless (no sticky sessions)
-      sessionIdGenerator: undefined,
-      enableJsonResponse: true,
-    })
-    const server = createSidusMcpServer()
-    await server.connect(transport)
-    const res = await transport.handleRequest(req)
-    return withCors(res)
-  } catch (err) {
-    console.error('SIDUS MCP HTTP error', err)
-    return withCors(
-      Response.json(
-        {
-          error: err instanceof Error ? err.message : 'MCP handler failed',
-          disclaimer:
-            'Educational pure-SI model (SIDUS). Not flight software. No affiliation with NASA, ESA, or SpaceX.',
-        },
-        { status: 500 },
-      ),
-    )
-  }
 }
