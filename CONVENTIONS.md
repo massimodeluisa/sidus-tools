@@ -3,7 +3,7 @@
 **Mandatory coding and maintenance rules** for humans and agents working on
 [sidus.tools](https://sidus.tools).
 
-Related: [CONTRIBUTIONS.md](./CONTRIBUTIONS.md) · [INDEX.md](./INDEX.md) ·
+Related: [CONTRIBUTING.md](./CONTRIBUTING.md) · [INDEX.md](./INDEX.md) ·
 [LICENSE.md](./LICENSE.md) · [AGENTS.md](./AGENTS.md) ·
 [src/lib/snippets/QUALITY.md](./src/lib/snippets/QUALITY.md)
 

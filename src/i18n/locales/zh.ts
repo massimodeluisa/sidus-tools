@@ -231,7 +231,7 @@ export const zh: TMessages = {
       mcp_url: 'MCP 端点',
       agents: 'AGENTS.md',
       conventions: 'CONVENTIONS.md',
-      contributions: 'CONTRIBUTIONS.md',
+      contributions: 'CONTRIBUTING.md',
       docs_index: 'INDEX.md',
       license: '许可证',
     },
@@ -241,6 +241,8 @@ export const zh: TMessages = {
     made: '用',
     made_by: '由',
     author: 'Massimo De Luisa',
+    made_with: '使用',
+    made_tool: 'Grok Build',
   },
   common: {
     body: '中心天体',

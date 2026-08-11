@@ -1,7 +1,7 @@
 # Snippet quality standard (mandatory)
 
 Project-wide rules: [CONVENTIONS.md](../../../CONVENTIONS.md) ·
-[CONTRIBUTIONS.md](../../../CONTRIBUTIONS.md) · [INDEX.md](../../../INDEX.md).
+[CONTRIBUTING.md](../../../CONTRIBUTING.md) · [INDEX.md](../../../INDEX.md).
 
 Every tool ships **hand-written, idiomatic** pure-SI snippets for **all**
 `CodeLang` keys: `c`, `cpp`, `rust`, `zig`, `python`, `javascript`,

@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
 
 const GITHUB = 'https://github.com/massimodeluisa/sidus-tools'
 const AUTHOR = 'https://massimo.deluisa.bio'
+const GROK_BUILD = 'https://x.ai/build'
 const MCP_URL = 'https://sidus.tools/api/mcp'
 
 type FooterLink = {
@@ -92,7 +93,7 @@ export function SiteFooter() {
     },
     {
       label: t('footer.dev.contributions'),
-      href: `${GITHUB}/blob/main/CONTRIBUTIONS.md`,
+      href: `${GITHUB}/blob/main/CONTRIBUTING.md`,
       external: true,
     },
     {
@@ -223,6 +224,15 @@ export function SiteFooter() {
                   className="text-signal underline-offset-2 transition-colors hover:text-fg hover:underline"
                 >
                   {t('footer.author')}
+                </a>
+                <span>{t('footer.made_with')}</span>
+                <a
+                  href={GROK_BUILD}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-signal underline-offset-2 transition-colors hover:text-fg hover:underline"
+                >
+                  {t('footer.made_tool')}
                 </a>
               </p>
             </div>

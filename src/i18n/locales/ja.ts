@@ -236,7 +236,7 @@ export const ja: TMessages = {
       mcp_url: 'MCP エンドポイント',
       agents: 'AGENTS.md',
       conventions: 'CONVENTIONS.md',
-      contributions: 'CONTRIBUTIONS.md',
+      contributions: 'CONTRIBUTING.md',
       docs_index: 'INDEX.md',
       license: 'ライセンス',
     },
@@ -246,6 +246,8 @@ export const ja: TMessages = {
     made: 'Made with',
     made_by: 'by',
     author: 'Massimo De Luisa',
+    made_with: 'with',
+    made_tool: 'Grok Build',
   },
   common: {
     body: '中心天体',

@@ -236,7 +236,7 @@ export const ru: TMessages = {
       mcp_url: 'MCP endpoint',
       agents: 'AGENTS.md',
       conventions: 'CONVENTIONS.md',
-      contributions: 'CONTRIBUTIONS.md',
+      contributions: 'CONTRIBUTING.md',
       docs_index: 'INDEX.md',
       license: 'Лицензия',
     },
@@ -246,6 +246,8 @@ export const ru: TMessages = {
     made: 'Сделано с',
     made_by: 'автором',
     author: 'Massimo De Luisa',
+    made_with: 'с',
+    made_tool: 'Grok Build',
   },
   common: {
     body: 'Центральное тело',

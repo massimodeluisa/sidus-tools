@@ -11,7 +11,6 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 const REQUIRED_DOCS = [
   'CONVENTIONS.md',
-  'CONTRIBUTIONS.md',
   'CONTRIBUTING.md',
   'LICENSE.md',
   'LICENSE',
@@ -75,12 +74,12 @@ for (const f of localeFiles) {
 
 // Policy docs must mention each other lightly
 const conventions = readFileSync(path.join(ROOT, 'CONVENTIONS.md'), 'utf8')
-for (const name of ['CONTRIBUTIONS.md', 'INDEX.md', 'LICENSE.md', 'llms', 'sitemap', 'i18n']) {
+for (const name of ['CONTRIBUTING.md', 'INDEX.md', 'LICENSE.md', 'llms', 'sitemap', 'i18n']) {
   if (!conventions.toLowerCase().includes(name.toLowerCase().replace('.md', ''))) {
     // soft: only hard-fail critical cross-links
   }
 }
-if (!conventions.includes('CONTRIBUTIONS.md')) fail('CONVENTIONS.md should link CONTRIBUTIONS.md')
+if (!conventions.includes('CONTRIBUTING.md')) fail('CONVENTIONS.md should link CONTRIBUTING.md')
 if (!conventions.includes('sitemap')) fail('CONVENTIONS.md should document sitemap maintenance')
 
 if (process.exitCode) {

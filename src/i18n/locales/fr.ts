@@ -236,7 +236,7 @@ export const fr: TMessages = {
       mcp_url: 'Point de terminaison MCP',
       agents: 'AGENTS.md',
       conventions: 'CONVENTIONS.md',
-      contributions: 'CONTRIBUTIONS.md',
+      contributions: 'CONTRIBUTING.md',
       docs_index: 'INDEX.md',
       license: 'Licence',
     },
@@ -246,6 +246,8 @@ export const fr: TMessages = {
     made: 'Fait avec',
     made_by: 'par',
     author: 'Massimo De Luisa',
+    made_with: 'avec',
+    made_tool: 'Grok Build',
   },
   common: {
     body: 'Corps central',

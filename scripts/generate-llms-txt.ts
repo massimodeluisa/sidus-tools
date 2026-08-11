@@ -124,7 +124,7 @@ function build(): string {
     '## Project docs (GitHub)',
     '- [INDEX.md](https://github.com/massimodeluisa/sidus-tools/blob/main/INDEX.md) - documentation map',
     '- [CONVENTIONS.md](https://github.com/massimodeluisa/sidus-tools/blob/main/CONVENTIONS.md) - coding + maintenance rules',
-    '- [CONTRIBUTIONS.md](https://github.com/massimodeluisa/sidus-tools/blob/main/CONTRIBUTIONS.md) - how to contribute',
+    '- [CONTRIBUTING.md](https://github.com/massimodeluisa/sidus-tools/blob/main/CONTRIBUTING.md) - how to contribute',
     '- [AGENTS.md](https://github.com/massimodeluisa/sidus-tools/blob/main/AGENTS.md) - agent entrypoint',
     '- [LICENSE.md](https://github.com/massimodeluisa/sidus-tools/blob/main/LICENSE.md) - MIT license notes',
     '',

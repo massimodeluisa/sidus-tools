@@ -142,18 +142,41 @@
             "@id": "https://sidus.tools/#website",
             "name": "SIDUS",
             "url": "https://sidus.tools/",
-            "description": "Open-source space engineering calculators (pure SI).",
-            "inLanguage": "en",
+            "description": "Open-source pure-SI space engineering calculators for orbital mechanics, propulsion, satellites, launch, RF, and crew ECLSS.",
+            "inLanguage": ["en", "it", "de", "fr", "es", "ru", "zh", "ja", "ko", "pt"],
             "datePublished": "2026-01-01",
-            "dateModified": "2026-08-08",
-            "publisher": { "@id": "https://sidus.tools/#org" }
+            "dateModified": "2026-08-11",
+            "publisher": { "@id": "https://sidus.tools/#org" },
+            "author": { "@id": "https://sidus.tools/#person" }
           },
           {
             "@type": "Organization",
             "@id": "https://sidus.tools/#org",
             "name": "SIDUS",
             "url": "https://sidus.tools/",
-            "sameAs": ["https://github.com/massimodeluisa/sidus-tools", "https://massimo.deluisa.bio"]
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://sidus.tools/assets/logo-512.png",
+              "width": 512,
+              "height": 512
+            },
+            "sameAs": [
+              "https://github.com/massimodeluisa/sidus-tools",
+              "https://massimo.deluisa.bio",
+              "https://x.com/massimodeluisa",
+              "https://github.com/massimodeluisa"
+            ]
+          },
+          {
+            "@type": "Person",
+            "@id": "https://sidus.tools/#person",
+            "name": "Massimo De Luisa",
+            "url": "https://massimo.deluisa.bio",
+            "sameAs": [
+              "https://github.com/massimodeluisa",
+              "https://x.com/massimodeluisa",
+              "https://massimo.deluisa.bio"
+            ]
           },
           {
             "@type": "SoftwareApplication",
@@ -162,10 +185,13 @@
             "operatingSystem": "Web",
             "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
             "url": "https://sidus.tools/",
+            "image": "https://sidus.tools/assets/logo-512.png",
             "license": "https://github.com/massimodeluisa/sidus-tools/blob/main/LICENSE",
             "datePublished": "2026-01-01",
-            "dateModified": "2026-08-08",
-            "author": { "@type": "Person", "name": "Massimo De Luisa", "url": "https://massimo.deluisa.bio" }
+            "dateModified": "2026-08-11",
+            "author": { "@id": "https://sidus.tools/#person" },
+            "publisher": { "@id": "https://sidus.tools/#org" },
+            "featureList": "About 175 pure-SI calculators; public MCP at https://sidus.tools/api/mcp; multi-language UI; code export"
           },
           {
             "@type": "FAQPage",
@@ -175,7 +201,7 @@
                 "name": "What is SIDUS?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "SIDUS is an open-source educational site with pure-SI space engineering calculators for orbits, propulsion, satellites, launch, RF link budgets, and crew ECLSS. Math runs in the browser with no backend for formulas."
+                  "text": "SIDUS is an open-source educational site with pure-SI space engineering calculators for orbits, propulsion, satellites, launch, RF link budgets, and crew ECLSS. Math runs in the browser; agents can also call https://sidus.tools/api/mcp."
                 }
               },
               {
@@ -191,7 +217,7 @@
                 "name": "Can AI agents use SIDUS tools?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Yes. Agents can read /llms.txt and tool pages. For executable math, connect any MCP client to the public endpoint https://sidus.tools/api/mcp: no local install required. Optional offline: run npm run mcp from a clone (stdio)."
+                  "text": "Yes. Agents can read /llms.txt and tool pages. For executable math, connect any MCP client to the public endpoint https://sidus.tools/api/mcp — no local install required. Optional offline: run npm run mcp from a clone (stdio)."
                 }
               }
             ]
@@ -229,10 +255,11 @@
           any agency or company.
         </p>
         <p>
-          As of 2026 the catalog ships <strong>84 live tools</strong> across
-          <strong>5 categories</strong> (orbital, propulsion, satellite, crew, utilities),
-          with multi-source bibliographies (typically ≥3 references per formula tool) and
-          multi-language code export. Earth gravitational parameter used in defaults is
+          As of 2026 the catalog ships about <strong>175 live tools</strong> across
+          <strong>7 categories</strong> (orbital, propulsion, satellite, crew, geometry,
+          planetary, utilities), with multi-source bibliographies (typically ≥3 references
+          per formula tool) and multi-language code export. Earth gravitational parameter
+          used in defaults is
           <strong>μ ⊕ = 3.986004418×10¹⁴ m³/s²</strong> (WGS-84 / standard educational value);
           Earth equatorial radius default is <strong>6 378 137 m</strong>.
         </p>
@@ -246,6 +273,7 @@
           Repository:
           <a href="https://github.com/massimodeluisa/sidus-tools">github.com/massimodeluisa/sidus-tools</a>.
           Agent index: <a href="/llms.txt">/llms.txt</a>.
+          Public MCP (no install): <a href="https://sidus.tools/api/mcp">https://sidus.tools/api/mcp</a>.
           Sitemap: <a href="/sitemap.xml">/sitemap.xml</a>.
           Primary sources: <a href="/resources">/resources</a>.
         </p>
@@ -256,12 +284,12 @@
             <tr><th>Metric</th><th>Value</th></tr>
           </thead>
           <tbody>
-            <tr><td>Live tools</td><td>30</td></tr>
-            <tr><td>Categories</td><td>5 (orbital, propulsion, satellite, crew, utilities)</td></tr>
+            <tr><td>Live tools</td><td>~175</td></tr>
+            <tr><td>Categories</td><td>7 (orbital, propulsion, satellite, crew, geometry, planetary, utilities)</td></tr>
             <tr><td>Default units</td><td>SI (m, s, kg, K, Pa, W)</td></tr>
             <tr><td>License</td><td>MIT</td></tr>
-            <tr><td>Hosted math backend</td><td>None (browser-local + optional local MCP)</td></tr>
-            <tr><td>Locales</td><td>en, it, de, fr, es, ru, zh, ja</td></tr>
+            <tr><td>MCP endpoint</td><td>https://sidus.tools/api/mcp (public URL; optional local stdio)</td></tr>
+            <tr><td>Locales</td><td>en, it, de, fr, es, ru, zh, ja, ko, pt</td></tr>
           </tbody>
         </table>
 
@@ -332,8 +360,11 @@
         <p>
           Read <a href="/llms.txt">/llms.txt</a> for the machine index, crawl tool URLs under
           <a href="/tools">/tools</a>, and cite linked sources on each page. For executable
-          physics without costing SIDUS hosting, run the public stdio MCP from the repository:
-          <code>npx tsx mcp/server.ts</code> (compute on the client machine only).
+          pure-SI math with no install, connect any MCP client to
+          <a href="https://sidus.tools/api/mcp">https://sidus.tools/api/mcp</a>
+          (Streamable HTTP). Optional offline / air-gapped: clone the repository and run
+          <code>npm run mcp</code> (stdio). An Agent Skill is available at
+          <code>skills/sidus/SKILL.md</code> (<code>npx skills add massimodeluisa/sidus-tools</code>).
         </p>
         <h2>Is this flight software?</h2>
         <p>
@@ -390,7 +421,8 @@
       <footer>
         <p>
           100% open source · non-profit · Made with ❤️ by
-          <a href="https://massimo.deluisa.bio">Massimo De Luisa</a>.
+          <a href="https://massimo.deluisa.bio">Massimo De Luisa</a>
+          with <a href="https://x.ai/build">Grok Build</a>.
           Edit on GitHub:
           <a href="https://github.com/massimodeluisa/sidus-tools">massimodeluisa/sidus-tools</a>.
         </p>

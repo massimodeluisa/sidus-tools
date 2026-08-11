@@ -1,18 +1,28 @@
 /**
- * Bot / social-crawler HTML injection for OG tags.
- * SPA shells alone lack per-tool og:image; crawlers that do not run JS
- * get a minimal document with absolute meta + link to /api/og.
+ * Edge middleware: OG meta + crawler HTML strategy.
  *
- * For tool URLs we also rewrite meta on the real SPA HTML (non-bot) so
- * OpenGraph debuggers that use a browser UA still see the tool image.
+ * - AI / search crawlers (GPTBot, ClaudeBot, Perplexity, Googlebot, …): full SPA
+ *   `index.html` with patched OG/canonical so they see JSON-LD + rich SSR body
+ *   (isready.ai / non-JS extractors). Thin shells fail content-depth checks.
+ * - Social unfurlers (Facebook, Twitter, Slack, Discord, …): lightweight HTML
+ *   with absolute OG + optional tool preview image (fast TTFB for cards).
+ * - Everyone else on app routes: same SPA patch so browser-like scrapers still
+ *   get host-correct og:image.
  *
- * Runs on Vercel Edge. Local Vite dev does not use this file.
- * Returning void continues the request to the static SPA (Vercel middleware).
+ * Local Vite dev does not run this file.
+ * Returning void continues to the static SPA (Vercel middleware).
  */
 
-/** Social + unfurl + OG debuggers (opengraph.xyz often uses a browser-like UA with “opengraph”). */
+/** Pure social / unfurl agents — prefer a small HTML card, not the full SPA body. */
+const SOCIAL_RE =
+  /facebookexternalhit|Facebot|Twitterbot|LinkedInBot|WhatsApp|TelegramBot|Discordbot|Slackbot|SkypeUriPreview|vkShare|redditbot|Embedly|Quora Link Preview|Showyoubot|outbrain|pinterest|flipboard|tumblr|bitlybot|meta-externalagent|opengraph|OpenGraph|iframely|metatags\.io|metainspector|unfurl|preview\.card|linkexpander|embedly|nuzzel|scoop\.it|Valve/i
+
+/**
+ * Any bot/crawler (AI + search + social). Social is handled first via SOCIAL_RE;
+ * remaining matches get the full SPA document.
+ */
 const BOT_RE =
-  /bot|crawl|spider|slurp|facebookexternalhit|Facebot|Twitterbot|LinkedInBot|WhatsApp|TelegramBot|Discordbot|Slackbot|SkypeUriPreview|vkShare|W3C_Validator|redditbot|Embedly|Quora Link Preview|Showyoubot|outbrain|pinterest|flipboard|tumblr|bitlybot|Applebot|Google-InspectionTool|GPTBot|ChatGPT|ClaudeBot|anthropic|Perplexity|Bytespider|meta-externalagent|opengraph|OpenGraph|iframely|metatags\.io|metainspector|unfurl|preview\.card|linkexpander|embedly|nuzzel|scoop\.it|baiduspider|yandex|duckduckbot|bingpreview|rogerbot|Valve/i
+  /bot|crawl|spider|slurp|facebookexternalhit|Facebot|Twitterbot|LinkedInBot|WhatsApp|TelegramBot|Discordbot|Slackbot|SkypeUriPreview|vkShare|W3C_Validator|redditbot|Embedly|Quora Link Preview|Showyoubot|outbrain|pinterest|flipboard|tumblr|bitlybot|Applebot|Google-InspectionTool|GPTBot|ChatGPT|ClaudeBot|anthropic|Perplexity|Bytespider|OAI-SearchBot|meta-externalagent|opengraph|OpenGraph|iframely|metatags\.io|metainspector|unfurl|preview\.card|linkexpander|embedly|nuzzel|scoop\.it|baiduspider|yandex|duckduckbot|bingpreview|rogerbot|Valve|isready/i
 
 /** Layout/chrome query keys must not pollute dynamic formula OG images. */
 const OG_STRIP_PARAMS = new Set([
@@ -34,6 +44,13 @@ const OG_STRIP_PARAMS = new Set([
   'code',
   'mcp',
 ])
+
+/** Site “content revised” signal for Last-Modified (ISO date, midnight UTC). */
+const CONTENT_REVISED = '2026-08-11T00:00:00.000Z'
+
+function isSocial(ua: string): boolean {
+  return SOCIAL_RE.test(ua)
+}
 
 function isBot(ua: string): boolean {
   return BOT_RE.test(ua)
@@ -66,6 +83,7 @@ function botHtml(opts: {
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>${escapeHtml(title)}</title>
   <meta name="description" content="${escapeHtml(description)}"/>
+  <meta name="author" content="Massimo De Luisa"/>
   <link rel="canonical" href="${escapeHtml(url)}"/>
   <meta property="og:type" content="website"/>
   <meta property="og:site_name" content="SIDUS"/>
@@ -143,7 +161,7 @@ function resolveOgCtx(requestUrl: URL): OgCtx {
   }
 }
 
-/** Patch SPA index.html meta so non-bot scrapers still see tool-specific OG. */
+/** Patch SPA index.html meta so scrapers see tool-specific OG + correct host. */
 function patchSpaHtml(html: string, ctx: OgCtx): string {
   const { title, description, canonical, image } = ctx
   let out = html
@@ -180,6 +198,23 @@ function patchSpaHtml(html: string, ctx: OgCtx): string {
   return out
 }
 
+async function spaResponse(url: URL, ctx: OgCtx, extraHeaders: Record<string, string> = {}) {
+  const indexUrl = new URL('/index.html', url.origin)
+  const indexRes = await fetch(indexUrl)
+  if (!indexRes.ok) return null
+  const raw = await indexRes.text()
+  const html = patchSpaHtml(raw, ctx)
+  return new Response(html, {
+    status: 200,
+    headers: {
+      'content-type': 'text/html; charset=utf-8',
+      'cache-control': 'public, s-maxage=300, stale-while-revalidate=3600',
+      'last-modified': new Date(CONTENT_REVISED).toUTCString(),
+      ...extraHeaders,
+    },
+  })
+}
+
 export default async function middleware(request: Request) {
   const ua = request.headers.get('user-agent') ?? ''
   const url = new URL(request.url)
@@ -196,8 +231,8 @@ export default async function middleware(request: Request) {
   const ctx = resolveOgCtx(url)
   const toolMatch = url.pathname.match(/^\/tools\/([^/]+)\/?$/)
 
-  // Bots / unfurlers: minimal HTML shell with OG + preview image
-  if (isBot(ua)) {
+  // Social unfurlers: light shell (fast cards). AI/search bots get full SPA below.
+  if (isSocial(ua)) {
     let body = `<h1>SIDUS</h1><p>${escapeHtml(ctx.description)}</p>`
     if (url.pathname === '/tools') body = `<h1>Tools</h1><p>${escapeHtml(ctx.description)}</p>`
     else if (url.pathname === '/resources')
@@ -222,29 +257,19 @@ export default async function middleware(request: Request) {
       headers: {
         'content-type': 'text/html; charset=utf-8',
         'cache-control': 'public, s-maxage=300, stale-while-revalidate=3600',
-        'x-sidus-bot-shell': '1',
+        'last-modified': new Date(CONTENT_REVISED).toUTCString(),
+        'x-sidus-bot-shell': 'social',
       },
     })
   }
 
-  // All app routes: rewrite SPA shell meta so opengraph.xyz / Chrome-UA scrapers
-  // that do not match BOT_RE still see absolute og:image on *this* host.
-  // (index.html hardcodes https://sidus.tools — broken on preview + when DNS is down.)
+  // AI / search crawlers + normal app routes: full SPA (JSON-LD + rich SSR body)
   try {
-    const indexUrl = new URL('/index.html', url.origin)
-    const indexRes = await fetch(indexUrl)
-    if (indexRes.ok) {
-      const raw = await indexRes.text()
-      const html = patchSpaHtml(raw, ctx)
-      return new Response(html, {
-        status: 200,
-        headers: {
-          'content-type': 'text/html; charset=utf-8',
-          'cache-control': 'public, s-maxage=60, stale-while-revalidate=600',
-          'x-sidus-og-patch': '1',
-        },
-      })
-    }
+    const res = await spaResponse(url, ctx, {
+      'x-sidus-og-patch': '1',
+      ...(isBot(ua) ? { 'x-sidus-bot-shell': 'spa-full' } : {}),
+    })
+    if (res) return res
   } catch {
     /* fall through to static SPA */
   }

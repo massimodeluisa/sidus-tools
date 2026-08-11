@@ -232,7 +232,7 @@ export const en = {
       mcp_url: 'MCP endpoint',
       agents: 'AGENTS.md',
       conventions: 'CONVENTIONS.md',
-      contributions: 'CONTRIBUTIONS.md',
+      contributions: 'CONTRIBUTING.md',
       docs_index: 'INDEX.md',
       license: 'License',
     },
@@ -242,6 +242,8 @@ export const en = {
     made: 'Made with',
     made_by: 'by',
     author: 'Massimo De Luisa',
+    made_with: 'with',
+    made_tool: 'Grok Build',
   },
   common: {
     body: 'Central body',

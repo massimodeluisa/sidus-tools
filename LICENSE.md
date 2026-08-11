@@ -72,4 +72,4 @@ in `src/lib/snippets/`.
 ## Contributing under this license
 
 Contributions are accepted under the same MIT terms. See
-[CONTRIBUTIONS.md](./CONTRIBUTIONS.md).
+[CONTRIBUTING.md](./CONTRIBUTING.md).

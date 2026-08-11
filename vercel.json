@@ -7,6 +7,14 @@
       "maxDuration": 30
     }
   },
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.sidus.tools" }],
+      "destination": "https://sidus.tools/:path*",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/mcp",

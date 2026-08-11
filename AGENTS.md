@@ -7,8 +7,9 @@ Entrypoint for agentic tooling on **[sidus.tools](https://sidus.tools)**.
 | Doc | Why |
 |-----|-----|
 | **[CONVENTIONS.md](./CONVENTIONS.md)** | Code, tests, i18n, catalog, robots/sitemap/llms, snippets |
-| **[CONTRIBUTIONS.md](./CONTRIBUTIONS.md)** | PR / contribution workflow |
+| **[CONTRIBUTING.md](./CONTRIBUTING.md)** | PR / contribution workflow |
 | **[INDEX.md](./INDEX.md)** | Full documentation map |
+| **[skills/sidus/SKILL.md](./skills/sidus/SKILL.md)** | Agent Skill (MCP + pure-SI calculators) |
 | **[LICENSE.md](./LICENSE.md)** | MIT + educational disclaimer |
 | **[src/lib/snippets/QUALITY.md](./src/lib/snippets/QUALITY.md)** | Multi-lang export quality |
 

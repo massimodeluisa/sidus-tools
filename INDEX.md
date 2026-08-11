@@ -13,11 +13,12 @@ Site: **https://sidus.tools** · Repo:
 | Doc | Purpose |
 |-----|---------|
 | **[CONVENTIONS.md](./CONVENTIONS.md)** | How to write code; tests; i18n; catalog; robots/sitemap/llms; snippets |
-| **[CONTRIBUTIONS.md](./CONTRIBUTIONS.md)** | How to contribute / PR workflow |
+| **[CONTRIBUTING.md](./CONTRIBUTING.md)** | How to contribute / PR workflow |
 | **[LICENSE.md](./LICENSE.md)** | MIT license explanation (+ link to `LICENSE`) |
 | **[LICENSE](./LICENSE)** | Canonical MIT text |
 | **[AGENTS.md](./AGENTS.md)** | Short agent entrypoint (points here + CONVENTIONS) |
-| **[README.md](./README.md)** | Project overview, install, MCP |
+| **[README.md](./README.md)** | Project overview, install, MCP, skill |
+| **[skills/sidus/SKILL.md](./skills/sidus/SKILL.md)** | Installable Agent Skill (`npx skills add massimodeluisa/sidus-tools`) |
 
 ---
 

@@ -1,5 +1,5 @@
 # SIDUS: allow classic SEO and AI crawlers (educational open source)
-# Policy docs (CONVENTIONS, CONTRIBUTIONS, INDEX, LICENSE) live on GitHub, not here.
+# Policy docs (CONVENTIONS, CONTRIBUTING, INDEX, LICENSE) live on GitHub, not here.
 # Keep Sitemap absolute. After catalog changes: update sitemap.xml + npm run llms:gen
 User-agent: *
 Allow: /
