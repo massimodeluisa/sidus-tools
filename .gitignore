@@ -21,3 +21,4 @@ docs/AGENCY_OPEN_SOURCE_SURVEY.md
 docs/godbolt-matrix/
 docs/reviews/
 docs/**/*.log
+/.cursor

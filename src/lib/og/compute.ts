@@ -687,6 +687,6 @@ export function buildOgImageUrl(
     }
   }
   // Bust social-scraper caches after OG pipeline fixes
-  if (!u.searchParams.has('v')) u.searchParams.set('v', '3')
+  if (!u.searchParams.has('v')) u.searchParams.set('v', '5')
   return u.toString()
 }

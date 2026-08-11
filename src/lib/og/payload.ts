@@ -69,7 +69,6 @@ export function resolveOgPayloadStatic(
       formula: 'Orbital · Propulsion · Satellite · Crew · Utilities',
       brand: 'SIDUS',
       urlHint: 'sidus.tools/tools',
-      tags: ['orbital', 'propulsion', 'ECLSS', 'RF', 'GNC'],
     }
   }
 
@@ -107,7 +106,6 @@ export function resolveOgPayloadStatic(
     formula: 'Pure SI · open source · educational',
     brand: 'SIDUS',
     urlHint: SITE_ORIGIN.replace('https://', ''),
-    tags: ['orbits', 'propulsion', 'ECLSS', 'RF'],
     context: 'No affiliation with NASA, ESA, or SpaceX',
     dynamic: false,
   }

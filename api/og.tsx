@@ -1,22 +1,19 @@
 /**
- * Dynamic OG image — SIDUS brand language (not Axiom gold gallery).
+ * Dynamic OG image — SIDUS brand language.
  *
  * Matches site UI tokens:
  * - bg #050505 · fg #f2f2f2 · muted #8a8a8a · border #222 · signal #c4c8ce · grid #161616
- * - Orbit mark (Lucide-style mono), IBM Plex Mono labels, Space Grotesk headlines
- * - Tool cards: title + formula + optional live metrics
+ * - Orbit mark, system mono labels, system sans headlines
  *
- * Performance: static payload only (no physics bundle). Live metrics optional
- * via dynamic import when URL has tool params — crawlers rarely wait >5s.
+ * Edge / Satori constraints (empty PNG body if violated):
+ * - no <br />, no flexWrap, no React Fragments with mixed conditionals
+ * - no TagChips / nested chip rows (empty body on Edge for home+tools)
+ * - no heavy physics bundle on cold path (OOM → content-length 0)
  *
  * 1200×630 · @vercel/og
  */
 import { ImageResponse } from '@vercel/og'
-import {
-  hasLiveToolParams,
-  queryFromSearch,
-  resolveOgPayloadStatic,
-} from '../src/lib/og/payload'
+import { queryFromSearch, resolveOgPayloadStatic } from '../src/lib/og/payload'
 import type { OgPayload } from '../src/lib/og/types'
 import { OG_H, OG_W } from '../src/lib/og/types'
 
@@ -36,6 +33,11 @@ const SURFACE = '#141414'
 
 const CACHE =
   'public, max-age=60, s-maxage=300, stale-while-revalidate=3600'
+
+const OG_HEADERS = {
+  'Cache-Control': CACHE,
+  'Access-Control-Allow-Origin': '*',
+} as const
 
 /** Subtle engineering grid — few lines only (Satori cost). */
 function SiteGrid() {
@@ -97,7 +99,6 @@ function OrbitMark({ size = 44 }: { size?: number }) {
         position: 'relative',
       }}
     >
-      {/* outer ring */}
       <div
         style={{
           width: s * 0.62,
@@ -107,7 +108,6 @@ function OrbitMark({ size = 44 }: { size?: number }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          position: 'relative',
         }}
       >
         <div
@@ -119,7 +119,6 @@ function OrbitMark({ size = 44 }: { size?: number }) {
           }}
         />
       </div>
-      {/* satellite dots */}
       <div
         style={{
           position: 'absolute',
@@ -148,10 +147,11 @@ function OrbitMark({ size = 44 }: { size?: number }) {
 
 function BrandRow({ live }: { live?: boolean }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+    <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
       <OrbitMark size={40} />
       <div
         style={{
+          marginLeft: 14,
           fontSize: 26,
           fontWeight: 700,
           letterSpacing: '0.16em',
@@ -163,6 +163,7 @@ function BrandRow({ live }: { live?: boolean }) {
       </div>
       <div
         style={{
+          marginLeft: 14,
           fontSize: 12,
           letterSpacing: '0.14em',
           color: SUBTLE,
@@ -175,7 +176,7 @@ function BrandRow({ live }: { live?: boolean }) {
       {live ? (
         <div
           style={{
-            marginLeft: 8,
+            marginLeft: 12,
             fontSize: 11,
             letterSpacing: '0.16em',
             color: SIGNAL,
@@ -193,48 +194,25 @@ function BrandRow({ live }: { live?: boolean }) {
 }
 
 function Footer({ urlHint }: { urlHint?: string }) {
+  const hint =
+    urlHint && urlHint !== 'sidus.tools'
+      ? urlHint.replace(/^sidus\.tools\/?/, '/')
+      : ''
   return (
     <div
       style={{
         display: 'flex',
+        flexDirection: 'row',
         alignItems: 'center',
-        gap: 10,
         fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
         fontSize: 16,
         color: MUTED,
       }}
     >
       <span style={{ color: SIGNAL }}>https://sidus.tools</span>
-      {urlHint && urlHint !== 'sidus.tools' ? (
-        <>
-          <span style={{ color: SUBTLE }}>·</span>
-          <span style={{ color: SUBTLE }}>{urlHint.replace(/^sidus\.tools\/?/, '/')}</span>
-        </>
+      {hint ? (
+        <span style={{ color: SUBTLE, marginLeft: 10 }}>· {hint}</span>
       ) : null}
-    </div>
-  )
-}
-
-function TagChips({ tags }: { tags: string[] }) {
-  if (!tags.length) return null
-  return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
-      {tags.slice(0, 6).map((tg) => (
-        <div
-          key={tg}
-          style={{
-            border: `1px solid ${BORDER}`,
-            padding: '5px 10px',
-            fontSize: 13,
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            color: MUTED,
-            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-          }}
-        >
-          #{tg}
-        </div>
-      ))}
     </div>
   )
 }
@@ -245,9 +223,16 @@ function MetricsRow({
   metrics: NonNullable<OgPayload['metrics']>
 }) {
   return (
-    <div style={{ display: 'flex', gap: 28, marginTop: 20, flexWrap: 'wrap' }}>
-      {metrics.slice(0, 4).map((m) => (
-        <div key={m.label} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <div style={{ display: 'flex', flexDirection: 'row', marginTop: 20 }}>
+      {metrics.slice(0, 4).map((m, i) => (
+        <div
+          key={m.label}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            marginRight: i < 3 ? 28 : 0,
+          }}
+        >
           <div
             style={{
               fontSize: 12,
@@ -259,7 +244,14 @@ function MetricsRow({
           >
             {m.label}
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'flex-end',
+              marginTop: 4,
+            }}
+          >
             <div
               style={{
                 fontSize: 34,
@@ -272,7 +264,7 @@ function MetricsRow({
               {m.value}
             </div>
             {m.unit ? (
-              <div style={{ fontSize: 15, color: SIGNAL }}>{m.unit}</div>
+              <div style={{ fontSize: 15, color: SIGNAL, marginLeft: 6 }}>{m.unit}</div>
             ) : null}
           </div>
         </div>
@@ -281,9 +273,25 @@ function MetricsRow({
   )
 }
 
+function kickerFor(kind: OgPayload['kind']): string {
+  if (kind === 'home') return 'Open source · Pure SI'
+  if (kind === 'tools') return 'Catalog'
+  if (kind === 'resources') return 'Library'
+  return 'Tool · SIDUS'
+}
+
+/**
+ * Single Satori-safe layout for all pages.
+ * Home/tools previously used TagChips + Fragments → content-length 0 on Edge.
+ */
 function SidusOgCard({ payload }: { payload: OgPayload }) {
-  const isHome = payload.kind === 'home'
   const isTool = payload.kind === 'tool'
+  const title =
+    payload.kind === 'home' ? 'Tools for space engineering.' : payload.title
+  const subtitle =
+    payload.kind === 'home'
+      ? 'Pure-SI calculators for orbits, propulsion, SGP4, launch, RF, and crew ECLSS.'
+      : payload.subtitle
 
   return (
     <div
@@ -291,16 +299,17 @@ function SidusOgCard({ payload }: { payload: OgPayload }) {
         width: '100%',
         height: '100%',
         display: 'flex',
+        flexDirection: 'column',
         backgroundColor: BG,
         color: FG,
-        fontFamily: 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif',
+        fontFamily:
+          'ui-sans-serif, system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif',
         position: 'relative',
         overflow: 'hidden',
       }}
     >
       <SiteGrid />
 
-      {/* Left accent bar */}
       <div
         style={{
           position: 'absolute',
@@ -329,114 +338,80 @@ function SidusOgCard({ payload }: { payload: OgPayload }) {
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: 14,
-            flex: 1,
             justifyContent: 'center',
+            flex: 1,
             maxWidth: 980,
           }}
         >
-          {isHome ? (
-            <>
-              <div
-                style={{
-                  fontSize: 54,
-                  fontWeight: 600,
-                  letterSpacing: '-0.03em',
-                  lineHeight: 1.12,
-                  color: FG,
-                }}
-              >
-                Tools for space
-                <br />
-                engineering.
-              </div>
-              <div
-                style={{
-                  fontSize: 22,
-                  color: MUTED,
-                  lineHeight: 1.4,
-                  maxWidth: 640,
-                }}
-              >
-                Pure-SI calculators for orbits, propulsion, SGP4, launch, RF, and crew
-                ECLSS — open source, educational.
-              </div>
-              <TagChips tags={payload.tags ?? []} />
-            </>
-          ) : (
-            <>
-              {payload.kind !== 'tool' ? (
-                <div
-                  style={{
-                    fontSize: 13,
-                    letterSpacing: '0.18em',
-                    textTransform: 'uppercase',
-                    color: SUBTLE,
-                    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-                  }}
-                >
-                  {payload.kind === 'tools' ? 'Catalog' : 'Library'}
-                </div>
-              ) : (
-                <div
-                  style={{
-                    fontSize: 13,
-                    letterSpacing: '0.18em',
-                    textTransform: 'uppercase',
-                    color: SUBTLE,
-                    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-                  }}
-                >
-                  Tool · SIDUS
-                </div>
-              )}
-              <div
-                style={{
-                  fontSize: isTool ? 48 : 52,
-                  fontWeight: 600,
-                  letterSpacing: '-0.03em',
-                  lineHeight: 1.12,
-                  color: FG,
-                }}
-              >
-                {payload.title}
-              </div>
-              {payload.subtitle ? (
-                <div style={{ fontSize: 22, color: MUTED, lineHeight: 1.35 }}>
-                  {payload.subtitle}
-                </div>
-              ) : null}
-              {payload.formula ? (
-                <div
-                  style={{
-                    marginTop: 6,
-                    fontSize: 20,
-                    color: SIGNAL,
-                    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-                    letterSpacing: '0.02em',
-                    lineHeight: 1.4,
-                  }}
-                >
-                  {payload.formula}
-                </div>
-              ) : null}
-              {payload.context ? (
-                <div
-                  style={{
-                    fontSize: 16,
-                    color: SUBTLE,
-                    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-                  }}
-                >
-                  {payload.context}
-                </div>
-              ) : null}
-              {payload.metrics && payload.metrics.length > 0 ? (
-                <MetricsRow metrics={payload.metrics} />
-              ) : null}
-              <TagChips tags={payload.tags ?? []} />
-            </>
-          )}
+          <div
+            style={{
+              fontSize: 13,
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              color: SUBTLE,
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+              marginBottom: 14,
+            }}
+          >
+            {kickerFor(payload.kind)}
+          </div>
+
+          <div
+            style={{
+              fontSize: isTool ? 48 : 52,
+              fontWeight: 600,
+              letterSpacing: '-0.03em',
+              lineHeight: 1.12,
+              color: FG,
+            }}
+          >
+            {title}
+          </div>
+
+          {subtitle ? (
+            <div
+              style={{
+                fontSize: 22,
+                color: MUTED,
+                lineHeight: 1.35,
+                marginTop: 14,
+              }}
+            >
+              {subtitle}
+            </div>
+          ) : null}
+
+          {payload.formula ? (
+            <div
+              style={{
+                marginTop: 14,
+                fontSize: 20,
+                color: SIGNAL,
+                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+                letterSpacing: '0.02em',
+                lineHeight: 1.4,
+              }}
+            >
+              {payload.formula}
+            </div>
+          ) : null}
+
+          {payload.context ? (
+            <div
+              style={{
+                marginTop: 10,
+                fontSize: 16,
+                color: SUBTLE,
+                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+              }}
+            >
+              {payload.context}
+            </div>
+          ) : null}
+
+          {payload.metrics && payload.metrics.length > 0 ? (
+            <MetricsRow metrics={payload.metrics} />
+          ) : null}
         </div>
 
         <Footer urlHint={payload.urlHint} />
@@ -445,49 +420,86 @@ function SidusOgCard({ payload }: { payload: OgPayload }) {
   )
 }
 
+/** Minimal card used when the primary render yields an empty PNG body. */
+function MinimalOgCard() {
+  return (
+    <div
+      style={{
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        backgroundColor: BG,
+        color: FG,
+        padding: 64,
+        fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+      }}
+    >
+      <div
+        style={{
+          fontSize: 28,
+          fontWeight: 700,
+          letterSpacing: '0.16em',
+          marginBottom: 24,
+        }}
+      >
+        SIDUS
+      </div>
+      <div style={{ fontSize: 48, fontWeight: 600, lineHeight: 1.15 }}>
+        Space Engineering Tools
+      </div>
+      <div style={{ fontSize: 22, color: MUTED, marginTop: 16 }}>
+        Pure SI · open source · educational
+      </div>
+      <div
+        style={{
+          fontSize: 16,
+          color: SIGNAL,
+          marginTop: 40,
+          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+        }}
+      >
+        https://sidus.tools
+      </div>
+    </div>
+  )
+}
+
+async function pngResponse(element: JSX.Element): Promise<Response> {
+  const res = new ImageResponse(element, {
+    width: OG_W,
+    height: OG_H,
+    headers: { ...OG_HEADERS },
+  })
+  // @vercel/og can return image/png with content-length 0 when Satori fails
+  // silently — detect and let the caller fall back.
+  const buf = await res.arrayBuffer()
+  if (buf.byteLength < 256) {
+    throw new Error(`og empty png body (${buf.byteLength} bytes)`)
+  }
+  return new Response(buf, {
+    status: 200,
+    headers: {
+      'Content-Type': 'image/png',
+      ...OG_HEADERS,
+    },
+  })
+}
+
 export default async function handler(req: Request) {
+  const url = new URL(req.url)
+  const q = queryFromSearch(url.searchParams)
+  const payload: OgPayload = resolveOgPayloadStatic(q)
+
   try {
-    const url = new URL(req.url)
-    const q = queryFromSearch(url.searchParams)
-
-    // Fast path: static card (no physics bundle)
-    let payload: OgPayload = resolveOgPayloadStatic(q)
-
-    // Optional live metrics — only when tool URL has real params (not just tool=id)
-    const toolId = q.tool || q.id
-    if (toolId && hasLiveToolParams(q)) {
-      try {
-        const { computeToolOg } = await import('../src/lib/og/compute')
-        payload = computeToolOg(toolId, q)
-      } catch (e) {
-        console.error('og live compute skipped', e)
-      }
-    }
-
-    return new ImageResponse(<SidusOgCard payload={payload} />, {
-      width: OG_W,
-      height: OG_H,
-      headers: {
-        'Cache-Control': CACHE,
-        'Access-Control-Allow-Origin': '*',
-      },
-    })
+    return await pngResponse(<SidusOgCard payload={payload} />)
   } catch (err) {
-    console.error('og error', err)
+    console.error('og primary render failed', err)
     try {
-      const fallback: OgPayload = {
-        kind: 'home',
-        title: 'SIDUS',
-        subtitle: 'Space Engineering Tools',
-        brand: 'SIDUS',
-        urlHint: 'sidus.tools',
-      }
-      return new ImageResponse(<SidusOgCard payload={fallback} />, {
-        width: OG_W,
-        height: OG_H,
-        headers: { 'Cache-Control': CACHE, 'Access-Control-Allow-Origin': '*' },
-      })
-    } catch {
+      return await pngResponse(<MinimalOgCard />)
+    } catch (err2) {
+      console.error('og fallback render failed', err2)
       return new Response('OG render failed', { status: 500 })
     }
   }

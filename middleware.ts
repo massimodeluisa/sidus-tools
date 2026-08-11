@@ -150,8 +150,8 @@ function resolveOgCtx(requestUrl: URL): OgCtx {
     }
   }
 
-  // Cache-bust for scrapers that cached a failed first fetch of og:image
-  if (!og.searchParams.has('v')) og.searchParams.set('v', '3')
+  // Cache-bust for scrapers that cached empty/failed og:image bodies
+  if (!og.searchParams.has('v')) og.searchParams.set('v', '5')
 
   return {
     title,
