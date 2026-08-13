@@ -29,6 +29,10 @@ const REQUIRED_LOCALE_KEYS = [
   'footer.dev.license',
   'footer.dev.agents',
   'nav.language',
+  'footer.privacy',
+  'footer.cookies',
+  'cookie.accept',
+  'privacy.title',
 ]
 
 function fail(msg) {

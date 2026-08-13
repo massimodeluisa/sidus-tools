@@ -6,6 +6,7 @@ export const de: TMessages = {
     tools: 'Werkzeuge',
     resources: 'Quellen',
     language: 'Sprache',
+    privacy: 'Datenschutz',
   },
   home: {
     badge: 'Missionssysteme',
@@ -243,11 +244,48 @@ export const de: TMessages = {
     disclaimer:
       'SIDUS ist ein unabhängiges Bildungsprojekt ohne Verbindung zu NASA, ESA, SpaceX, Roscosmos, CNSA, JAXA, ISRO, ASI, DLR, CNES oder einer anderen Behörde oder Firma. Modelle sind pure-SI-Bildungs-Tools, nicht flugzertifiziert.',
     opensource: '100 % open source · non-profit',
+    privacy: 'Datenschutz',
+    cookies: 'Cookies',
     made: 'Gemacht mit',
     made_by: 'von',
     author: 'Massimo De Luisa',
     made_with: 'mit',
     made_tool: 'Grok Build',
+  },
+  cookie: {
+    title: 'Cookies',
+    body: 'Wir nutzen optionale Analyse-Cookies (Google Analytics über Tag Manager), um die Nutzung von SIDUS zu verstehen. Notwendiger Speicher bleibt aktiv. Du kannst die Wahl später im Footer ändern.',
+    privacy: 'Datenschutzhinweis',
+    accept: 'Akzeptieren',
+    reject: 'Ablehnen',
+  },
+  privacy: {
+    seo_title: 'Datenschutz · SIDUS',
+    seo_description:
+      'Wie SIDUS Cookies und Google Analytics über Tag Manager nutzt. Einwilligung, Speicherung und deine Rechte.',
+    kicker: 'Rechtliches',
+    title: 'Datenschutz und Cookies',
+    updated: 'Zuletzt aktualisiert: 13. August 2026',
+    who_title: 'Wer wir sind',
+    who_body:
+      'SIDUS (sidus.tools) ist ein unabhängiges Bildungsprojekt von Massimo De Luisa. Keine Verbindung zu NASA, ESA, SpaceX oder anderen Agenturen.',
+    what_title: 'Was wir erheben',
+    what_body:
+      'Die Rechner laufen im Browser. Ein Konto ist nicht nötig. Wenn du Analytics akzeptierst, kann Google Nutzungsdaten verarbeiten (besuchte Seiten, ungefähre Lage, Gerät und Browser, Referrer). Wir verkaufen keine personenbezogenen Daten.',
+    gtm_title: 'Google Tag Manager und Analytics',
+    gtm_body:
+      'Wir laden Google Tag Manager (Container GTM-TP7284WJ). Darüber können wir Google Analytics 4 betreiben. Tags, die Analyse-Cookies setzen, starten erst nach deiner Einwilligung. Bis dahin hält Consent Mode analytics_storage und Werbespeicher auf denied. Google ist ein eigenständiger Auftragsverarbeiter; siehe Googles Datenschutzdokumentation.',
+    cookies_title: 'Welche Cookies wir nutzen',
+    cookies_body:
+      'Notwendig: Sprachwahl (sidus.locale) und Cookie-Entscheidung (sidus.cookie-consent) im local storage. Analytics (nur bei Zustimmung): Google-Cookies wie _ga und _gid. Ablehnen oder die Wahl unter Cookies im Footer erneut öffnen.',
+    legal_title: 'Rechtsgrundlage und Speicherung',
+    legal_body:
+      'Analytics beruhen auf Einwilligung (DSGVO Art. 6 Abs. 1 lit. a). Du kannst sie jederzeit widerrufen. Analytics-Daten bleiben gemäß den Google-Analytics-Einstellungen (typisch ein rollierendes Monatsfenster). SIDUS führt keine getrennte Nutzerdatenbank.',
+    rights_title: 'Deine Rechte',
+    rights_body:
+      'Gilt die DSGVO oder ähnliches Recht, kannst du Auskunft, Berichtigung, Löschung, Einschränkung, Widerspruch oder Übertragbarkeit verlangen und dich bei einer Aufsichtsbehörde beschweren. Widerruf über den Footer, ohne die sonstige Nutzung zu sperren.',
+    contact_title: 'Kontakt',
+    contact_body: 'Fragen zu diesem Hinweis: Massimo De Luisa,',
   },
   common: {
     body: 'Zentralkörper',

@@ -8,6 +8,7 @@ import {
 
   Terminal,
 } from 'lucide-react'
+import { openCookiePreferences } from '@/lib/gtm'
 import { cn } from '@/lib/utils'
 
 const GITHUB = 'https://github.com/massimodeluisa/sidus-tools'
@@ -79,6 +80,7 @@ export function SiteFooter() {
     { label: t('nav.home'), to: '/' },
     { label: t('nav.tools'), to: '/tools' },
     { label: t('nav.resources'), to: '/resources' },
+    { label: t('footer.privacy'), to: '/privacy' },
   ]
 
   const developers: FooterLink[] = [
@@ -208,6 +210,25 @@ export function SiteFooter() {
                   ·
                 </span>
                 <span>{t('footer.opensource')}</span>
+                <span className="text-border-strong" aria-hidden>
+                  ·
+                </span>
+                <Link
+                  to="/privacy"
+                  className="text-muted no-underline transition-colors hover:text-fg"
+                >
+                  {t('footer.privacy')}
+                </Link>
+                <span className="text-border-strong" aria-hidden>
+                  ·
+                </span>
+                <button
+                  type="button"
+                  onClick={() => openCookiePreferences()}
+                  className="uppercase tracking-[0.12em] text-muted transition-colors hover:text-fg"
+                >
+                  {t('footer.cookies')}
+                </button>
                 <span className="text-border-strong" aria-hidden>
                   ·
                 </span>

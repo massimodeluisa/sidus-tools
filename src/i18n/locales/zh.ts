@@ -6,6 +6,7 @@ export const zh: TMessages = {
     tools: '工具',
     resources: '资源',
     language: '语言',
+    privacy: '隐私',
   },
   home: {
     badge: '任务系统',
@@ -238,11 +239,47 @@ export const zh: TMessages = {
     disclaimer:
       'SIDUS 是独立教育项目，与 NASA、ESA、SpaceX、Roscosmos、CNSA、JAXA、ISRO、ASI、DLR、CNES 或任何其他机构/公司均无隶属关系。模型为 pure-SI 教育工具，非飞行认证。',
     opensource: '100% 开源 · 非营利',
+    privacy: '隐私',
+    cookies: 'Cookie',
     made: '用',
     made_by: '由',
     author: 'Massimo De Luisa',
     made_with: '使用',
     made_tool: 'Grok Build',
+  },
+  cookie: {
+    title: 'Cookie',
+    body: '我们使用可选的分析 Cookie（通过 Tag Manager 的 Google Analytics）了解 SIDUS 的使用情况。必要存储始终开启。之后可在页脚更改选择。',
+    privacy: '隐私说明',
+    accept: '接受',
+    reject: '拒绝',
+  },
+  privacy: {
+    seo_title: '隐私 · SIDUS',
+    seo_description: 'SIDUS 如何通过 Tag Manager 使用 Cookie 与 Google Analytics。同意、保留期限与你的权利。',
+    kicker: '法律',
+    title: '隐私与 Cookie',
+    updated: '最近更新：2026 年 8 月 13 日',
+    who_title: '我们是谁',
+    who_body:
+      'SIDUS（sidus.tools）是 Massimo De Luisa 的独立教育项目。与 NASA、ESA、SpaceX 或其他机构无隶属关系。',
+    what_title: '我们收集什么',
+    what_body:
+      '计算器在浏览器中运行。无需账户。若你接受分析，Google 可能处理使用数据（浏览页面、大致位置、设备与浏览器、来源）。我们不出售个人数据。',
+    gtm_title: 'Google Tag Manager 与 Analytics',
+    gtm_body:
+      '我们加载 Google Tag Manager（容器 GTM-TP7284WJ），可通过它运行 Google Analytics 4。设置分析 Cookie 的标签仅在你同意后触发。此前 Consent Mode 将 analytics_storage 与广告存储保持为 denied。Google 为独立处理方，详见其隐私文档。',
+    cookies_title: '我们使用的 Cookie',
+    cookies_body:
+      '必要：语言（sidus.locale）与 Cookie 选择（sidus.cookie-consent），存于 local storage。分析（仅在同意后）：Google Cookie，如 _ga 与 _gid。可在页脚的 Cookie 中拒绝或重新打开选择。',
+    legal_title: '法律依据与保留',
+    legal_body:
+      '分析基于同意（GDPR 第 6(1)(a) 条）。可随时撤回。分析数据按 Google Analytics 媒体资源设置保留（通常为滚动数月）。SIDUS 没有单独的用户数据库。',
+    rights_title: '你的权利',
+    rights_body:
+      '若适用 GDPR 或类似法律，你可以请求访问、更正、删除、限制、反对或可携，并向监管机构投诉。可在页脚撤回同意，不影响其他功能。',
+    contact_title: '联系',
+    contact_body: '关于本说明的问题：Massimo De Luisa，',
   },
   common: {
     body: '中心天体',

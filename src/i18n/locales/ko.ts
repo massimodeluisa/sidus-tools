@@ -6,6 +6,7 @@ export const ko: TMessages = {
     tools: '도구',
     resources: '자료',
     language: '언어',
+    privacy: '개인정보',
   },
   home: {
     badge: '미션 시스템',
@@ -242,11 +243,48 @@ export const ko: TMessages = {
     disclaimer:
       'SIDUS는 독립 교육 프로젝트입니다. NASA, ESA, SpaceX, Roscosmos, CNSA, JAXA, ISRO, ASI, DLR, CNES 또는 다른 기관·회사와 제휴하지 않습니다. 모델은 순수 SI 교육용 도구이며 비행 인증이 아닙니다.',
     opensource: '100% 오픈소스 · 비영리',
+    privacy: '개인정보',
+    cookies: '쿠키',
     made: 'Made with',
     made_by: 'by',
     author: 'Massimo De Luisa',
     made_with: 'with',
     made_tool: 'Grok Build',
+  },
+  cookie: {
+    title: '쿠키',
+    body: 'SIDUS 사용 방식을 이해하기 위해 선택적 분석 쿠키(Tag Manager를 통한 Google Analytics)를 사용합니다. 필수 저장소는 유지됩니다. 나중에 푸터에서 바꿀 수 있습니다.',
+    privacy: '개인정보 안내',
+    accept: '허용',
+    reject: '거부',
+  },
+  privacy: {
+    seo_title: '개인정보 · SIDUS',
+    seo_description:
+      'SIDUS가 Tag Manager를 통해 쿠키와 Google Analytics를 사용하는 방법. 동의, 보관, 권리.',
+    kicker: '법률',
+    title: '개인정보와 쿠키',
+    updated: '최종 업데이트: 2026년 8월 13일',
+    who_title: '운영자',
+    who_body:
+      'SIDUS(sidus.tools)는 Massimo De Luisa의 독립 교육 프로젝트입니다. NASA, ESA, SpaceX 또는 다른 기관과 제휴하지 않습니다.',
+    what_title: '수집 항목',
+    what_body:
+      '계산기는 브라우저에서 실행됩니다. 계정은 필요 없습니다. 분석을 허용하면 Google이 이용 데이터(조회 페이지, 대략적 위치, 기기와 브라우저, 리퍼러)를 처리할 수 있습니다. 개인정보는 판매하지 않습니다.',
+    gtm_title: 'Google Tag Manager와 Analytics',
+    gtm_body:
+      'Google Tag Manager(컨테이너 GTM-TP7284WJ)를 로드하며 Google Analytics 4를 실행할 수 있습니다. 분석 쿠키를 설정하는 태그는 동의한 뒤에만 실행됩니다. 그전까지 Consent Mode는 analytics_storage와 광고 저장소를 denied로 둡니다. Google은 독립 처리자입니다. 자세한 내용은 Google 개인정보 문서를 보세요.',
+    cookies_title: '사용하는 쿠키',
+    cookies_body:
+      '필수: 언어(sidus.locale)와 쿠키 선택(sidus.cookie-consent)을 local storage에 저장. 분석(허용 시에만): _ga, _gid 같은 Google 쿠키. 푸터의 쿠키에서 거부하거나 다시 열 수 있습니다.',
+    legal_title: '법적 근거와 보관',
+    legal_body:
+      '분석은 동의(GDPR 제6조 1항 (a))에 근거합니다. 언제든 철회할 수 있습니다. 분석 데이터는 Google Analytics 속성 설정에 따라 보관됩니다(보통 수개월 단위). SIDUS는 별도의 사용자 데이터베이스가 없습니다.',
+    rights_title: '당신의 권리',
+    rights_body:
+      'GDPR 또는 유사 법이 적용되면 열람, 정정, 삭제, 제한, 반대, 이동을 요청하고 감독 기관에 민원할 수 있습니다. 푸터에서 동의를 철회해도 사이트의 다른 이용은 막히지 않습니다.',
+    contact_title: '연락',
+    contact_body: '이 안내에 대한 문의: Massimo De Luisa,',
   },
   common: {
     body: '중심 천체',

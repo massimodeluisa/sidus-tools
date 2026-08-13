@@ -6,6 +6,7 @@ export const es: TMessages = {
     tools: 'Herramientas',
     resources: 'Fuentes',
     language: 'Idioma',
+    privacy: 'Privacidad',
   },
   home: {
     badge: 'Sistemas de misión',
@@ -243,11 +244,48 @@ export const es: TMessages = {
     disclaimer:
       'SIDUS es un proyecto educativo independiente, sin afiliación a la NASA, ESA, SpaceX, Roscosmos, CNSA, JAXA, ISRO, ASI, DLR, CNES ni a ninguna otra agencia o empresa. Los modelos son herramientas educativas pure-SI, no certificadas de vuelo.',
     opensource: '100 % open source · sin ánimo de lucro',
+    privacy: 'Privacidad',
+    cookies: 'Cookies',
     made: 'Hecho con',
     made_by: 'por',
     author: 'Massimo De Luisa',
     made_with: 'con',
     made_tool: 'Grok Build',
+  },
+  cookie: {
+    title: 'Cookies',
+    body: 'Usamos cookies de analítica opcionales (Google Analytics vía Tag Manager) para entender cómo se usa SIDUS. El almacenamiento necesario sigue activo. Puedes cambiarlo más tarde desde el pie.',
+    privacy: 'Aviso de privacidad',
+    accept: 'Aceptar',
+    reject: 'Rechazar',
+  },
+  privacy: {
+    seo_title: 'Privacidad · SIDUS',
+    seo_description:
+      'Cómo SIDUS usa cookies y Google Analytics vía Tag Manager. Consentimiento, conservación y tus derechos.',
+    kicker: 'Legal',
+    title: 'Privacidad y cookies',
+    updated: 'Última actualización: 13 de agosto de 2026',
+    who_title: 'Quiénes somos',
+    who_body:
+      'SIDUS (sidus.tools) es un proyecto educativo independiente de Massimo De Luisa. Sin afiliación con NASA, ESA, SpaceX ni otras agencias.',
+    what_title: 'Qué recogemos',
+    what_body:
+      'Las calculadoras se ejecutan en el navegador. No hace falta una cuenta. Si aceptas analítica, Google puede tratar datos de uso (páginas vistas, ubicación aproximada, dispositivo y navegador, referente). No vendemos datos personales.',
+    gtm_title: 'Google Tag Manager y Analytics',
+    gtm_body:
+      'Cargamos Google Tag Manager (contenedor GTM-TP7284WJ). Con él podemos ejecutar Google Analytics 4. Las etiquetas que ponen cookies de analítica solo se disparan tras tu consentimiento. Hasta entonces Consent Mode mantiene analytics_storage y el almacenamiento publicitario en denied. Google es un encargado independiente; consulta su documentación de privacidad.',
+    cookies_title: 'Cookies que usamos',
+    cookies_body:
+      'Necesarias: idioma (sidus.locale) y tu elección de cookies (sidus.cookie-consent) en local storage. Analítica (solo si aceptas): cookies de Google como _ga y _gid. Puedes rechazar o reabrir la elección en Cookies del pie.',
+    legal_title: 'Base jurídica y conservación',
+    legal_body:
+      'La analítica se basa en tu consentimiento (RGPD art. 6(1)(a)). Puedes retirarlo en cualquier momento. Los datos de analítica se conservan según la propiedad de Google Analytics (normalmente una ventana de meses). SIDUS no tiene una base de usuarios propia.',
+    rights_title: 'Tus derechos',
+    rights_body:
+      'Si aplica el RGPD o una ley similar, puedes pedir acceso, rectificación, supresión, limitación, oposición o portabilidad, y reclamar ante una autoridad de control. Retira el consentimiento desde el pie sin impedir el resto del sitio.',
+    contact_title: 'Contacto',
+    contact_body: 'Preguntas sobre este aviso: Massimo De Luisa,',
   },
   common: {
     body: 'Cuerpo central',

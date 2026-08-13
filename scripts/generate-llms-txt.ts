@@ -144,6 +144,7 @@ function build(): string {
     '## Other pages',
     `- [Home](${SITE}/)`,
     `- [Resources / public data](${SITE}/resources)`,
+    `- [Privacy and cookies](${SITE}/privacy)`,
     `- [MCP endpoint](${SITE}/api/mcp)`,
     `- [robots.txt](${SITE}/robots.txt)`,
     `- [sitemap.xml](${SITE}/sitemap.xml)`,

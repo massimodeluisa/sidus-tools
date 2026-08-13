@@ -46,6 +46,7 @@ Site: **https://sidus.tools** · Repo:
 | [public/llms.txt](./public/llms.txt) | LLM/agent catalog | `npm run llms:gen` |
 | https://sidus.tools/api/mcp | MCP endpoint | `api/mcp.ts` |
 | https://sidus.tools/api/og | Dynamic OG images | `api/og.tsx`, `src/lib/og/` |
+| https://sidus.tools/privacy | Privacy and cookies (GTM / GA) | `src/pages/PrivacyPage.tsx` |
 
 ---
 

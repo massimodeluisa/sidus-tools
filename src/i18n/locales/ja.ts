@@ -6,6 +6,7 @@ export const ja: TMessages = {
     tools: 'ツール',
     resources: '資料',
     language: '言語',
+    privacy: 'プライバシー',
   },
   home: {
     badge: 'ミッションシステム',
@@ -243,11 +244,48 @@ export const ja: TMessages = {
     disclaimer:
       'SIDUS は独立した教育プロジェクトです。NASA、ESA、SpaceX、Roscosmos、CNSA、JAXA、ISRO、ASI、DLR、CNES、その他の機関・企業とは無関係です。モデルは pure-SI の教育用ツールであり、飛行認証されていません。',
     opensource: '100% オープンソース · 非営利',
+    privacy: 'プライバシー',
+    cookies: 'Cookie',
     made: 'Made with',
     made_by: 'by',
     author: 'Massimo De Luisa',
     made_with: 'with',
     made_tool: 'Grok Build',
+  },
+  cookie: {
+    title: 'Cookie',
+    body: 'SIDUS の利用状況を把握するため、任意の分析 Cookie（Tag Manager 経由の Google Analytics）を使います。必須の保存は常に有効です。後からフッターで変更できます。',
+    privacy: 'プライバシーに関する通知',
+    accept: '同意する',
+    reject: '拒否する',
+  },
+  privacy: {
+    seo_title: 'プライバシー · SIDUS',
+    seo_description:
+      'SIDUS が Tag Manager 経由で Cookie と Google Analytics を使う方法。同意、保存期間、権利。',
+    kicker: '法務',
+    title: 'プライバシーと Cookie',
+    updated: '最終更新: 2026年8月13日',
+    who_title: '運営者',
+    who_body:
+      'SIDUS（sidus.tools）は Massimo De Luisa による独立した教育プロジェクトです。NASA、ESA、SpaceX その他の機関との提携はありません。',
+    what_title: '収集する情報',
+    what_body:
+      '計算機はブラウザで動作します。アカウントは不要です。分析に同意した場合、Google が利用データ（閲覧ページ、おおよその位置、端末とブラウザ、リファラ）を処理することがあります。個人データは販売しません。',
+    gtm_title: 'Google Tag Manager と Analytics',
+    gtm_body:
+      'Google Tag Manager（コンテナ GTM-TP7284WJ）を読み込み、Google Analytics 4 を実行することがあります。分析 Cookie を置くタグは同意後にのみ発火します。それまでは Consent Mode が analytics_storage と広告ストレージを denied に保ちます。Google は独立した処理者です。詳細は Google のプライバシー文書を参照してください。',
+    cookies_title: '使用する Cookie',
+    cookies_body:
+      '必須: 言語（sidus.locale）と Cookie の選択（sidus.cookie-consent）を local storage に保存。分析（同意時のみ）: _ga や _gid などの Google Cookie。フッターの Cookie から拒否または再表示できます。',
+    legal_title: '法的根拠と保存',
+    legal_body:
+      '分析は同意（GDPR 6条1項(a)）に基づきます。いつでも撤回できます。分析データは Google Analytics プロパティの設定に従い保持されます（通常は数か月のローリング）。SIDUS に別のユーザーデータベースはありません。',
+    rights_title: 'あなたの権利',
+    rights_body:
+      'GDPR または類似の法が適用される場合、アクセス、訂正、削除、制限、異議、ポータビリティを求め、監督機関に苦情を申し立てることができます。フッターから同意を撤回しても、サイトの他の利用は妨げられません。',
+    contact_title: '連絡先',
+    contact_body: '本通知に関する問い合わせ: Massimo De Luisa,',
   },
   common: {
     body: '中心天体',

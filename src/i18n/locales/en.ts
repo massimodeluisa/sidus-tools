@@ -4,6 +4,7 @@ export const en = {
     tools: 'Tools',
     resources: 'Resources',
     language: 'Language',
+    privacy: 'Privacy',
   },
   home: {
     badge: 'Mission systems',
@@ -239,11 +240,48 @@ export const en = {
     disclaimer:
       'SIDUS is an independent educational project with no affiliation to NASA, ESA, SpaceX, Roscosmos, CNSA, JAXA, ISRO, ASI, DLR, CNES, or any other agency or company. Models are pure-SI educational tools, not flight-certified.',
     opensource: '100% open source · non-profit',
+    privacy: 'Privacy',
+    cookies: 'Cookies',
     made: 'Made with',
     made_by: 'by',
     author: 'Massimo De Luisa',
     made_with: 'with',
     made_tool: 'Grok Build',
+  },
+  cookie: {
+    title: 'Cookies',
+    body: 'We use optional analytics cookies (Google Analytics via Tag Manager) to understand how SIDUS is used. Necessary storage stays on. You can change this later from the footer.',
+    privacy: 'Privacy notice',
+    accept: 'Accept',
+    reject: 'Reject',
+  },
+  privacy: {
+    seo_title: 'Privacy · SIDUS',
+    seo_description:
+      'How SIDUS uses cookies and Google Analytics via Tag Manager. Consent, retention, and your rights.',
+    kicker: 'Legal',
+    title: 'Privacy and cookies',
+    updated: 'Last updated: 13 August 2026',
+    who_title: 'Who we are',
+    who_body:
+      'SIDUS (sidus.tools) is an independent educational project by Massimo De Luisa. There is no company affiliation with NASA, ESA, SpaceX, or any other agency.',
+    what_title: 'What we collect',
+    what_body:
+      'The calculators run in your browser. We do not require an account. If you accept analytics, Google may process usage data (pages viewed, approximate location, device and browser type, referral). We do not sell personal data.',
+    gtm_title: 'Google Tag Manager and Analytics',
+    gtm_body:
+      'We load Google Tag Manager (container GTM-TP7284WJ). Through it we may run Google Analytics 4. Tags that set analytics cookies fire only after you accept. Until then, Consent Mode keeps analytics_storage and advertising storage denied. Google is an independent processor; see Google privacy documentation for their terms.',
+    cookies_title: 'Cookies we use',
+    cookies_body:
+      'Strictly necessary: language preference (sidus.locale) and your cookie choice (sidus.cookie-consent) in local storage. Analytics (only if you accept): Google cookies such as _ga and _gid. You can reject analytics or reopen this choice from Cookies in the footer.',
+    legal_title: 'Legal basis and retention',
+    legal_body:
+      'Analytics run on your consent (GDPR Art. 6(1)(a)). You can withdraw it at any time. Analytics data is retained according to the Google Analytics property settings (typically a rolling months-long window). We do not keep a separate SIDUS user database.',
+    rights_title: 'Your rights',
+    rights_body:
+      'If GDPR or similar law applies, you may request access, rectification, erasure, restriction, objection, or portability of personal data, and you may lodge a complaint with a supervisory authority. Withdraw consent from the footer without affecting other site use.',
+    contact_title: 'Contact',
+    contact_body: 'Questions about this notice: Massimo De Luisa,',
   },
   common: {
     body: 'Central body',

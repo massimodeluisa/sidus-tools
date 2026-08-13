@@ -1,12 +1,16 @@
+import { useEffect } from 'react'
 import { Routes, Route, useSearchParams, useLocation } from 'react-router-dom'
 import { SiteHeader } from '@/components/site/SiteHeader'
 import { SiteFooter } from '@/components/site/SiteFooter'
 import { ScrollToTop } from '@/components/site/ScrollToTop'
+import { CookieConsent } from '@/components/site/CookieConsent'
 import { HomePage } from '@/pages/HomePage'
 import { ToolsPage } from '@/pages/ToolsPage'
 import { ToolDetailPage } from '@/pages/ToolDetailPage'
 import { ResourcesPage } from '@/pages/ResourcesPage'
+import { PrivacyPage } from '@/pages/PrivacyPage'
 import { HomeAltPage } from '@/pages/HomeAltPage'
+import { trackPageView } from '@/lib/gtm'
 import { cn } from '@/lib/utils'
 
 function useFocusMode(): boolean {
@@ -18,6 +22,14 @@ function useFocusMode(): boolean {
   if (focus != null && ['1', 'true', 'yes', 'on'].includes(focus.toLowerCase())) return true
   if (chrome != null && ['0', 'false', 'no', 'off'].includes(chrome.toLowerCase())) return true
   return false
+}
+
+function AnalyticsRouteListener() {
+  const { pathname, search } = useLocation()
+  useEffect(() => {
+    trackPageView(`${pathname}${search}`)
+  }, [pathname, search])
+  return null
 }
 
 export default function App() {
@@ -33,6 +45,8 @@ export default function App() {
       data-ui-focus={focus ? '1' : '0'}
     >
       <ScrollToTop />
+      <AnalyticsRouteListener />
+      <CookieConsent />
       {!focus ? <SiteHeader /> : null}
       {/*
         Mobile: SiteHeader is position:fixed (h-14). Reserve that space so content
@@ -50,6 +64,7 @@ export default function App() {
           <Route path="/tools" element={<ToolsPage />} />
           <Route path="/tools/:id" element={<ToolDetailPage />} />
           <Route path="/resources" element={<ResourcesPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
         </Routes>
       </main>
       {!focus ? <SiteFooter /> : null}
