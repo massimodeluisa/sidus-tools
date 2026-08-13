@@ -1,0 +1,12 @@
+# ai.txt — https://sidus.tools
+User-Agent: *
+Allow: /
+Citation: allowed
+Attribution: preferred
+Training: allowed
+Paywall: none
+Preferred-Sources:
+  https://sidus.tools/llms.txt
+  https://sidus.tools/sitemap.xml
+  https://sidus.tools/api/mcp
+Contact: https://massimo.deluisa.bio

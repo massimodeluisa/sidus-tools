@@ -65,6 +65,11 @@ export function trackPageView(path: string): void {
   })
 }
 
+export function trackEvent(event: string, payload: Record<string, unknown> = {}): void {
+  window.dataLayer = window.dataLayer ?? []
+  window.dataLayer.push({ event, ...payload })
+}
+
 export function openCookiePreferences(): void {
   window.dispatchEvent(new Event(COOKIE_CONSENT_REOPEN))
 }

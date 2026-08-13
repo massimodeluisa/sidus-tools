@@ -1,0 +1,18 @@
+{
+  "name": "SIDUS",
+  "url": "https://sidus.tools",
+  "type": "SoftwareApplication",
+  "description": "Open-source educational pure-SI space engineering calculators for orbits, propulsion, satellites, launch, RF, and crew ECLSS.",
+  "author": {
+    "name": "Massimo De Luisa",
+    "url": "https://massimo.deluisa.bio"
+  },
+  "sameAs": [
+    "https://github.com/massimodeluisa/sidus-tools",
+    "https://massimo.deluisa.bio",
+    "https://x.com/massimodeluisa"
+  ],
+  "mcp": "https://sidus.tools/api/mcp",
+  "license": "MIT",
+  "updated": "2026-08-13"
+}

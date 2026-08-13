@@ -13,6 +13,11 @@
  * Returning void continues to the static SPA (Vercel middleware).
  */
 
+import { getTool } from './src/data/tools'
+import { resolveSources } from './src/data/sources'
+import { toolOgMeta } from './src/lib/og/catalog'
+import { SITE_ORIGIN } from './src/lib/og/types'
+
 /** Pure social / unfurl agents — prefer a small HTML card, not the full SPA body. */
 const SOCIAL_RE =
   /facebookexternalhit|Facebot|Twitterbot|LinkedInBot|WhatsApp|TelegramBot|Discordbot|Slackbot|SkypeUriPreview|vkShare|redditbot|Embedly|Quora Link Preview|Showyoubot|outbrain|pinterest|flipboard|tumblr|bitlybot|meta-externalagent|opengraph|OpenGraph|iframely|metatags\.io|metainspector|unfurl|preview\.card|linkexpander|embedly|nuzzel|scoop\.it|Valve/i
@@ -74,8 +79,9 @@ function botHtml(opts: {
   url: string
   image: string
   bodyHtml: string
+  jsonLd?: string
 }): string {
-  const { title, description, url, image, bodyHtml } = opts
+  const { title, description, url, image, bodyHtml, jsonLd } = opts
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -100,10 +106,11 @@ function botHtml(opts: {
   <meta name="twitter:title" content="${escapeHtml(title)}"/>
   <meta name="twitter:description" content="${escapeHtml(description)}"/>
   <meta name="twitter:image" content="${escapeHtml(image)}"/>
+  ${jsonLd ? `<script type="application/ld+json">${jsonLd}</script>` : ''}
 </head>
 <body style="font-family:system-ui,sans-serif;background:#050505;color:#e8e8e8;max-width:42rem;margin:2rem auto;padding:0 1rem;line-height:1.55">
 ${bodyHtml}
-<p><a href="${escapeHtml(url)}" style="color:#c4c8ce">Open interactive tool</a> · <a href="https://sidus.tools/" style="color:#c4c8ce">SIDUS</a></p>
+<p><a href="${escapeHtml(url)}" style="color:#c4c8ce">Open interactive tool</a> · <a href="${SITE_ORIGIN}/" style="color:#c4c8ce">SIDUS</a></p>
 </body>
 </html>`
 }
@@ -143,8 +150,11 @@ function resolveOgCtx(requestUrl: URL): OgCtx {
         if (k === 'tool' || k === 'page' || OG_STRIP_PARAMS.has(k)) return
         og.searchParams.set(k, v)
       })
-      title = `${toolId} · SIDUS`
-      description = `SIDUS pure-SI calculator: ${toolId}. Educational orbital / propulsion / ECLSS models.`
+      const tool = getTool(toolId)
+      title = `${tool?.title ?? toolId} · SIDUS`
+      description =
+        tool?.description ??
+        `SIDUS pure-SI calculator: ${toolId}. Educational orbital / propulsion / ECLSS models.`
     } else {
       og.searchParams.set('page', 'home')
     }
@@ -159,6 +169,83 @@ function resolveOgCtx(requestUrl: URL): OgCtx {
     canonical: absolute,
     image: og.toString(),
   }
+}
+
+function toolCrawlerDocument(toolId: string, canonical: string): {
+  title: string
+  description: string
+  bodyHtml: string
+  jsonLd: string
+} | null {
+  const tool = getTool(toolId)
+  if (!tool) return null
+  const meta = toolOgMeta(tool.id)
+  const sources = resolveSources(tool.sourceIds)
+  const title = `${tool.title} · SIDUS`
+  const description = tool.description
+  const sourceLis = sources
+    .map(
+      (s) =>
+        `<li><a href="${escapeAttr(s.url)}">${escapeHtml(s.name)}</a> (${escapeHtml(s.org)}): ${escapeHtml(s.note)}</li>`,
+    )
+    .join('')
+  const bodyHtml = `<header>
+<nav aria-label="Primary"><a href="/">Home</a> · <a href="/tools">Tools</a> · <a href="/resources">Resources</a> · <a href="/llms.txt">llms.txt</a></nav>
+</header>
+<main>
+  <h1>${escapeHtml(tool.title)}</h1>
+  <p>${escapeHtml(tool.description)}</p>
+  <p>SIDUS educational calculator. Category <strong>${escapeHtml(tool.category)}</strong>. Tags: ${tool.tags.map(escapeHtml).join(', ')}. Pure SI. Not flight software.</p>
+  <h2>Formula</h2>
+  <p><code>${escapeHtml(meta.formula)}</code></p>
+  <blockquote>${escapeHtml(meta.blurb)}</blockquote>
+  ${sourceLis ? `<h2>Primary sources</h2><ul>${sourceLis}</ul>` : ''}
+  <h2>How do AI agents use this tool?</h2>
+  <p>Read <a href="/llms.txt">/llms.txt</a> or call <a href="${SITE_ORIGIN}/api/mcp">${SITE_ORIGIN}/api/mcp</a>. Open the interactive page for live SI inputs.</p>
+</main>`
+  const jsonLd = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'SoftwareApplication',
+        name: tool.title,
+        description: tool.description,
+        url: canonical,
+        applicationCategory: 'EducationalApplication',
+        operatingSystem: 'Web',
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+        keywords: tool.tags.join(', '),
+        isPartOf: { '@id': `${SITE_ORIGIN}/#website` },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'SIDUS', item: `${SITE_ORIGIN}/` },
+          { '@type': 'ListItem', position: 2, name: 'Tools', item: `${SITE_ORIGIN}/tools` },
+          { '@type': 'ListItem', position: 3, name: tool.title, item: canonical },
+        ],
+      },
+      {
+        '@type': 'FAQPage',
+        mainEntity: [
+          {
+            '@type': 'Question',
+            name: `What does the ${tool.title} tool calculate?`,
+            acceptedAnswer: { '@type': 'Answer', text: tool.description },
+          },
+          {
+            '@type': 'Question',
+            name: 'Is this flight software?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'No. SIDUS models are educational reimplementations. Cross-check before any flight decision.',
+            },
+          },
+        ],
+      },
+    ],
+  })
+  return { title, description, bodyHtml, jsonLd }
 }
 
 /** Patch SPA index.html meta so scrapers see tool-specific OG + correct host. */
@@ -198,11 +285,21 @@ function patchSpaHtml(html: string, ctx: OgCtx): string {
   return out
 }
 
-async function spaResponse(url: URL, ctx: OgCtx, extraHeaders: Record<string, string> = {}) {
-  const indexUrl = new URL('/index.html', url.origin)
-  const indexRes = await fetch(indexUrl)
+const INDEX_TTL_MS = 60_000
+let indexCache: { html: string; at: number } | null = null
+
+async function loadIndexHtml(origin: string): Promise<string | null> {
+  if (indexCache && Date.now() - indexCache.at < INDEX_TTL_MS) return indexCache.html
+  const indexRes = await fetch(new URL('/index.html', origin))
   if (!indexRes.ok) return null
-  const raw = await indexRes.text()
+  const html = await indexRes.text()
+  indexCache = { html, at: Date.now() }
+  return html
+}
+
+async function spaResponse(url: URL, ctx: OgCtx, extraHeaders: Record<string, string> = {}) {
+  const raw = await loadIndexHtml(url.origin)
+  if (!raw) return null
   const html = patchSpaHtml(raw, ctx)
   return new Response(html, {
     status: 200,
@@ -261,6 +358,32 @@ export default async function middleware(request: Request) {
         'x-sidus-bot-shell': 'social',
       },
     })
+  }
+
+  // AI / search crawlers on a tool URL: unique extractable HTML (not the homepage dump).
+  if (isBot(ua) && toolMatch) {
+    const built = toolCrawlerDocument(decodeURIComponent(toolMatch[1]), ctx.canonical)
+    if (built) {
+      return new Response(
+        botHtml({
+          title: built.title,
+          description: built.description,
+          url: ctx.canonical,
+          image: ctx.image,
+          bodyHtml: built.bodyHtml,
+          jsonLd: built.jsonLd,
+        }),
+        {
+          status: 200,
+          headers: {
+            'content-type': 'text/html; charset=utf-8',
+            'cache-control': 'public, s-maxage=300, stale-while-revalidate=3600',
+            'last-modified': new Date(CONTENT_REVISED).toUTCString(),
+            'x-sidus-bot-shell': 'tool',
+          },
+        },
+      )
+    }
   }
 
   // AI / search crawlers + normal app routes: full SPA (JSON-LD + rich SSR body)

@@ -6,6 +6,7 @@ import { getTool, primaryTag } from '@/data/tools'
 import { resolveSources } from '@/data/sources'
 import { Panel } from '@/components/shared/Panel'
 import { SeoHead } from '@/components/site/SeoHead'
+import { trackEvent } from '@/lib/gtm'
 import { EditOnGitHub, toolSourcePath } from '@/components/site/EditOnGitHub'
 import { PrecisionPanel } from '@/components/site/PrecisionPanel'
 import { ToolLayoutBar } from '@/components/site/ToolLayoutBar'
@@ -32,6 +33,11 @@ export function ToolDetailPage() {
     setSearchParams(seeded, { replace: true, preventScrollReset: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
+
+  useEffect(() => {
+    if (!tool) return
+    trackEvent('tool_view', { tool_id: tool.id, tool_title: tool.title, category: tool.category })
+  }, [tool])
 
   if (!tool) {
     return (

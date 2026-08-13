@@ -21,7 +21,7 @@
       "destination": "/api/mcp"
     },
     {
-      "source": "/((?!api/|robots\\.txt|sitemap\\.xml|llms\\.txt|favicon\\.svg|favicon\\.ico|favicon-.*\\.png|apple-touch-icon\\.png|android-chrome-.*\\.png|maskable-icon-.*\\.png|site\\.webmanifest|assets/|og/).*)",
+      "source": "/((?!api/|robots\\.txt|sitemap\\.xml|llms\\.txt|ai\\.txt|\\.well-known/|favicon\\.svg|favicon\\.ico|favicon-.*\\.png|apple-touch-icon\\.png|android-chrome-.*\\.png|maskable-icon-.*\\.png|site\\.webmanifest|assets/|og/).*)",
       "destination": "/index.html"
     }
   ],

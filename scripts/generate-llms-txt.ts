@@ -9,14 +9,15 @@
  *
  * Usage: npx tsx scripts/generate-llms-txt.ts
  */
-import { writeFileSync } from 'node:fs'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { TOOLS, type ToolCategory, type ToolMeta } from '../src/data/tools.ts'
+import { SITE_ORIGIN } from '../src/lib/og/types.ts'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const OUT = path.join(ROOT, 'public', 'llms.txt')
-const SITE = 'https://sidus.tools'
+const SITE = SITE_ORIGIN
 
 /** Fold common scientific Unicode so naive URL scrapers stay clean. */
 function asciiSafe(s: string): string {
@@ -169,4 +170,69 @@ function build(): string {
 
 const text = build()
 writeFileSync(OUT, text, 'utf8')
-console.log(`Wrote ${OUT} (${TOOLS.length} tools, ${text.split('\n').length} lines)`)
+
+const today = new Date().toISOString().slice(0, 10)
+const sitemapUrls = [
+  ['/', '1.0', 'weekly'],
+  ['/tools', '0.9', 'weekly'],
+  ['/resources', '0.7', 'monthly'],
+  ['/privacy', '0.4', 'yearly'],
+  ...TOOLS.map((t) => [`/tools/${t.id}`, '0.8', 'monthly'] as const),
+]
+const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${sitemapUrls
+  .map(
+    ([path, priority, changefreq]) =>
+      `  <url><loc>${SITE}${path === '/' ? '/' : path}</loc><lastmod>${today}</lastmod><changefreq>${changefreq}</changefreq><priority>${priority}</priority></url>`,
+  )
+  .join('\n')}
+</urlset>
+`
+writeFileSync(path.join(ROOT, 'public', 'sitemap.xml'), sitemap, 'utf8')
+
+writeFileSync(
+  path.join(ROOT, 'public', 'ai.txt'),
+  `# ai.txt — ${SITE}
+User-Agent: *
+Allow: /
+Citation: allowed
+Attribution: preferred
+Training: allowed
+Paywall: none
+Preferred-Sources:
+  ${SITE}/llms.txt
+  ${SITE}/sitemap.xml
+  ${SITE}/api/mcp
+Contact: https://massimo.deluisa.bio
+`,
+  'utf8',
+)
+
+mkdirSync(path.join(ROOT, 'public', '.well-known'), { recursive: true })
+writeFileSync(
+  path.join(ROOT, 'public', '.well-known', 'brand-facts.json'),
+  `${JSON.stringify(
+    {
+      name: 'SIDUS',
+      url: SITE,
+      type: 'SoftwareApplication',
+      description:
+        'Open-source educational pure-SI space engineering calculators for orbits, propulsion, satellites, launch, RF, and crew ECLSS.',
+      author: { name: 'Massimo De Luisa', url: 'https://massimo.deluisa.bio' },
+      sameAs: [
+        'https://github.com/massimodeluisa/sidus-tools',
+        'https://massimo.deluisa.bio',
+        'https://x.com/massimodeluisa',
+      ],
+      mcp: `${SITE}/api/mcp`,
+      license: 'MIT',
+      updated: today,
+    },
+    null,
+    2,
+  )}\n`,
+  'utf8',
+)
+
+console.log(`Wrote ${OUT} (${TOOLS.length} tools, ${text.split('\n').length} lines) + sitemap.xml + ai.txt + brand-facts`)
