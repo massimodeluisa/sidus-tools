@@ -3,7 +3,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "functions": {
-    "api/mcp.ts": {
+    "api/mcp.js": {
       "maxDuration": 30
     }
   },

@@ -2,8 +2,8 @@
  * Smoke-test every SIDUS MCP tool over local stdio (zero host cost).
  * Usage: node scripts/mcp-smoke.mjs   |   npm run mcp:smoke
  */
-import { Client } from '@modelcontextprotocol/sdk/client/index.js'
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
+import { Client } from '@modelcontextprotocol/client'
+import { StdioClientTransport } from '@modelcontextprotocol/client/stdio'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { MCP_SAMPLES, MCP_TOOL_DEFS } from '../mcp/full-catalog.ts'

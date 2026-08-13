@@ -2,7 +2,8 @@
  * SIDUS MCP tool registration: shared by stdio and remote HTTP transports.
  * Registers the full pure-SI educational catalog (all live tools).
  */
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { McpServer } from '@modelcontextprotocol/server'
+import * as z from 'zod/v4'
 import {
   MCP_TOOL_DEFS,
   SIDUS_MCP_DISCLAIMER,
@@ -44,7 +45,7 @@ export function createSidusMcpServer(): McpServer {
       def.name,
       {
         description: def.description,
-        inputSchema: def.inputSchema,
+        inputSchema: z.object(def.inputSchema),
       },
       async (args) => {
         try {

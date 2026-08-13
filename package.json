@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && node scripts/bundle-mcp-api.mjs && vite build",
+    "mcp:bundle": "node scripts/bundle-mcp-api.mjs",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
@@ -14,6 +15,7 @@
     "mcp:http": "tsx mcp/http-dev.ts",
     "mcp:smoke": "tsx scripts/mcp-smoke.mjs",
     "mcp:smoke:http": "node scripts/mcp-http-smoke.mjs",
+    "mcp:smoke:fetch": "tsx scripts/mcp-fetch-face.mjs",
     "og:static": "node scripts/generate-static-og.mjs",
     "godbolt:matrix": "tsx scripts/godbolt-matrix.ts",
     "godbolt:matrix:all": "tsx scripts/godbolt-matrix.ts --all",
@@ -21,7 +23,8 @@
     "docs:check": "node scripts/check-docs.mjs"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@modelcontextprotocol/node": "^2.0.0",
+    "@modelcontextprotocol/server": "^2.0.0",
     "@vercel/og": "^1.0.1",
     "clsx": "^2.1.1",
     "i18next": "^26.3.6",
@@ -35,7 +38,9 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@modelcontextprotocol/client": "^2.0.0",
     "@tailwindcss/vite": "^4.3.3",
+    "@types/bun": "latest",
     "@types/node": "^26.2.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
@@ -45,7 +50,6 @@
     "tsx": "^4.23.11",
     "typescript": "~5.9.3",
     "vite": "^8.2.1",
-    "vitest": "^4.1.10",
-    "@types/bun": "latest"
+    "vitest": "^4.1.10"
   }
 }

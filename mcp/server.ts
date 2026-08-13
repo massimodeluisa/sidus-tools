@@ -8,17 +8,13 @@
  * Local:
  *   npm run mcp
  */
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
+import { serveStdio } from '@modelcontextprotocol/server/stdio'
 import { createSidusMcpServer } from './create-server'
 
-async function main() {
-  const server = createSidusMcpServer()
-  const transport = new StdioServerTransport()
-  await server.connect(transport)
-  console.error('SIDUS MCP stdio (optional local). Prefer https://sidus.tools/api/mcp')
-}
-
-main().catch((err) => {
-  console.error(err)
-  process.exit(1)
+serveStdio(() => createSidusMcpServer(), {
+  onerror: (err) => {
+    console.error(err)
+  },
 })
+
+console.error('SIDUS MCP stdio (optional local). Prefer https://sidus.tools/api/mcp')
