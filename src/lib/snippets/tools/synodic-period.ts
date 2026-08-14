@@ -16,51 +16,71 @@ export const synodicSnippets: FormulaSnippet = {
   code: {
     python: `# Synodic period: ${A}
 import math
+r1 = R + h1
+r2 = R + h2
 n1 = math.sqrt(mu / r1**3)
 n2 = math.sqrt(mu / r2**3)
 T_syn = 2 * math.pi / abs(n2 - n1)`,
 
     javascript: `// Synodic period: ${A}
+const r1 = R + h1
+const r2 = R + h2
 const n1 = Math.sqrt(mu / r1 ** 3)
 const n2 = Math.sqrt(mu / r2 ** 3)
 const tSyn = (2 * Math.PI) / Math.abs(n2 - n1)`,
 
     typescript: `// Synodic period: ${A}
+const r1: number = R + h1
+const r2: number = R + h2
 const n1: number = Math.sqrt(mu / r1 ** 3)
 const n2: number = Math.sqrt(mu / r2 ** 3)
 const tSyn: number = (2 * Math.PI) / Math.abs(n2 - n1)`,
 
     c: `/* Synodic period: ${A} */
+const double r1 = R + h1;
+const double r2 = R + h2;
 const double n1 = sqrt(mu / (r1 * r1 * r1));
 const double n2 = sqrt(mu / (r2 * r2 * r2));
 const double t_syn = 2.0 * M_PI / fabs(n2 - n1);`,
 
     cpp: `// Synodic period: ${A}
+const double r1 = R + h1;
+const double r2 = R + h2;
 const double n1 = std::sqrt(mu / (r1 * r1 * r1));
 const double n2 = std::sqrt(mu / (r2 * r2 * r2));
 const double t_syn = 2.0 * M_PI / std::fabs(n2 - n1);`,
 
     rust: `// Synodic period: ${A}
+let r1 = R + h1;
+let r2 = R + h2;
 let n1 = (mu / (r1 * r1 * r1)).sqrt();
 let n2 = (mu / (r2 * r2 * r2)).sqrt();
 let t_syn = 2.0 * std::f64::consts::PI / (n2 - n1).abs();`,
 
     zig: `// Synodic period: ${A}
+const r1 = R + h1;
+const r2 = R + h2;
 const n1 = std.math.sqrt(mu / (r1 * r1 * r1));
 const n2 = std.math.sqrt(mu / (r2 * r2 * r2));
 const t_syn = 2.0 * std.math.pi / @abs(n2 - n1);`,
 
     fortran: `! Synodic period: ${A}
+r1 = R + h1
+r2 = R + h2
 n1 = sqrt(mu / (r1 * r1 * r1))
 n2 = sqrt(mu / (r2 * r2 * r2))
 t_syn = 2.0d0 * 3.141592653589793d0 / abs(n2 - n1)`,
 
     matlab: `% Synodic period: ${A}
+r1 = R + h1;
+r2 = R + h2;
 n1 = sqrt(mu / r1^3);
 n2 = sqrt(mu / r2^3);
 T_syn = 2 * pi / abs(n2 - n1);`,
 
     julia: `# Synodic period: ${A}
+r1 = R + h1
+r2 = R + h2
 n1 = sqrt(mu / r1^3)
 n2 = sqrt(mu / r2^3)
 T_syn = 2 * π / abs(n2 - n1)`,

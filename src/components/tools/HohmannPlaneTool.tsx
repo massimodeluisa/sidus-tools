@@ -22,8 +22,10 @@ export function HohmannPlaneTool() {
   const { t } = useTranslation()
   const [p, setP] = useToolSearchParams(SCHEMA)
   const body = getBody(p.body)
-  const r1 = body.radius + toSi(p.h1, p.hu)
-  const r2 = body.radius + toSi(p.h2, p.hu)
+  const h1 = toSi(p.h1, p.hu)
+  const h2 = toSi(p.h2, p.hu)
+  const r1 = body.radius + h1
+  const r2 = body.radius + h2
   const di = toSi(p.di, p.diu)
   const res = useMemo(() => hohmannWithPlaneChange(body.mu, r1, r2, di), [body.mu, r1, r2, di])
 
@@ -51,7 +53,7 @@ export function HohmannPlaneTool() {
           <p className="font-mono text-sm text-muted">{t('fields.invalid_radii')}</p>
         )
       }
-      code={<CodeExport formulaId="hohmann-plane" values={{ di, r1, r2, mu: body.mu, R: body.radius, h1: p.h1, h2: p.h2, body: p.body, diu: p.diu }} />}
+      code={<CodeExport formulaId="hohmann-plane" values={{ di, h1, h2, mu: body.mu, R: body.radius, body: p.body }} />}
     />
   )
 }

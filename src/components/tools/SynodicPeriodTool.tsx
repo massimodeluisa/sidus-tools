@@ -56,7 +56,7 @@ export function SynodicPeriodTool() {
         <ResultCard label={t('fields.t')} si={res.T1} category="time" unitId="pretty" unitIds={TOOL_UNIT_SETS.timePretty} digits={4} />
         <ResultCard label={t('fields.t_2')} si={res.T2} category="time" unitId="pretty" unitIds={TOOL_UNIT_SETS.timePretty} digits={4} />
       </div> : <p className="font-mono text-sm text-muted">{t('fields.need_two_different_radii')}</p>}
-      code={<CodeExport formulaId="synodic-period" values={{ r1, r2, mu: body.mu, R: body.radius, h1: p.h1, h2: p.h2, body: p.body }} />}
+      code={<CodeExport formulaId="synodic-period" values={{ h1: toSi(p.h1, p.hu), h2: toSi(p.h2, p.hu), mu: body.mu, R: body.radius, body: p.body }} />}
     />
   )
 }

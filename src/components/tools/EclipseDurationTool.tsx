@@ -36,11 +36,10 @@ export function EclipseDurationTool() {
         <CodeExport
           formulaId="eclipse-duration"
           values={{
-            a,
+            h: toSi(p.h, p.hu),
             R: body.radius,
             T: res?.period,
             mu: body.mu,
-            h: p.h,
             body: p.body,
           }}
         />

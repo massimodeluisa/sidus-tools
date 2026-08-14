@@ -76,7 +76,7 @@ export function HyperbolicC3Tool() {
           <p className="font-mono text-sm text-muted">{t('fields.invalid_hyperbolic_c3')}</p>
         )
       }
-      code={<CodeExport formulaId="hyperbolic-c3" values={{ h, vInf, r, mu: body.mu, R: body.radius, vinf: p.vinf, v_inf: vInf, body: p.body }} />}
+      code={<CodeExport formulaId="hyperbolic-c3" values={{ h, v_inf: vInf, mu: body.mu, R: body.radius, body: p.body }} />}
     />
   )
 }

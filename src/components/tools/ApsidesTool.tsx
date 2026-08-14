@@ -142,7 +142,7 @@ export function ApsidesTool() {
           />
         ) : null
       }
-      code={<CodeExport formulaId="apsides" values={{ a_m, mu: body.mu, R: body.radius, a: p.a, e: p.e, body: p.body }} />}
+      code={<CodeExport formulaId="apsides" values={{ a: a_m, mu: body.mu, e: p.e, body: p.body }} />}
     />
   )
 }

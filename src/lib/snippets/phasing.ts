@@ -15,6 +15,7 @@ export const phasingSnippets: FormulaSnippet = {
   code: {
     python: `# Phasing orbit: ${A}
 import math
+r = R + h
 n_t = math.sqrt(mu / r**3)
 T_t = 2 * math.pi / n_t
 T_c = T_t + phase / (n * n_t)  # phase gain [rad] over n revs
@@ -31,6 +32,7 @@ dv2 = abs(v2 - va)
 dv_total = 2 * (dv1 + dv2)  # enter + exit`,
 
     javascript: `// Phasing orbit: ${A}
+const r = R + h
 const nT = Math.sqrt(mu / r ** 3)
 const TT = (2 * Math.PI) / nT
 const Tc = TT + phase / (n * nT)
@@ -47,6 +49,7 @@ const dv2 = Math.abs(v2 - va)
 const dvTotal = 2 * (dv1 + dv2)`,
 
     typescript: `// Phasing orbit: ${A}
+const r: number = R + h
 const nT: number = Math.sqrt(mu / r ** 3)
 const TT: number = (2 * Math.PI) / nT
 const Tc: number = TT + phase / (n * nT)
@@ -63,6 +66,7 @@ const dv2: number = Math.abs(v2 - va)
 const dvTotal: number = 2 * (dv1 + dv2)`,
 
     c: `/* Phasing orbit: ${A} */
+const double r = R + h;
 const double n_t = sqrt(mu / (r * r * r));
 const double T_t = 2.0 * M_PI / n_t;
 const double T_c = T_t + phase / (n * n_t);
@@ -79,6 +83,7 @@ const double dv2 = fabs(v2 - va);
 const double dv_total = 2.0 * (dv1 + dv2);`,
 
     cpp: `// Phasing orbit: ${A}
+const double r = R + h;
 const double n_t = std::sqrt(mu / (r * r * r));
 const double T_t = 2.0 * M_PI / n_t;
 const double T_c = T_t + phase / (n * n_t);
@@ -95,6 +100,7 @@ const double dv2 = std::fabs(v2 - va);
 const double dv_total = 2.0 * (dv1 + dv2);`,
 
     rust: `// Phasing orbit: ${A}
+let r = R + h;
 let n_t = (mu / (r * r * r)).sqrt();
 let t_t = 2.0 * std::f64::consts::PI / n_t;
 let t_c = t_t + phase / (n * n_t);
@@ -111,6 +117,7 @@ let dv2 = (v2 - va).abs();
 let dv_total = 2.0 * (dv1 + dv2);`,
 
     zig: `// Phasing orbit: ${A}
+const r = R + h;
 const n_t = std.math.sqrt(mu / (r * r * r));
 const T_t = 2.0 * std.math.pi / n_t;
 const T_c = T_t + phase / (n * n_t);
@@ -127,6 +134,7 @@ const dv2 = @abs(v2 - va);
 const dv_total = 2.0 * (dv1 + dv2);`,
 
     fortran: `! Phasing orbit: ${A}
+r = R + h
 n_t = sqrt(mu / r**3)
 T_t = 2.0d0 * 3.141592653589793d0 / n_t
 T_c = T_t + phase / (n * n_t)
@@ -143,6 +151,7 @@ dv2 = abs(v2 - va)
 dv_total = 2.0d0 * (dv1 + dv2)`,
 
     matlab: `% Phasing orbit: ${A}
+r = R + h;
 n_t = sqrt(mu / r^3);
 T_t = 2*pi / n_t;
 T_c = T_t + phase / (n * n_t);
@@ -156,6 +165,7 @@ dv1 = abs(vp - v1); dv2 = abs(v2 - va);
 dv_total = 2*(dv1 + dv2);`,
 
     julia: `# Phasing orbit: ${A}
+r = R + h
 n_t = sqrt(mu / r^3)
 T_t = 2π / n_t
 T_c = T_t + phase / (n * n_t)

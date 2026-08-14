@@ -125,7 +125,7 @@ export function CoellipticTool() {
           formulaId="coelliptic"
           values={{
             da,
-            a,
+            h: toSi(p.h, p.hu),
             dthRad,
             mu: body.mu,
             R: body.radius,

@@ -8,6 +8,9 @@ export const biellipticSnippets: FormulaSnippet = {
   assumptions: ASSUMPTIONS,
   code: {
     c: `/* Bielliptic: ${ASSUMPTIONS} */
+const double r1 = R + h1;
+const double r2 = R + h2;
+const double rb = R + hb;
 const double a1 = (r1 + rb) / 2.0;
 const double a2 = (r2 + rb) / 2.0;
 const double dv1 = fabs(sqrt(mu * (2.0 / r1 - 1.0 / a1)) - sqrt(mu / r1));
@@ -17,6 +20,9 @@ const double dv = dv1 + dv2 + dv3;
 const double tof = M_PI * sqrt(a1 * a1 * a1 / mu) + M_PI * sqrt(a2 * a2 * a2 / mu);`,
 
     cpp: `// Bielliptic: ${ASSUMPTIONS}
+const double r1 = R + h1;
+const double r2 = R + h2;
+const double rb = R + hb;
 const double a1 = (r1 + rb) / 2.0;
 const double a2 = (r2 + rb) / 2.0;
 const double dv1 = std::fabs(std::sqrt(mu * (2.0 / r1 - 1.0 / a1)) - std::sqrt(mu / r1));
@@ -26,6 +32,9 @@ const double dv = dv1 + dv2 + dv3;
 const double tof = M_PI * std::sqrt(a1 * a1 * a1 / mu) + M_PI * std::sqrt(a2 * a2 * a2 / mu);`,
 
     rust: `// Bielliptic: ${ASSUMPTIONS}
+let r1 = R + h1;
+let r2 = R + h2;
+let rb = R + hb;
 let a1 = (r1 + rb) / 2.0;
 let a2 = (r2 + rb) / 2.0;
 let dv1 = ((mu * (2.0 / r1 - 1.0 / a1)).sqrt() - (mu / r1).sqrt()).abs();
@@ -36,6 +45,9 @@ let tof = std::f64::consts::PI * (a1.powi(3) / mu).sqrt()
         + std::f64::consts::PI * (a2.powi(3) / mu).sqrt();`,
 
     zig: `// Bielliptic: ${ASSUMPTIONS}
+const r1 = R + h1;
+const r2 = R + h2;
+const rb = R + hb;
 const a1 = (r1 + rb) / 2.0;
 const a2 = (r2 + rb) / 2.0;
 const dv1 = @abs(std.math.sqrt(mu * (2.0 / r1 - 1.0 / a1)) - std.math.sqrt(mu / r1));
@@ -47,6 +59,9 @@ const tof = std.math.pi * std.math.sqrt(a1 * a1 * a1 / mu)
 
     python: `# Bielliptic transfer: ${ASSUMPTIONS}
 import math
+r1 = R + h1
+r2 = R + h2
+rb = R + hb
 a1 = (r1 + rb) / 2
 a2 = (r2 + rb) / 2
 v1 = math.sqrt(mu / r1)
@@ -63,6 +78,9 @@ tof = (math.pi * math.sqrt(a1**3 / mu)
      + math.pi * math.sqrt(a2**3 / mu))`,
 
     javascript: `// Bielliptic transfer: ${ASSUMPTIONS}
+const r1 = R + h1
+const r2 = R + h2
+const rb = R + hb
 const a1 = (r1 + rb) / 2, a2 = (r2 + rb) / 2
 const v1 = Math.sqrt(mu / r1), v2 = Math.sqrt(mu / r2)
 const v1p = Math.sqrt(mu * (2 / r1 - 1 / a1))
@@ -76,6 +94,9 @@ const dv = dv1 + dv2 + dv3
 const tof = Math.PI * Math.sqrt(a1 ** 3 / mu) + Math.PI * Math.sqrt(a2 ** 3 / mu)`,
 
     typescript: `// Bielliptic: ${ASSUMPTIONS}
+const r1: number = R + h1
+const r2: number = R + h2
+const rb: number = R + hb
 const a1: number = (r1 + rb) / 2, a2: number = (r2 + rb) / 2
 const v1: number = Math.sqrt(mu / r1), v2: number = Math.sqrt(mu / r2)
 const v1p: number = Math.sqrt(mu * (2 / r1 - 1 / a1))
@@ -89,6 +110,9 @@ const dv: number = dv1 + dv2 + dv3
 const tof: number = Math.PI * Math.sqrt(a1 ** 3 / mu) + Math.PI * Math.sqrt(a2 ** 3 / mu)`,
 
     matlab: `% Bielliptic: ${ASSUMPTIONS}
+r1 = R + h1;
+r2 = R + h2;
+rb = R + hb;
 a1 = (r1+rb)/2; a2 = (r2+rb)/2;
 dv1 = abs(sqrt(mu*(2/r1-1/a1)) - sqrt(mu/r1));
 dv2 = abs(sqrt(mu*(2/rb-1/a2)) - sqrt(mu*(2/rb-1/a1)));
@@ -97,6 +121,9 @@ dv = dv1+dv2+dv3;
 tof = pi*sqrt(a1^3/mu) + pi*sqrt(a2^3/mu);`,
 
     julia: `# Bielliptic: ${ASSUMPTIONS}
+r1 = R + h1
+r2 = R + h2
+rb = R + hb
 a1 = (r1 + rb) / 2
 a2 = (r2 + rb) / 2
 dv1 = abs(sqrt(mu * (2 / r1 - 1 / a1)) - sqrt(mu / r1))
@@ -106,6 +133,9 @@ dv = dv1 + dv2 + dv3
 tof = π * sqrt(a1^3 / mu) + π * sqrt(a2^3 / mu)`,
 
     fortran: `! Bielliptic: ${ASSUMPTIONS}
+r1 = R + h1
+r2 = R + h2
+rb = R + hb
 a1 = (r1 + rb) / 2.0d0
 a2 = (r2 + rb) / 2.0d0
 dv1 = abs(sqrt(mu * (2.0d0 / r1 - 1.0d0 / a1)) - sqrt(mu / r1))

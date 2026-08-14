@@ -121,7 +121,14 @@ export function RendezvousPhasingSimpleTool() {
       code={
         <CodeExport
           formulaId="rendezvous-catchup"
-          values={{ r, r2, phaseRad, mu: body.mu, R: body.radius, body: p.body }}
+          values={{
+            h1: toSi(p.h, p.hu),
+            h2: toSi(p.h + p.dh, p.hu),
+            phi: phaseRad,
+            mu: body.mu,
+            R: body.radius,
+            body: p.body,
+          }}
         />
       }
     />

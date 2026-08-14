@@ -123,7 +123,7 @@ export function PhasingTool() {
           </div>
         )
       }
-      code={<CodeExport formulaId="phasing" values={{ h, phase, r, mu: body.mu, R: body.radius, n: p.n, body: p.body }} />}
+      code={<CodeExport formulaId="phasing" values={{ h, phase, mu: body.mu, R: body.radius, n: p.n, body: p.body }} />}
     />
   )
 }

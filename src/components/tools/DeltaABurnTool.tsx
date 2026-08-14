@@ -45,7 +45,7 @@ export function DeltaABurnTool() {
         <ResultCard label={t('fields.v_from_a')} si={res.dvFromDa} category="velocity" unitId="mps" unitIds={TOOL_UNIT_SETS.velocity} digits={3} />
         <ResultCard label={t('fields.v_circ')} si={res.v} category="velocity" unitId="kmps" unitIds={TOOL_UNIT_SETS.velocity} digits={4} />
       </div> : <p className="font-mono text-sm text-muted">{t('fields.invalid_circular_orbit')}</p>}
-      code={<CodeExport formulaId="delta-a-burn" values={{ dv, da, a, mu: body.mu, R: body.radius, h: p.h, body: p.body, dau: p.dau }} />}
+      code={<CodeExport formulaId="delta-a-burn" values={{ dv, da, h: toSi(p.h, p.hu), mu: body.mu, R: body.radius, body: p.body }} />}
     />
   )
 }

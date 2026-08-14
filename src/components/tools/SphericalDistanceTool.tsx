@@ -47,6 +47,10 @@ export function SphericalDistanceTool() {
   const { t } = useTranslation()
   const [p, setP] = useToolSearchParams(SCHEMA)
   const body = getBody(p.body)
+  const lat1 = toSi(p.lat1, p.au)
+  const lon1 = toSi(p.lon1, p.au)
+  const lat2 = toSi(p.lat2, p.au)
+  const lon2 = toSi(p.lon2, p.au)
 
   const res = useMemo(() => {
     const lat1 = toSi(p.lat1, p.au)
@@ -146,7 +150,7 @@ export function SphericalDistanceTool() {
           <p className="font-mono text-sm text-muted">{t('fields.invalid_lat_lon')}</p>
         )
       }
-      code={<CodeExport formulaId="spherical-distance" values={{ lat1: p.lat1, lon1: p.lon1, lat2: p.lat2, lon2: p.lon2, R: body.radius, body: p.body, angleUnit: p.au }} />}
+      code={<CodeExport formulaId="spherical-distance" values={{ lat1, lon1, lat2, lon2, R: body.radius, body: p.body }} />}
     />
   )
 }

@@ -172,7 +172,6 @@ export function BallisticDragTool() {
             A,
             rho0,
             H,
-            r,
             mu: body.mu,
             R: body.radius,
             Cd: p.Cd,

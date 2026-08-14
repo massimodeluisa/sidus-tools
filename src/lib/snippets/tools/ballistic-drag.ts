@@ -15,6 +15,7 @@ export const ballisticSnippets: FormulaSnippet = {
   code: {
     python: `# Ballistic drag: ${A}
 import math
+r = R + h
 a = r
 v = math.sqrt(mu / r)
 beta = m / (Cd * A)
@@ -22,6 +23,7 @@ rho = rho0 * math.exp(-h / H)
 dv = math.pi * rho * a * v / beta`,
 
     javascript: `// Ballistic drag: ${A}
+const r = R + h
 const a = r
 const v = Math.sqrt(mu / r)
 const beta = m / (Cd * A)
@@ -29,6 +31,7 @@ const rho = rho0 * Math.exp(-h / H)
 const dv = Math.PI * rho * a * v / beta`,
 
     typescript: `// Ballistic drag: ${A}
+const r: number = R + h
 const a: number = r
 const v: number = Math.sqrt(mu / r)
 const beta: number = m / (Cd * A)
@@ -36,6 +39,7 @@ const rho: number = rho0 * Math.exp(-h / H)
 const dv: number = Math.PI * rho * a * v / beta`,
 
     c: `/* Ballistic drag: ${A} */
+const double r = R + h;
 const double a = r;
 const double v = sqrt(mu / r);
 const double beta = m / (Cd * A);
@@ -43,6 +47,7 @@ const double rho = rho0 * exp(-h / H);
 const double dv = M_PI * rho * a * v / beta;`,
 
     cpp: `// Ballistic drag: ${A}
+const double r = R + h;
 const double a = r;
 const double v = std::sqrt(mu / r);
 const double beta = m / (Cd * A);
@@ -50,6 +55,7 @@ const double rho = rho0 * std::exp(-h / H);
 const double dv = M_PI * rho * a * v / beta;`,
 
     rust: `// Ballistic drag: ${A}
+let r = R + h;
 let a = r;
 let v = (mu / r).sqrt();
 let beta = m / (Cd * A);
@@ -57,6 +63,7 @@ let rho = rho0 * (-h / H).exp();
 let dv = std::f64::consts::PI * rho * a * v / beta;`,
 
     zig: `// Ballistic drag: ${A}
+const r = R + h;
 const a = r;
 const v = std.math.sqrt(mu / r);
 const beta = m / (Cd * A);
@@ -64,6 +71,7 @@ const rho = rho0 * std.math.exp(-h / H);
 const dv = std.math.pi * rho * a * v / beta;`,
 
     fortran: `! Ballistic drag: ${A}
+r = R + h
 a = r
 v = sqrt(mu / r)
 beta = m / (Cd * A)
@@ -71,6 +79,7 @@ rho = rho0 * exp(-h / H)
 dv = 3.141592653589793d0 * rho * a * v / beta`,
 
     matlab: `% Ballistic drag: ${A}
+r = R + h;
 a = r;
 v = sqrt(mu / r);
 beta = m / (Cd * A);
@@ -78,6 +87,7 @@ rho = rho0 * exp(-h / H);
 dv = pi * rho * a * v / beta;`,
 
     julia: `# Ballistic drag: ${A}
+r = R + h
 a = r
 v = sqrt(mu / r)
 beta = m / (Cd * A)

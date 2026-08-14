@@ -15,42 +15,52 @@ export const coellipticSnippets: FormulaSnippet = {
   code: {
     python: `# Coelliptic relative mean motion: ${A}
 import math
+a = R + h
 n = math.sqrt(mu / a**3)
 n_rel = -1.5 * n * (da / a)`,
 
     javascript: `// Coelliptic relative mean motion: ${A}
+const a = R + h
 const n = Math.sqrt(mu / a ** 3)
 const nRel = -1.5 * n * (da / a)`,
 
     typescript: `// Coelliptic relative mean motion: ${A}
+const a: number = R + h
 const n: number = Math.sqrt(mu / a ** 3)
 const nRel: number = -1.5 * n * (da / a)`,
 
     c: `/* Coelliptic relative mean motion: ${A} */
+const double a = R + h;
 const double n = sqrt(mu / (a * a * a));
 const double n_rel = -1.5 * n * (da / a);`,
 
     cpp: `// Coelliptic relative mean motion: ${A}
+const double a = R + h;
 const double n = std::sqrt(mu / (a * a * a));
 const double n_rel = -1.5 * n * (da / a);`,
 
     rust: `// Coelliptic relative mean motion: ${A}
+let a = R + h;
 let n = (mu / a.powi(3)).sqrt();
 let n_rel = -1.5 * n * (da / a);`,
 
     zig: `// Coelliptic relative mean motion: ${A}
+const a = R + h;
 const n = std.math.sqrt(mu / (a * a * a));
 const n_rel = -1.5 * n * (da / a);`,
 
     fortran: `! Coelliptic relative mean motion: ${A}
+a = R + h
 n = sqrt(mu / a**3)
 n_rel = -1.5d0 * n * (da / a)`,
 
     matlab: `% Coelliptic relative mean motion: ${A}
+a = R + h;
 n = sqrt(mu / a^3);
 n_rel = -1.5 * n * (da / a);`,
 
     julia: `# Coelliptic relative mean motion: ${A}
+a = R + h
 n = sqrt(mu / a^3)
 n_rel = -1.5 * n * (da / a)`,
 

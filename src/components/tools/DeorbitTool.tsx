@@ -39,7 +39,7 @@ export function DeorbitTool() {
         <ResultCard label={t('fields.half_period_tof')} si={res.tofHalf} category="time" unitId="pretty" unitIds={TOOL_UNIT_SETS.timePretty} digits={4} />
         <ResultCard label={t('fields.transfer_a')} si={res.a} category="length" unitId="km" unitIds={TOOL_UNIT_SETS.length} digits={1} />
       </div> : <p className="font-mono text-sm text-muted">{t('fields.need_circ_above_peri')}</p>}
-      code={<CodeExport formulaId="deorbit" values={{ r, rp, mu: body.mu, R: body.radius, h: p.h, hp: p.hp, body: p.body }} />}
+      code={<CodeExport formulaId="deorbit" values={{ h: toSi(p.h, p.hu), hp: toSi(p.hp, p.hu), mu: body.mu, R: body.radius, body: p.body }} />}
     />
   )
 }

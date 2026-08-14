@@ -15,6 +15,7 @@ export const cwSnippets: FormulaSnippet = {
   code: {
     python: `# CW propagate (LVLH): ${A}
 import math
+a = R + h
 n = math.sqrt(mu / a**3)
 nt = n * tf
 s = math.sin(nt)
@@ -28,6 +29,7 @@ vz_f = -z * n * s + vz * c
 # Two-impulse to origin: solve Φ_rv v0 = -Φ_rr r0, then Δv2 = -v(tf)`,
 
     javascript: `// CW propagate (LVLH): ${A}
+const a = R + h
 const n = Math.sqrt(mu / a ** 3)
 const nt = n * tf
 const s = Math.sin(nt)
@@ -40,6 +42,7 @@ const vyF = 6 * n * (c - 1) * x - 2 * s * vx + (4 * c - 3) * vy
 const vzF = -z * n * s + vz * c`,
 
     typescript: `// CW propagate (LVLH): ${A}
+const a: number = R + h
 const n: number = Math.sqrt(mu / a ** 3)
 const nt: number = n * tf
 const s: number = Math.sin(nt)
@@ -52,6 +55,7 @@ const vyF: number = 6 * n * (c - 1) * x - 2 * s * vx + (4 * c - 3) * vy
 const vzF: number = -z * n * s + vz * c`,
 
     c: `/* CW propagate (LVLH): ${A} */
+const double a = R + h;
 const double n = sqrt(mu / (a * a * a));
 const double nt = n * tf;
 const double s = sin(nt);
@@ -64,6 +68,7 @@ const double vy_f = 6.0 * n * (c - 1.0) * x - 2.0 * s * vx + (4.0 * c - 3.0) * v
 const double vz_f = -z * n * s + vz * c;`,
 
     cpp: `// CW propagate (LVLH): ${A}
+const double a = R + h;
 const double n = std::sqrt(mu / (a * a * a));
 const double nt = n * tf;
 const double s = std::sin(nt);
@@ -76,6 +81,7 @@ const double vy_f = 6.0 * n * (c - 1.0) * x - 2.0 * s * vx + (4.0 * c - 3.0) * v
 const double vz_f = -z * n * s + vz * c;`,
 
     rust: `// CW propagate (LVLH): ${A}
+let a = R + h;
 let n = (mu / (a * a * a)).sqrt();
 let nt = n * tf;
 let s = nt.sin();
@@ -88,6 +94,7 @@ let vy_f = 6.0 * n * (c - 1.0) * x - 2.0 * s * vx + (4.0 * c - 3.0) * vy;
 let vz_f = -z * n * s + vz * c;`,
 
     zig: `// CW propagate (LVLH): ${A}
+const a = R + h;
 const n = std.math.sqrt(mu / (a * a * a));
 const nt = n * tf;
 const s = std.math.sin(nt);
@@ -100,6 +107,7 @@ const vy_f = 6.0 * n * (c - 1.0) * x - 2.0 * s * vx + (4.0 * c - 3.0) * vy;
 const vz_f = -z * n * s + vz * c;`,
 
     fortran: `! CW propagate (LVLH): ${A}
+a = R + h
 n = sqrt(mu / a**3)
 nt = n * tf
 s = sin(nt)
@@ -112,6 +120,7 @@ vy_f = 6.0d0 * n * (c - 1.0d0) * x - 2.0d0 * s * vx + (4.0d0 * c - 3.0d0) * vy
 vz_f = -z * n * s + vz * c`,
 
     matlab: `% CW propagate (LVLH): ${A}
+a = R + h;
 n = sqrt(mu / a^3);
 nt = n * tf;
 s = sin(nt); c = cos(nt);
@@ -123,6 +132,7 @@ vy_f = 6*n*(c-1)*x - 2*s*vx + (4*c-3)*vy;
 vz_f = -z*n*s + vz*c;`,
 
     julia: `# CW propagate (LVLH): ${A}
+a = R + h
 n = sqrt(mu / a^3)
 nt = n * tf
 s = sin(nt)

@@ -113,7 +113,7 @@ export function VisVivaTool() {
           </div>
         )
       }
-      code={<CodeExport formulaId="vis-viva" values={{ r_m, a_m, mu: body.mu, r: p.r, a: p.a, body: p.body }} />}
+      code={<CodeExport formulaId="vis-viva" values={{ r: r_m, a: a_m, mu: body.mu, body: p.body }} />}
     />
   )
 }

@@ -154,7 +154,7 @@ export function CircularOrbitTool() {
           }
         />
       }
-      code={<CodeExport formulaId="circular-orbit" values={{ h_m, r, mu: body.mu, R: body.radius, h: p.h, body: p.body }} />}
+      code={<CodeExport formulaId="circular-orbit" values={{ h: h_m, mu: body.mu, R: body.radius, body: p.body }} />}
     />
   )
 }

@@ -132,7 +132,7 @@ export function PlaneChangeTool() {
           <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
         )
       }
-      code={<CodeExport formulaId="plane-change" values={{ mu: body.mu, R: body.radius, h: p.h, v: p.v, di: p.di, mode: p.mode, body: p.body }} />}
+      code={<CodeExport formulaId="plane-change" values={{ v: results?.v, di_deg: p.di }} />}
     />
   )
 }

@@ -176,7 +176,18 @@ export function HohmannTool() {
           }
         />
       }
-      code={<CodeExport formulaId="hohmann" values={{ h1_m, h2_m, r1, r2, mu: body.mu, R: body.radius, h1: p.h1, h2: p.h2, body: p.body }} />}
+      code={
+        <CodeExport
+          formulaId="hohmann"
+          values={{
+            h1: h1_m,
+            h2: h2_m,
+            mu: body.mu,
+            R: body.radius,
+            body: p.body,
+          }}
+        />
+      }
     />
   )
 }

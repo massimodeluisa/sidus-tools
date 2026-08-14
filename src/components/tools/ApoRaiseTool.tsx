@@ -39,7 +39,7 @@ export function ApoRaiseTool() {
         <ResultCard label={t('fields.transfer_a')} si={res.a} category="length" unitId="km" unitIds={TOOL_UNIT_SETS.length} digits={1} />
         <ResultCard label={t('fields.period_ellipse')} si={res.T} category="time" unitId="pretty" unitIds={TOOL_UNIT_SETS.timePretty} digits={4} />
       </div> : <p className="font-mono text-sm text-muted">{t('fields.need_target_apo_above_burn')}</p>}
-      code={<CodeExport formulaId="apo-raise" values={{ r, mu: body.mu, R: body.radius, h: p.h, ha: p.ha, body: p.body }} />}
+      code={<CodeExport formulaId="apo-raise" values={{ h: toSi(p.h, p.hu), ha: toSi(p.ha, p.hu), mu: body.mu, R: body.radius, body: p.body }} />}
     />
   )
 }

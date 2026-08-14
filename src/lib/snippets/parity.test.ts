@@ -151,7 +151,11 @@ describe('physics parity via pure-SI cores', () => {
     const sn = getSnippets('circular-orbit')
     expect(sn?.code.javascript).toBeTruthy()
     // Evaluate formula body with full-precision SI bindings (not URL-rounded preamble)
-    const env = evalAssignments(sn!.code.javascript!, { mu, r })
+    const env = evalAssignments(sn!.code.javascript!, {
+      mu,
+      R: EARTH_RADIUS,
+      h: 400_000,
+    })
     const vSnip = env.v
     const TSnip = env.T ?? env.t
     expect(vSnip).toBeDefined()
@@ -249,7 +253,7 @@ describe('nested systems ports match pure-SI math', () => {
     const a = R + 400_000
     const betaTrue = Math.acos(Math.sqrt(1 - (R / a) ** 2))
     const js = getSnippets('eclipse-duration')!.code.javascript!
-    const env = evalAssignments(js, { R, a, T: 5600 })
+    const env = evalAssignments(js, { R, h: 400_000, T: 5600 })
     expect(Math.abs(env.beta - betaTrue) / betaTrue).toBeLessThan(1e-12)
   })
 

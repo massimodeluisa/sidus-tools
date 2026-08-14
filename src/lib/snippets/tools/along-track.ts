@@ -15,42 +15,52 @@ export const atSnippets: FormulaSnippet = {
   assumptions: A,
   code: {
     python: `# Along-track from ΔM: ${A}
+a = R + h
 dy_from_dM = a * dM
 dM_from_dy = dy / a`,
 
     javascript: `// Along-track from ΔM: ${A}
+const a = R + h
 const dy_from_dM = a * dM
 const dM_from_dy = dy / a`,
 
     typescript: `// Along-track from ΔM: ${A}
+const a: number = R + h
 const dy_from_dM: number = a * dM
 const dM_from_dy: number = dy / a`,
 
     c: `/* Along-track from ΔM: ${A} */
+const double a = R + h;
 const double dy_from_dM = a * dM;
 const double dM_from_dy = dy / a;`,
 
     cpp: `// Along-track from ΔM: ${A}
+const double a = R + h;
 const double dy_from_dM = a * dM;
 const double dM_from_dy = dy / a;`,
 
     rust: `// Along-track from ΔM: ${A}
+let a = R + h;
 let dy_from_d_m = a * dM;
 let d_m_from_dy = dy / a;`,
 
     zig: `// Along-track from ΔM: ${A}
+const a = R + h;
 const dy_from_dM = a * dM;
 const dM_from_dy = dy / a;`,
 
     fortran: `! Along-track from ΔM: ${A}
+a = R + h
 dy_from_dM = a * dM
 dM_from_dy = dy / a`,
 
     matlab: `% Along-track from ΔM: ${A}
+a = R + h;
 dy_from_dM = a * dM;
 dM_from_dy = dy / a;`,
 
     julia: `# Along-track from ΔM: ${A}
+a = R + h
 dy_from_dM = a * dM
 dM_from_dy = dy / a`,
 

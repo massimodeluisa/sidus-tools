@@ -47,7 +47,7 @@ export function EnergyMarginTool() {
           <p className="font-mono text-sm text-muted">{t('fields.invalid_radius')}</p>
         )
       }
-      code={<CodeExport formulaId="escape-margin" values={{ r, mu: body.mu, R: body.radius, h: p.h, body: p.body }} />}
+      code={<CodeExport formulaId="escape-margin" values={{ h: toSi(p.h, p.hu), mu: body.mu, R: body.radius, body: p.body }} />}
     />
   )
 }

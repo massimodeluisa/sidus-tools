@@ -248,7 +248,7 @@ export function BiellipticTool() {
           }
         />
       }
-      code={<CodeExport formulaId="bielliptic" values={{ h1_m, h2_m, hb_m, r1, r2, rb, mu: body.mu, R: body.radius, h1: p.h1, h2: p.h2, hb: p.hb, body: p.body }} />}
+      code={<CodeExport formulaId="bielliptic" values={{ h1: h1_m, h2: h2_m, hb: hb_m, mu: body.mu, R: body.radius, body: p.body }} />}
     />
   )
 }

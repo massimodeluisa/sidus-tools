@@ -15,42 +15,52 @@ export const deltaASnippets: FormulaSnippet = {
   code: {
     python: `# Δa from tangential burn: ${A}
 import math
+a = R + h
 v = math.sqrt(mu / a)
 da = 2 * a * dv / v`,
 
     javascript: `// Δa from tangential burn: ${A}
+const a = R + h
 const v = Math.sqrt(mu / a)
 const da = (2 * a * dv) / v`,
 
     typescript: `// Δa from tangential burn: ${A}
+const a: number = R + h
 const v: number = Math.sqrt(mu / a)
 const da: number = (2 * a * dv) / v`,
 
     c: `/* Δa from tangential burn: ${A} */
+const double a = R + h;
 const double v = sqrt(mu / a);
 const double da = 2.0 * a * dv / v;`,
 
     cpp: `// Δa from tangential burn: ${A}
+const double a = R + h;
 const double v = std::sqrt(mu / a);
 const double da = 2.0 * a * dv / v;`,
 
     rust: `// Δa from tangential burn: ${A}
+let a = R + h;
 let v = (mu / a).sqrt();
 let da = 2.0 * a * dv / v;`,
 
     zig: `// Δa from tangential burn: ${A}
+const a = R + h;
 const v = std.math.sqrt(mu / a);
 const da = 2.0 * a * dv / v;`,
 
     fortran: `! Δa from tangential burn: ${A}
+a = R + h
 v = sqrt(mu / a)
 da = 2.0d0 * a * dv / v`,
 
     matlab: `% Δa from tangential burn: ${A}
+a = R + h;
 v = sqrt(mu / a);
 da = 2 * a * dv / v;`,
 
     julia: `# Δa from tangential burn: ${A}
+a = R + h
 v = sqrt(mu / a)
 da = 2 * a * dv / v`,
 

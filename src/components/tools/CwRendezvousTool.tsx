@@ -169,7 +169,7 @@ export function CwRendezvousTool() {
           </div>
         )
       }
-      code={<CodeExport formulaId="cw-rendezvous" values={{ h, tf, a, mu: body.mu, R: body.radius, x: p.x, y: p.y, z: p.z, body: p.body, tfu: p.tfu }} />}
+      code={<CodeExport formulaId="cw-rendezvous" values={{ h, tf, mu: body.mu, R: body.radius, x: p.x, y: p.y, z: p.z, body: p.body }} />}
     />
   )
 }

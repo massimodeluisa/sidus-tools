@@ -14,6 +14,7 @@ import {
   propagateEci,
   SAMPLE_ISS_TLE,
   TOOL_UNIT_SETS,
+  toSi,
 } from '@/lib/physics'
 import { resolveUtcParam } from '@/lib/utcInput'
 import { numParam, strParam, useToolSearchParams } from '@/lib/useToolSearchParams'
@@ -151,7 +152,7 @@ export function LookAnglesTool() {
       code={
         <CodeExport
           formulaId="look-angles"
-          values={{ lat: p.lat, lon: p.lon, h_m: p.h_m, at: p.at }}
+          values={{ lat: toSi(p.lat, 'deg'), lon: toSi(p.lon, 'deg'), h_m: p.h_m, at: p.at }}
         />
       }
     />

@@ -16,6 +16,8 @@ export const deorbitSnippets: FormulaSnippet = {
   code: {
     python: `# Deorbit: ${A}
 import math
+r = R + h
+rp = R + hp
 a = 0.5 * (r + rp)
 v_c = math.sqrt(mu / r)
 v_a = math.sqrt(mu * (2 / r - 1 / a))
@@ -23,6 +25,8 @@ dv = v_c - v_a
 tof = math.pi * math.sqrt(a**3 / mu)`,
 
     javascript: `// Deorbit: ${A}
+const r = R + h
+const rp = R + hp
 const a = 0.5 * (r + rp)
 const vC = Math.sqrt(mu / r)
 const vA = Math.sqrt(mu * (2 / r - 1 / a))
@@ -30,6 +34,8 @@ const dv = vC - vA
 const tof = Math.PI * Math.sqrt(a ** 3 / mu)`,
 
     typescript: `// Deorbit: ${A}
+const r: number = R + h
+const rp: number = R + hp
 const a: number = 0.5 * (r + rp)
 const vC: number = Math.sqrt(mu / r)
 const vA: number = Math.sqrt(mu * (2 / r - 1 / a))
@@ -37,6 +43,8 @@ const dv: number = vC - vA
 const tof: number = Math.PI * Math.sqrt(a ** 3 / mu)`,
 
     c: `/* Deorbit: ${A} */
+const double r = R + h;
+const double rp = R + hp;
 const double a = 0.5 * (r + rp);
 const double v_c = sqrt(mu / r);
 const double v_a = sqrt(mu * (2.0 / r - 1.0 / a));
@@ -44,6 +52,8 @@ const double dv = v_c - v_a;
 const double tof = M_PI * sqrt(a * a * a / mu);`,
 
     cpp: `// Deorbit: ${A}
+const double r = R + h;
+const double rp = R + hp;
 const double a = 0.5 * (r + rp);
 const double v_c = std::sqrt(mu / r);
 const double v_a = std::sqrt(mu * (2.0 / r - 1.0 / a));
@@ -51,6 +61,8 @@ const double dv = v_c - v_a;
 const double tof = M_PI * std::sqrt(a * a * a / mu);`,
 
     rust: `// Deorbit: ${A}
+let r = R + h;
+let rp = R + hp;
 let a = 0.5 * (r + rp);
 let v_c = (mu / r).sqrt();
 let v_a = (mu * (2.0 / r - 1.0 / a)).sqrt();
@@ -58,6 +70,8 @@ let dv = v_c - v_a;
 let tof = std::f64::consts::PI * (a * a * a / mu).sqrt();`,
 
     zig: `// Deorbit: ${A}
+const r = R + h;
+const rp = R + hp;
 const a = 0.5 * (r + rp);
 const v_c = std.math.sqrt(mu / r);
 const v_a = std.math.sqrt(mu * (2.0 / r - 1.0 / a));
@@ -65,6 +79,8 @@ const dv = v_c - v_a;
 const tof = std.math.pi * std.math.sqrt(a * a * a / mu);`,
 
     fortran: `! Deorbit: ${A}
+r = R + h
+rp = R + hp
 a = 0.5d0 * (r + rp)
 v_c = sqrt(mu / r)
 v_a = sqrt(mu * (2.0d0 / r - 1.0d0 / a))
@@ -72,6 +88,8 @@ dv = v_c - v_a
 tof = 3.141592653589793d0 * sqrt(a**3 / mu)`,
 
     matlab: `% Deorbit: ${A}
+r = R + h;
+rp = R + hp;
 a = 0.5 * (r + rp);
 v_c = sqrt(mu / r);
 v_a = sqrt(mu * (2 / r - 1 / a));
@@ -79,6 +97,8 @@ dv = v_c - v_a;
 tof = pi * sqrt(a^3 / mu);`,
 
     julia: `# Deorbit: ${A}
+r = R + h
+rp = R + hp
 a = 0.5 * (r + rp)
 v_c = sqrt(mu / r)
 v_a = sqrt(mu * (2 / r - 1 / a))

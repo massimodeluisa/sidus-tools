@@ -102,7 +102,7 @@ export function AlongTrackTool() {
       code={
         <CodeExport
           formulaId="along-track"
-          values={{ dy, dM, a, mu: body.mu, R: body.radius, body: p.body }}
+          values={{ dy, dM, h: toSi(p.h, p.hu), mu: body.mu, R: body.radius, body: p.body }}
         />
       }
     />

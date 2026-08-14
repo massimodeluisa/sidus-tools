@@ -153,10 +153,9 @@ export function EscapeTool() {
         <CodeExport
           formulaId="escape"
           values={{
-            h_m,
+            h: h_m,
             mu: body.mu,
             R: body.radius,
-            r: results?.r ?? body.radius + h_m,
             body: p.body,
           }}
         />

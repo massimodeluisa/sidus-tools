@@ -163,15 +163,12 @@ export function J2DriftTool() {
         <CodeExport
           formulaId="j2-drift"
           values={{
-            a_m,
-            i_rad,
+            a: a_m,
+            i: i_rad,
             mu: body.mu,
             R: body.radius,
-            a: p.a,
             e: p.e,
-            i: p.i,
             body: p.body,
-            iu: p.iu,
           }}
         />
       }

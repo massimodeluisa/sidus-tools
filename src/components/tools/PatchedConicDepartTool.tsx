@@ -108,10 +108,9 @@ export function PatchedConicDepartTool() {
           formulaId="patched-conic-depart"
           values={{
             mu: planet.mu,
-            r_park: planet.radius + toSi(p.h, p.hu),
+            R: planet.radius,
+            h: toSi(p.h, p.hu),
             v_inf: res?.vInf,
-            v_transfer: res != null ? (res.vCircPark + res.vInf) : undefined,
-            v_planet: res?.vCircPark,
             planet: p.planet,
             target: p.target,
           }}

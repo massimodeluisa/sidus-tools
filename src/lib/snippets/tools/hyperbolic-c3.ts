@@ -7,7 +7,7 @@ import type { FormulaSnippet } from '../types'
  * Matches HyperbolicC3Tool + lib/physics/hyperbolic.ts.
  */
 const A =
-  'Two-body hyperbola; C3 = v_∞²; impulsive departure from circular. SI.'
+  'Two-body hyperbola; C3 = v_∞²; impulsive departure from circular; r = R+h. SI.'
 
 export const hyperbolicC3Snippets: FormulaSnippet = {
   formulaId: 'hyperbolic-c3',
@@ -15,6 +15,7 @@ export const hyperbolicC3Snippets: FormulaSnippet = {
   code: {
     python: `# Hyperbolic excess / C3: ${A}
 import math
+r = R + h
 C3 = v_inf**2
 v_p = math.sqrt(v_inf**2 + 2 * mu / r)
 v_c = math.sqrt(mu / r)
@@ -22,6 +23,7 @@ dv = v_p - v_c
 e = 1 + r * v_inf**2 / mu`,
 
     javascript: `// Hyperbolic excess / C3: ${A}
+const r = R + h
 const C3 = v_inf ** 2
 const v_p = Math.sqrt(v_inf ** 2 + (2 * mu) / r)
 const v_c = Math.sqrt(mu / r)
@@ -29,6 +31,7 @@ const dv = v_p - v_c
 const e = 1 + (r * v_inf ** 2) / mu`,
 
     typescript: `// Hyperbolic excess / C3: ${A}
+const r: number = R + h
 const C3: number = v_inf ** 2
 const v_p: number = Math.sqrt(v_inf ** 2 + (2 * mu) / r)
 const v_c: number = Math.sqrt(mu / r)
@@ -36,6 +39,7 @@ const dv: number = v_p - v_c
 const e: number = 1 + (r * v_inf ** 2) / mu`,
 
     c: `/* Hyperbolic excess / C3: ${A} */
+const double r = R + h;
 const double C3 = v_inf * v_inf;
 const double v_p = sqrt(v_inf * v_inf + 2.0 * mu / r);
 const double v_c = sqrt(mu / r);
@@ -43,6 +47,7 @@ const double dv = v_p - v_c;
 const double e = 1.0 + r * v_inf * v_inf / mu;`,
 
     cpp: `// Hyperbolic excess / C3: ${A}
+const double r = R + h;
 const double C3 = v_inf * v_inf;
 const double v_p = std::sqrt(v_inf * v_inf + 2.0 * mu / r);
 const double v_c = std::sqrt(mu / r);
@@ -50,6 +55,7 @@ const double dv = v_p - v_c;
 const double e = 1.0 + r * v_inf * v_inf / mu;`,
 
     rust: `// Hyperbolic excess / C3: ${A}
+let r = R + h;
 let c3 = v_inf * v_inf;
 let v_p = (v_inf * v_inf + 2.0 * mu / r).sqrt();
 let v_c = (mu / r).sqrt();
@@ -57,6 +63,7 @@ let dv = v_p - v_c;
 let e = 1.0 + r * v_inf * v_inf / mu;`,
 
     zig: `// Hyperbolic excess / C3: ${A}
+const r = R + h;
 const C3 = v_inf * v_inf;
 const v_p = std.math.sqrt(v_inf * v_inf + 2.0 * mu / r);
 const v_c = std.math.sqrt(mu / r);
@@ -64,6 +71,7 @@ const dv = v_p - v_c;
 const e = 1.0 + r * v_inf * v_inf / mu;`,
 
     fortran: `! Hyperbolic excess / C3: ${A}
+r = R + h
 C3 = v_inf * v_inf
 v_p = sqrt(v_inf * v_inf + 2.0d0 * mu / r)
 v_c = sqrt(mu / r)
@@ -71,6 +79,7 @@ dv = v_p - v_c
 e = 1.0d0 + r * v_inf * v_inf / mu`,
 
     matlab: `% Hyperbolic excess / C3: ${A}
+r = R + h;
 C3 = v_inf^2;
 v_p = sqrt(v_inf^2 + 2 * mu / r);
 v_c = sqrt(mu / r);
@@ -78,6 +87,7 @@ dv = v_p - v_c;
 e = 1 + r * v_inf^2 / mu;`,
 
     julia: `# Hyperbolic excess / C3: ${A}
+r = R + h
 C3 = v_inf^2
 v_p = sqrt(v_inf^2 + 2 * mu / r)
 v_c = sqrt(mu / r)
@@ -86,6 +96,7 @@ e = 1 + r * v_inf^2 / mu`,
 
     latex: `% Hyperbolic excess / C3: pure SI
 \\[
+  r = R + h,\\quad
   C_{3} = v_{\\infty}^{2},\\quad
   v_{p} = \\sqrt{v_{\\infty}^{2} + \\frac{2\\mu}{r}},\\quad
   v_{c} = \\sqrt{\\frac{\\mu}{r}},\\quad

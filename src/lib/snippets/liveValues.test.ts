@@ -49,6 +49,50 @@ describe('live code values', () => {
     expect(e?.r).toBe(6378137 + 400_000)
   })
 
+  it('Hohmann-family C export shows R+h1, not a bare 6578137 that looks like Earth radius', () => {
+    const bag = {
+      R: 6378137,
+      h1: 200_000,
+      h2: 35_786_000,
+      mu: 3.986004418e14,
+      di: 0.5,
+    }
+    for (const id of ['hohmann', 'hohmann-time', 'hohmann-plane'] as const) {
+      const sn = getSnippets(id)!
+      const out = renderLiveCode(sn.code.c!, 'c', bag)
+      expect(out, id).toContain('const double R = 6378137.0')
+      expect(out, id).toContain('const double h1 = 200000.0')
+      expect(out, id).toMatch(/const double r1 = R \+ h1/)
+      expect(out, id).toMatch(/const double r2 = R \+ h2/)
+      expect(out, id).not.toContain('const double r1 = 6578137')
+      expect(out, id).toMatch(/circular-orbit radii/)
+    }
+  })
+
+  it('does not inject display-km as SI for vis-viva / apsides / sso-period', () => {
+    const vis = renderLiveCode(getSnippets('vis-viva')!.code.c!, 'c', {
+      r: 6_778_137,
+      a: 6_778_137,
+      mu: 3.986004418e14,
+    })
+    expect(vis).toContain('const double r = 6778137.0')
+    expect(vis).not.toContain('const double r = 6778.0')
+
+    const sso = renderLiveCode(getSnippets('sso-period')!.code.c!, 'c', { h: 600_000 })
+    expect(sso).toContain('const double h = 600000.0')
+    expect(sso).toMatch(/a = R \+ h/)
+    expect(sso).not.toContain('const double h = 600.0')
+
+    const circ = renderLiveCode(getSnippets('circular-orbit')!.code.c!, 'c', {
+      R: 6378137,
+      h: 400_000,
+      mu: 3.986004418e14,
+    })
+    expect(circ).toContain('const double R = 6378137.0')
+    expect(circ).toMatch(/const double r = R \+ h/)
+    expect(circ).not.toContain('const double r = 6778137')
+  })
+
   it('renderLiveCode builds runnable python with prints', () => {
     const out = renderLiveCode(
       'import math\nv = math.sqrt(mu / r)',

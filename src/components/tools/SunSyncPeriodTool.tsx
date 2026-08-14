@@ -30,7 +30,7 @@ export function SunSyncPeriodTool() {
         <ResultCard label={t('fields.period')} si={res.T} category="time" unitId="pretty" unitIds={TOOL_UNIT_SETS.timePretty} digits={4} />
         <ResultCard label={t('fields.revs_day')} value={res.revs.toFixed(3)} />
       </div> : <p className="font-mono text-sm text-muted">{t('fields.no_real_sso')}</p>}
-      code={<CodeExport formulaId="sso-period" values={{ h: p.h }} />}
+      code={<CodeExport formulaId="sso-period" values={{ h: toSi(p.h, p.hu) }} />}
     />
   )
 }
