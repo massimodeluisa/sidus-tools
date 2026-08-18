@@ -273,6 +273,20 @@
     height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
     <div id="sidus-boot" aria-hidden="true">SIDUS</div>
+    <script>
+      window.addEventListener(
+        'error',
+        function (ev) {
+          var el = ev && ev.target
+          if (!el || (el.tagName !== 'SCRIPT' && el.tagName !== 'LINK')) return
+          var boot = document.getElementById('sidus-boot')
+          if (!boot) return
+          boot.innerHTML =
+            'SIDUS · failed to load · <a href="" style="color:#f2f2f2">refresh</a>'
+        },
+        true,
+      )
+    </script>
     <!--
       Non-JS bootstrap: AI crawlers that do not execute JavaScript (GPTBot, ClaudeBot, …)
       must still see substantive English content in the raw HTML response.

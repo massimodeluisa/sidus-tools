@@ -285,12 +285,12 @@ function patchSpaHtml(html: string, ctx: OgCtx): string {
   return out
 }
 
-const INDEX_TTL_MS = 60_000
+const INDEX_TTL_MS = 5_000
 let indexCache: { html: string; at: number } | null = null
 
 async function loadIndexHtml(origin: string): Promise<string | null> {
   if (indexCache && Date.now() - indexCache.at < INDEX_TTL_MS) return indexCache.html
-  const indexRes = await fetch(new URL('/index.html', origin))
+  const indexRes = await fetch(new URL('/index.html', origin), { cache: 'no-store' })
   if (!indexRes.ok) return null
   const html = await indexRes.text()
   indexCache = { html, at: Date.now() }
@@ -305,8 +305,10 @@ async function spaResponse(url: URL, ctx: OgCtx, extraHeaders: Record<string, st
     status: 200,
     headers: {
       'content-type': 'text/html; charset=utf-8',
-      'cache-control': 'public, s-maxage=300, stale-while-revalidate=3600',
-      'last-modified': new Date(CONTENT_REVISED).toUTCString(),
+      // Never long-cache HTML that references hashed /assets/*.js|css — a new
+      // Vite deploy deletes old chunks; stale HTML then 404s and the boot
+      // splash (#sidus-boot) never unmounts.
+      'cache-control': 'no-cache',
       ...extraHeaders,
     },
   })
