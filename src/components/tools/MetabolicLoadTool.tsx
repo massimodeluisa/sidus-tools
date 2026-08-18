@@ -85,7 +85,7 @@ export function MetabolicLoadTool() {
         !res ? (
           <p className="font-mono text-sm text-muted">{t('fields.invalid_duration_crew')}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard
               label={t('fields.o_consumed')}
               si={res.b.o2Kg}

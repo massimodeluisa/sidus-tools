@@ -132,7 +132,7 @@ export function RvElementsTool() {
               />
             </>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="sidus-results">
               <UiField
                 label={t('fields.a')}
                 unit="km"
@@ -191,7 +191,7 @@ export function RvElementsTool() {
             {result?.err ? t(`fields.${result.err}`) : t('fields.invalid_params')}
           </p>
         ) : result.kind === 'el' ? (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard
               label={t('fields.a')}
               value={formatNumber(result.el.a / 1000, 4)}
@@ -232,7 +232,7 @@ export function RvElementsTool() {
             ) : null}
           </div>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard
               label={t('fields.r_x_r_y_r_z')}
               value={`${formatNumber(result.st.r[0], 2)}, ${formatNumber(result.st.r[1], 2)}, ${formatNumber(result.st.r[2], 2)}`}

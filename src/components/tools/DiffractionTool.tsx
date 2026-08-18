@@ -65,7 +65,7 @@ export function DiffractionTool() {
       }
       results={
         res ? (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard
               label={t('fields.f_1_22_d')}
               si={res.thetaRad}

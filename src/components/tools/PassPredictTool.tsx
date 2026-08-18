@@ -135,7 +135,7 @@ export function PassPredictTool() {
             {t('fields.no_pass_above', { el: formatNumber(p.minEl, 1), hours: p.hours })}
           </p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.aos_utc')} value={pass.aos.toISOString()} accent />
             <ResultCard label={t('fields.los_utc')} value={pass.los.toISOString()} />
             <ResultCard

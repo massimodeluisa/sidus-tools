@@ -40,7 +40,7 @@ export function ImpedanceMatchingTool() {
         res == null || (typeof res === 'number' && !Number.isFinite(res)) ? (
           <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.gamma_2')} value={formatNumber(res.g,6)} accent />
             <ResultCard label={t('fields.vswr')} value={formatNumber(res.vswr,6)} />
             <ResultCard label={t('fields.disc_rl')} value={formatNumber(res.rl,4)} unit="dB" />

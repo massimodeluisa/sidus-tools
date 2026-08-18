@@ -55,7 +55,7 @@ export function CharacteristicVelocityCstarTool() {
         res == null || (typeof res === 'number' && !Number.isFinite(res)) ? (
           <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.c_meas')} si={res.cMeas} category="velocity" unitId="kmps" unitIds={TOOL_UNIT_SETS.velocity} digits={4} accent />
             <ResultCard label={t('fields.c_ideal')} si={res.cId} category="velocity" unitId="kmps" unitIds={TOOL_UNIT_SETS.velocity} digits={4} />
             <ResultCard label={t('fields.eta')} value={formatNumber(res.eta,6)} />

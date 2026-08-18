@@ -148,7 +148,7 @@ export function CabinLeakTool() {
         !res ? (
           <p className="font-mono text-sm text-muted">{t('fields.need_p0_gt_p1')}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard
               label={t('fields.time_p_p')}
               si={res.t}

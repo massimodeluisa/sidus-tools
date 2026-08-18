@@ -58,7 +58,7 @@ export function GnssGeometryGdopTool() {
         res == null || (typeof res === 'number' && !Number.isFinite(res)) ? (
           <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.gdop')} value={formatNumber(res.gdop,6)} accent />
             <ResultCard label={t('fields.pdop')} value={formatNumber(res.pdop,6)} />
             <ResultCard label={t('fields.hdop')} value={formatNumber(res.hdop,6)} />

@@ -55,7 +55,7 @@ export function HyperbolicC3Tool() {
       }
       results={
         res ? (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard
               label={t('fields.c3')}
               si={res.c3}

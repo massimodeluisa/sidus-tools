@@ -28,7 +28,7 @@ export function EqualStageTool() {
         <UiField label={t('fields.number_of_equal_stages')} type="number" value={p.n} min={1} onChange={(e) => setP({ n: Number(e.target.value) })} />
         <UiField label={t('fields.i_sp_each_stage')} type="number" value={p.isp} min={0.001} onChange={(e) => setP({ isp: Number(e.target.value) })} unit="s" />
       </ParamsGrid>}
-      results={res ? <div className="grid gap-3 sm:grid-cols-2">
+      results={res ? <div className="sidus-results">
         <ResultCard label={t('fields.v_per_stage')} si={res.dvStage} category="velocity" unitId="mps" unitIds={TOOL_UNIT_SETS.velocity} digits={1} accent />
         <ResultCard label={t('fields.m_m_f_per_stage')} value={res.massRatio.toFixed(4)} />
         <ResultCard label={t('fields.v_e')} si={res.ve} category="velocity" unitId="mps" unitIds={TOOL_UNIT_SETS.velocity} digits={1} />

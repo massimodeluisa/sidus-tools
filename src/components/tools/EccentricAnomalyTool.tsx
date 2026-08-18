@@ -54,7 +54,7 @@ export function EccentricAnomalyTool() {
         </ParamsGrid>
       }
       results={
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="sidus-results">
           <ResultCard
             label={t('fields.mean_anomaly_m')}
             si={res.M}

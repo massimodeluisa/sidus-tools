@@ -80,7 +80,7 @@ export function HerrickGibbsTool() {
         !pack ? (
           <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.v2_mag')} si={pack.active.v2n} category="velocity" unitId="kmps" unitIds={TOOL_UNIT_SETS.velocity} digits={4} accent />
             <ResultCard label={t('fields.hg_v2x')} si={pack.active.v2[0]} category="velocity" unitId="kmps" unitIds={TOOL_UNIT_SETS.velocity} digits={4} />
             <ResultCard label={t('fields.hg_v2y')} si={pack.active.v2[1]} category="velocity" unitId="kmps" unitIds={TOOL_UNIT_SETS.velocity} digits={4} />

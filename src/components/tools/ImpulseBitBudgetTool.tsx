@@ -79,7 +79,7 @@ export function ImpulseBitBudgetTool() {
       }
       results={
         res ? (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard
               label={t('fields.impulse_bit')}
               si={res.ib}

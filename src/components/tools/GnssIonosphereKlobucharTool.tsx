@@ -41,7 +41,7 @@ export function GnssIonosphereKlobucharTool() {
         res == null || (typeof res === 'number' && !Number.isFinite(res)) ? (
           <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.delay')} si={res} category="length" unitId="km" unitIds={TOOL_UNIT_SETS.length} digits={4} accent />
           </div>
         )

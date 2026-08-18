@@ -140,7 +140,7 @@ export function LinkBudgetTool() {
         !res ? (
           <p className="font-mono text-sm text-muted">{t('fields.invalid_rf_params')}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.eirp')} value={formatNumber(res.eirpDbw, 2)} unit="dBW" accent />
             <ResultCard label={t('fields.fspl')} value={formatNumber(res.lfsDb, 2)} unit="dB" />
             <ResultCard label={t('fields.p_r')} value={formatNumber(res.prDbw, 2)} unit="dBW" accent />

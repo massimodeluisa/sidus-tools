@@ -32,7 +32,7 @@ export function GroundTrackTool() {
         <BodySelect value={p.body} onChange={(body) => setP({ body })} />
         <UiUnitField label={t('fields.altitude')} category="length" unitIds={TOOL_UNIT_SETS.altitude} unitId={p.hu} value={p.h} min={0} onValueChange={(h) => setP({ h })} onUnitChange={(hu, h) => setP({ hu, h })} hint={t('fields.hint_ground_track')} />
       </ParamsGrid>}
-      results={res && res.dLdeg != null ? <div className="grid gap-3 sm:grid-cols-2">
+      results={res && res.dLdeg != null ? <div className="sidus-results">
         <ResultCard label={t('fields.lon_rev_earth_rot')} si={res.dL!} category="angle" unitId="deg" unitIds={TOOL_UNIT_SETS.angle} digits={4} accent />
         <ResultCard label={t('fields.revs_day_2')} value={res.revsDay.toFixed(3)} />
         <ResultCard label={t('fields.period')} si={res.period} category="time" unitId="pretty" unitIds={TOOL_UNIT_SETS.timePretty} digits={4} />

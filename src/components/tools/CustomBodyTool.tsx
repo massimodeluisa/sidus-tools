@@ -122,7 +122,7 @@ export function CustomBodyTool() {
       }
       results={
         res ? (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.gm')} value={res.mu.toExponential(6)} unit="m³/s²" accent />
             {res.g != null ? (
               <ResultCard

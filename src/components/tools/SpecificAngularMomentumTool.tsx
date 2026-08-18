@@ -40,7 +40,7 @@ export function SpecificAngularMomentumTool() {
       }
       results={
         res ? (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.h_p')} value={res.h.toExponential(6)} unit="m²/s" accent />
             <ResultCard label={t('fields.p_a_1_e')} si={res.p} category="length" unitId="km" unitIds={TOOL_UNIT_SETS.length} digits={2} />
           </div>

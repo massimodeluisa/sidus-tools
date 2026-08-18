@@ -166,7 +166,7 @@ export function RocketEquationTool() {
       }
       results={
         results && Number.isFinite(results.deltaV) ? (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard
               label={t('fields.v_3')}
               si={results.deltaV}

@@ -76,14 +76,14 @@ export function UiVector3({
   const locale = i18n.language ?? 'en'
 
   return (
-    <fieldset className="col-span-full min-w-0 space-y-1.5 border border-border p-2.5 sm:p-3">
+    <fieldset className="@container col-span-full min-w-0 space-y-1.5 border border-border p-2.5 sm:p-3">
       <legend className="px-1 font-mono text-[10px] uppercase tracking-[0.14em] text-muted sm:text-[11px]">
         {label}
         {unit ? (
           <span className="ml-2 text-[10px] tracking-wider text-subtle">{unit}</span>
         ) : null}
       </legend>
-      <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-3">
+      <div className="grid min-w-0 grid-cols-1 gap-2 @xs:grid-cols-3">
         {(['x', 'y', 'z'] as const).map((axis) => (
           <AxisField
             key={axis}

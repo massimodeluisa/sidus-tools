@@ -46,7 +46,7 @@ export function SolarSailAccelTool() {
         res == null || (typeof res === 'number' && !Number.isFinite(res)) ? (
           <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.disc_a_2')} value={formatNumber(res,6)} unit="m/s²" accent />
           </div>
         )

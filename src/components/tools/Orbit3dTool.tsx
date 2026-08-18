@@ -74,7 +74,7 @@ export function Orbit3dTool() {
       }
       results={
         stats ? (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.v_10')} si={stats.v1} category="velocity" unitId="kmps" unitIds={TOOL_UNIT_SETS.velocity} digits={4} accent />
             <ResultCard label={t('fields.t')} si={stats.T1} category="time" unitId="pretty" unitIds={TOOL_UNIT_SETS.timePretty} digits={4} />
             {stats.v2 != null ? (

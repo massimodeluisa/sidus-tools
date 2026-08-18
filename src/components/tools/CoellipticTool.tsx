@@ -79,7 +79,7 @@ export function CoellipticTool() {
       }
       results={
         res ? (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard
               label={t('fields.n_rel')}
               tip={t('fields.tip_coell_dn')}

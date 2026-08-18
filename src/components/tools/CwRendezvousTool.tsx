@@ -117,7 +117,7 @@ export function CwRendezvousTool() {
             {t('fields.cw_cannot_solve')}
           </p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard
               label={t('fields.v_7')}
               si={res.dv1}

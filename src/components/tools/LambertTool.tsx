@@ -160,7 +160,7 @@ export function LambertTool() {
             {t('fields.no_lambert_solution')}
           </p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard
               label={t('fields.v_5')}
               si={Math.hypot(sol.v1[0], sol.v1[1], sol.v1[2])}

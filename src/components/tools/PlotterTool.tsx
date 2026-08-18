@@ -142,7 +142,7 @@ export function PlotterTool() {
         error ? (
           <p className="font-mono text-sm text-muted">{t(`fields.${error}`)}</p>
         ) : stats ? (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.samples')} value={String(stats.n)} accent />
             <ResultCard label={t('fields.y_min')} value={formatNumber(stats.yMin, 6)} />
             <ResultCard label={t('fields.y_max')} value={formatNumber(stats.yMax, 6)} />

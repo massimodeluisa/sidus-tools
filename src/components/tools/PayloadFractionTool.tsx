@@ -74,7 +74,7 @@ export function PayloadFractionTool() {
       }
       results={
         res ? (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.payload_fraction')} value={(res.pl * 100).toFixed(2)} unit="%" accent />
             <ResultCard label={t('fields.propellant_fraction')} value={(res.prop * 100).toFixed(2)} unit="%" />
             <ResultCard label={t('fields.structure_other')} value={(res.st * 100).toFixed(2)} unit="%" />

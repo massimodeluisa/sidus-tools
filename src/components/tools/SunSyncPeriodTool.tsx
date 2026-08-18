@@ -25,7 +25,7 @@ export function SunSyncPeriodTool() {
       parameters={<ParamsGrid>
         <UiUnitField label={t('fields.altitude')} category="length" unitIds={TOOL_UNIT_SETS.altitude} unitId={p.hu} value={p.h} min={0} onValueChange={(h) => setP({ h })} onUnitChange={(hu, h) => setP({ hu, h })} />
       </ParamsGrid>}
-      results={res ? <div className="grid gap-3 sm:grid-cols-2">
+      results={res ? <div className="sidus-results">
         <ResultCard label={t('fields.i_sso')} si={res.i} category="angle" unitId="deg" unitIds={TOOL_UNIT_SETS.angle} digits={3} accent />
         <ResultCard label={t('fields.period')} si={res.T} category="time" unitId="pretty" unitIds={TOOL_UNIT_SETS.timePretty} digits={4} />
         <ResultCard label={t('fields.revs_day')} value={res.revs.toFixed(3)} />

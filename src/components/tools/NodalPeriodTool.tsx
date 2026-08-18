@@ -68,7 +68,7 @@ export function NodalPeriodTool() {
       }
       results={
         res ? (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.f__5')} value={res.degDay.toFixed(4)} unit="°/day" accent />
             <ResultCard
               label={t('fields.nodal_period_2')}

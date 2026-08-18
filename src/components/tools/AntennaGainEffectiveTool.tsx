@@ -38,7 +38,7 @@ export function AntennaGainEffectiveTool() {
         res == null || (typeof res === 'number' && !Number.isFinite(res)) ? (
           <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.disc_ae')} value={formatNumber(res,6)} unit="m²" accent />
           </div>
         )

@@ -111,7 +111,7 @@ export function KeplerPropagateTool() {
             {t('fields.kepler_prop_failed')}
           </p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard
               label={t('fields.r_m')}
               value={`${formatNumber(prop.r[0], 2)}, ${formatNumber(prop.r[1], 2)}, ${formatNumber(prop.r[2], 2)}`}

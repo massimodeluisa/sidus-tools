@@ -105,7 +105,7 @@ export function ThermalRadTool() {
         </ParamsGrid>
       }
       results={
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="sidus-results">
           {res.Q != null ? (
             <ResultCard
               label={t('fields.radiated_q')}

@@ -33,7 +33,7 @@ export function DeorbitTool() {
         <UiUnitField label={t('fields.altitude')} category="length" unitIds={TOOL_UNIT_SETS.altitude} unitId={p.hu} value={p.h} min={0} onValueChange={(h) => setP({ h })} onUnitChange={(hu, h) => setP({ hu, h })} />
         <UiUnitField label={t('fields.target_periapsis_altitude')} category="length" unitIds={TOOL_UNIT_SETS.altitude} unitId={p.hu} value={p.hp} min={0} onValueChange={(hp) => setP({ hp })} onUnitChange={(hu, hp) => setP({ hu, hp })} hint={t('fields.hint_deorbit_interface')} />
       </ParamsGrid>}
-      results={res ? <div className="grid gap-3 sm:grid-cols-2">
+      results={res ? <div className="sidus-results">
         <ResultCard label={t('fields.deorbit_v')} si={res.dv} category="velocity" unitId="mps" unitIds={TOOL_UNIT_SETS.velocity} digits={2} accent />
         <ResultCard label={t('fields.v_at_periapsis_2')} si={res.ve} category="velocity" unitId="kmps" unitIds={TOOL_UNIT_SETS.velocity} digits={4} />
         <ResultCard label={t('fields.half_period_tof')} si={res.tofHalf} category="time" unitId="pretty" unitIds={TOOL_UNIT_SETS.timePretty} digits={4} />

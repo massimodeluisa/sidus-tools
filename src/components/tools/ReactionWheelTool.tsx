@@ -30,7 +30,7 @@ export function ReactionWheelTool() {
         <UiField label={t('fields.spin_rate')} type="number" value={p.rpm} onChange={(e) => setP({ rpm: Number(e.target.value) })} unit="rpm" />
         <UiField label={t('fields.angular_accel')} type="number" value={p.alpha} onChange={(e) => setP({ alpha: Number(e.target.value) })} unit="rad/s²" />
       </ParamsGrid>}
-      results={res ? <div className="grid gap-3 sm:grid-cols-2">
+      results={res ? <div className="sidus-results">
         <ResultCard label={t('fields.momentum_h_i')} value={res.H.toFixed(4)} unit="N·m·s" accent />
         <ResultCard label={t('fields.torque_t_i')} value={res.T.toFixed(4)} unit="N·m" />
         <ResultCard label={t('fields.f__3')} value={res.omega.toFixed(2)} unit="rad/s" />

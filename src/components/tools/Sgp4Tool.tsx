@@ -131,7 +131,7 @@ export function Sgp4Tool() {
             {t('fields.propagation_failed')}
           </p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.name')} value={parsed.name} accent />
             <ResultCard
               label={t('fields.r')}

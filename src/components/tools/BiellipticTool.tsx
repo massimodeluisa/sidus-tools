@@ -165,7 +165,7 @@ export function BiellipticTool() {
         ) : results.error ? (
           <p className="font-mono text-sm leading-relaxed text-warn">{results.error}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard
               label={t('fields.bielliptic_v')}
               si={results.bi.dvTotal}

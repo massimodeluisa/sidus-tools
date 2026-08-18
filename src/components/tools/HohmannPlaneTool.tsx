@@ -41,7 +41,7 @@ export function HohmannPlaneTool() {
       }
       results={
         res ? (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.v_combined')} si={res.dvCombined} category="velocity" unitId="kmps" unitIds={TOOL_UNIT_SETS.velocity} digits={4} accent />
             <ResultCard label={t('fields.v_hohmann')} si={res.dv1} category="velocity" unitId="kmps" unitIds={TOOL_UNIT_SETS.velocity} digits={4} />
             <ResultCard label={t('fields.v_circ_plane')} si={res.dv2} category="velocity" unitId="kmps" unitIds={TOOL_UNIT_SETS.velocity} digits={4} />

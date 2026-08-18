@@ -232,6 +232,14 @@
   border: 1px solid var(--color-border);
 }
 
+/* Results: 2 columns only when each tile is ≥18rem (half-panel stays 1 col). */
+.sidus-results {
+  display: grid;
+  min-width: 0;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+}
+
 /* ── Home-alt motion lab (Firecrawl-class scroll energy) ─────────────── */
 .sidus-reveal {
   opacity: 0;

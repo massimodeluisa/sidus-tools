@@ -17,7 +17,7 @@ export function CommDelayGeoTool() {
   return (
     <ToolShell
       parameters={<p className="font-mono text-sm text-muted">{t('fields.note_comm_delay_geo')}</p>}
-      results={<div className="grid gap-3 sm:grid-cols-2">
+      results={<div className="sidus-results">
         <ResultCard label={t('fields.one_way_nadir')} si={res.t} category="time" unitId="ms" unitIds={TOOL_UNIT_SETS.timePretty} digits={3} accent />
         <ResultCard label={t('fields.rtt')} si={res.rtt} category="time" unitId="ms" unitIds={TOOL_UNIT_SETS.timePretty} digits={3} />
         <ResultCard label={t('fields.geo_altitude')} si={res.h} category="length" unitId="km" unitIds={TOOL_UNIT_SETS.altitude} digits={1} />

@@ -35,7 +35,7 @@ export function OberthTool() {
         <UiField label={t('fields.e')} type="number" value={p.e} min={0} max={0.999} step={0.01} onChange={(e) => setP({ e: Number(e.target.value) })} />
         <UiUnitField label={t('fields.impulsive_v')} category="velocity" unitIds={TOOL_UNIT_SETS.velocity} unitId={p.dvu} value={p.dv} min={0} onValueChange={(dv) => setP({ dv })} onUnitChange={(dvu, dv) => setP({ dvu, dv })} />
       </ParamsGrid>}
-      results={res ? <div className="grid gap-3 sm:grid-cols-2">
+      results={res ? <div className="sidus-results">
         <ResultCard label={t('fields.at_peri')} si={res.dEp} category="specificEnergy" unitId="MJpkg" unitIds={TOOL_UNIT_SETS.specificEnergy} digits={4} accent />
         <ResultCard label={t('fields.at_apo')} si={res.dEa} category="specificEnergy" unitId="MJpkg" unitIds={TOOL_UNIT_SETS.specificEnergy} digits={4} />
         <ResultCard label={t('fields.oberth_advantage')} si={res.advantage} category="specificEnergy" unitId="MJpkg" unitIds={TOOL_UNIT_SETS.specificEnergy} digits={4} />

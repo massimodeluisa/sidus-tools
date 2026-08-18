@@ -50,7 +50,7 @@ export function SchweighartSedwickTool() {
         !res ? (
           <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.ss_s')} value={formatNumber(res.s, 6)} accent />
             <ResultCard label={t('fields.n_bar')} value={formatNumber(res.nBar, 6)} unit="rad/s" />
             <ResultCard label={t('fields.ss_z')} si={res.state.z} category="length" unitId="m" unitIds={TOOL_UNIT_SETS.lengthSmall} digits={3} />

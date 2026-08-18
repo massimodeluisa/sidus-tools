@@ -136,7 +136,7 @@ export function ElevationAzimuthTool() {
       }
       results={
         res ? (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard
               label={t('fields.elevation')}
               si={res.el} category="angle" unitId="deg" unitIds={TOOL_UNIT_SETS.angle} digits={3}

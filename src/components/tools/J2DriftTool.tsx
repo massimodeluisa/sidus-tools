@@ -129,7 +129,7 @@ export function J2DriftTool() {
         !rates ? (
           <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard
               label={t('fields.raan')}
               value={formatNumber(rates.Om_deg_day, 5)}

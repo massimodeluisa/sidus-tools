@@ -63,7 +63,7 @@ export function HeatFluxTool() {
       }
       results={
         q != null ? (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard
               label={t('fields.q_sutton_graves')}
               si={q}

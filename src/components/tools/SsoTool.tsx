@@ -68,7 +68,7 @@ export function SsoTool() {
         res.i == null || res.T == null ? (
           <p className="font-mono text-sm text-muted">{t('fields.need_alt_above_surface')}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard
               label={t('fields.sso_inclination')}
               si={res.i}

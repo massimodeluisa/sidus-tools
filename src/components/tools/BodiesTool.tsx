@@ -104,7 +104,7 @@ export function BodiesTool() {
               {body.name} · {body.type}
             </span>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard
               label={t('fields.gravitational_parameter')}
               value={formatNumber(body.mu, 5)}

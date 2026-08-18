@@ -64,7 +64,7 @@ export function PropellantMassTool() {
       }
       results={
         res ? (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.propellant')} si={res.prop} category="mass" unitId="kg" unitIds={TOOL_UNIT_SETS.mass} digits={2} accent />
             <ResultCard label={t('fields.wet_mass_m')} si={res.m0} category="mass" unitId="kg" unitIds={TOOL_UNIT_SETS.mass} digits={2} />
             <ResultCard label={t('fields.mass_ratio_m_m_f')} value={res.ratio.toFixed(4)} />

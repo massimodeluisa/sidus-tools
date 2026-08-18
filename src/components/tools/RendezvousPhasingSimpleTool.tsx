@@ -86,7 +86,7 @@ export function RendezvousPhasingSimpleTool() {
       }
       results={
         res ? (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard
               label={t('fields.catch_up_time')}
               si={res.t}

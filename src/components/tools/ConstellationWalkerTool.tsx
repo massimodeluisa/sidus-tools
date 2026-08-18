@@ -38,7 +38,7 @@ export function ConstellationWalkerTool() {
         res == null || (typeof res === 'number' && !Number.isFinite(res)) ? (
           <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.spp')} value={formatNumber(res.satsPerPlane,6)} accent />
             <ResultCard label={t('fields.din')} value={formatNumber(res.inPlaneSpacingRad,6)} unit="rad" />
             <ResultCard label={t('fields.dpl')} value={formatNumber(res.planeSpacingRad,6)} unit="rad" />

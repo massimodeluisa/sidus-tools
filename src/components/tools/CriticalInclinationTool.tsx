@@ -21,7 +21,7 @@ export function CriticalInclinationTool() {
         </p>
       }
       results={
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="sidus-results">
           <ResultCard
             label={`${t('fields.critical_inclination')} (${t('fields.prograde')})`}
             si={res.i1}

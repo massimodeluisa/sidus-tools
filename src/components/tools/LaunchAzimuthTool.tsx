@@ -96,7 +96,7 @@ export function LaunchAzimuthTool() {
             })}
           </p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard
               label={t('fields.azimuth_primary')}
               value={formatNumber(res.az.azimuthDeg, 3)}

@@ -134,7 +134,7 @@ export function SphericalDistanceTool() {
       }
       results={
         res ? (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.great_circle_distance')} si={res.dist} category="length" unitId="km" unitIds={TOOL_UNIT_SETS.length} digits={3} accent />
             <ResultCard
               label={t('fields.central_angle')}

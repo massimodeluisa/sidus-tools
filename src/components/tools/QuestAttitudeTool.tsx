@@ -60,7 +60,7 @@ export function QuestAttitudeTool() {
         !res ? (
           <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.triad_qw')} value={formatNumber(res.triad.w, 6)} accent />
             <ResultCard label={t('fields.triad_qx')} value={formatNumber(res.triad.x, 6)} />
             <ResultCard label={t('fields.quest_qw')} value={formatNumber(res.quest.w, 6)} />

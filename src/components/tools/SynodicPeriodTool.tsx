@@ -51,7 +51,7 @@ export function SynodicPeriodTool() {
         <UiUnitField label={t('fields.orbit1_altitude')} category="length" unitIds={TOOL_UNIT_SETS.altitude} unitId={p.hu} value={p.h1} min={0} onValueChange={(h1) => setP({ h1 })} onUnitChange={(hu) => changeAltitudeUnit(hu)} />
         <UiUnitField label={t('fields.orbit2_altitude')} category="length" unitIds={TOOL_UNIT_SETS.altitude} unitId={p.hu} value={p.h2} min={0} onValueChange={(h2) => setP({ h2 })} onUnitChange={(hu) => changeAltitudeUnit(hu)} />
       </ParamsGrid>}
-      results={res ? <div className="grid gap-3 sm:grid-cols-2">
+      results={res ? <div className="sidus-results">
         <ResultCard label={t('fields.t_synodic')} si={res.Tsyn} category="time" unitId="pretty" unitIds={TOOL_UNIT_SETS.timePretty} digits={4} accent />
         <ResultCard label={t('fields.t')} si={res.T1} category="time" unitId="pretty" unitIds={TOOL_UNIT_SETS.timePretty} digits={4} />
         <ResultCard label={t('fields.t_2')} si={res.T2} category="time" unitId="pretty" unitIds={TOOL_UNIT_SETS.timePretty} digits={4} />

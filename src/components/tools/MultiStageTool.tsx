@@ -119,7 +119,7 @@ export function MultiStageTool() {
         !results ? (
           <p className="font-mono text-sm text-muted">{t('fields.need_m0_mf_isp')}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             {results.dv.map((d, i) => (
               <ResultCard
                 key={i}

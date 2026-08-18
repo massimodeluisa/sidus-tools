@@ -172,7 +172,7 @@ export function CabinAtmosphereTool() {
         ) : (
           <div className="space-y-3">
             <p className="font-mono text-[11px] text-muted">{res.note}</p>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="sidus-results">
               <ResultCard
                 label={t('fields.ppo')}
                 si={res.atm.ppO2Pa}

@@ -40,7 +40,7 @@ export function DeltaABurnTool() {
         <UiUnitField label={t('fields.tangential_v')} category="velocity" unitIds={TOOL_UNIT_SETS.velocity} unitId={p.dvu} value={p.dv} min={0} onValueChange={(dv) => setP({ dv })} onUnitChange={(dvu, dv) => setP({ dvu, dv })} />
         <UiUnitField label={t('fields.desired_a')} category="length" unitIds={TOOL_UNIT_SETS.length} unitId={p.dau} value={p.da} min={0} onValueChange={(da) => setP({ da })} onUnitChange={(dau, da) => setP({ dau, da })} />
       </ParamsGrid>}
-      results={res ? <div className="grid gap-3 sm:grid-cols-2">
+      results={res ? <div className="sidus-results">
         <ResultCard label={t('fields.a_from_v')} si={res.daFromDv} category="length" unitId="km" unitIds={TOOL_UNIT_SETS.length} digits={3} accent />
         <ResultCard label={t('fields.v_from_a')} si={res.dvFromDa} category="velocity" unitId="mps" unitIds={TOOL_UNIT_SETS.velocity} digits={3} />
         <ResultCard label={t('fields.v_circ')} si={res.v} category="velocity" unitId="kmps" unitIds={TOOL_UNIT_SETS.velocity} digits={4} />

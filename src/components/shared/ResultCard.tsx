@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { TooltipLabel, tooltipProps } from '@/components/shared/tooltip'
 import { tipForLabel } from '@/lib/fieldTips'
@@ -62,6 +62,10 @@ const PRETTY_DEF: UnitDef = {
   category: 'time',
 }
 
+/** Same type scale as Field labels; `text-fg` so 10px captions stay readable. */
+const RESULT_LABEL =
+  'min-w-0 max-w-full font-mono text-[10px] uppercase leading-tight tracking-[0.12em] text-fg sm:text-[11px]'
+
 function resolveOptions(
   category: UnitCategory,
   unitIds: readonly string[] | undefined,
@@ -74,36 +78,92 @@ function resolveOptions(
   return unitsForCategory(category)
 }
 
+function ResultShell({
+  label,
+  tip,
+  accent,
+  meta,
+  children,
+}: {
+  label: string
+  tip?: string
+  accent?: boolean
+  meta?: ReactNode
+  children: ReactNode
+}) {
+  const resolvedTip = tip ?? tipForLabel(label)
+  return (
+    <div
+      className={cn(
+        // Match Field: label row, then value+unit. No unit on the label row.
+        'grid min-w-0 max-w-full grid-rows-[auto_auto] gap-y-1.5 overflow-visible p-2.5 sm:p-3',
+        'border border-border',
+        accent ? 'border-border-strong bg-surface-hover' : 'bg-bg-elevated/40',
+      )}
+    >
+      <TooltipLabel tip={resolvedTip} className={RESULT_LABEL}>
+        <span className="break-words hyphens-auto">{label}</span>
+      </TooltipLabel>
+      <div className="flex min-h-9 min-w-0 items-center justify-between gap-2 overflow-visible sm:min-h-8">
+        <div className="min-w-0 flex-1 break-words font-mono text-lg tabular text-fg sm:text-xl">
+          {children}
+        </div>
+        {meta != null ? (
+          <div className="flex max-w-[45%] shrink-0 items-center justify-end overflow-visible">
+            {meta}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
+function UnitMeta({
+  label,
+  children,
+}: {
+  label: string
+  children: ReactNode
+}) {
+  const { t } = useTranslation()
+  return (
+    <label
+      {...tooltipProps(
+        t('common.unit_converts'),
+        'relative inline-flex max-w-full shrink-0 items-center overflow-visible',
+        'above-end',
+      )}
+    >
+      <span className="sr-only">{t('common.unit_for', { label })}</span>
+      {children}
+    </label>
+  )
+}
+
 /**
- * Result tile. Either static text, or SI value + selectable unit
- * (same conversion helpers as UiUnitField / units tool).
- * Time with unit `pretty` shows human multi-part duration; switch to s/min/h/… for scalars.
+ * Result tile. Same chrome as Field: label on its own row, value + unit below
+ * (mirrors PARAMETERS label / control / meta).
  */
 export function ResultCard(props: Props) {
   if (isConvertible(props)) {
     return <ConvertibleResult {...props} />
   }
   const { label, value, unit, tip, accent } = props
-  const resolvedTip = tip ?? tipForLabel(label)
   return (
-    <div
-      className={cn(
-        'sidus-card-soft min-w-0 max-w-full p-3 sm:p-3.5',
-        accent && 'border-border-strong bg-surface-hover',
-      )}
-    >
-      <div className="mb-1.5 flex min-w-0 flex-wrap items-baseline justify-between gap-x-2 gap-y-1 overflow-visible">
-        <p className="min-w-0 max-w-full flex-1 overflow-visible break-words font-mono text-[10px] uppercase leading-tight tracking-[0.12em] text-muted sm:text-[11px]">
-          <TooltipLabel tip={resolvedTip}>{label}</TooltipLabel>
-        </p>
-        {unit ? (
-          <span className="max-w-full shrink-0 break-all font-mono text-[10px] uppercase tracking-wider text-signal">
+    <ResultShell
+      label={label}
+      tip={tip}
+      accent={accent}
+      meta={
+        unit ? (
+          <span className="max-w-full break-all font-mono text-[10px] uppercase tracking-wider text-signal sm:text-[11px]">
             {unit}
           </span>
-        ) : null}
-      </div>
-      <p className="min-w-0 break-words font-mono text-lg tabular text-fg sm:text-xl">{value}</p>
-    </div>
+        ) : undefined
+      }
+    >
+      {value}
+    </ResultShell>
   )
 }
 
@@ -117,7 +177,6 @@ function ConvertibleResult({
   tip,
   accent,
 }: ConvertibleProps) {
-  const { t } = useTranslation()
   const options = useMemo(
     () => resolveOptions(category, unitIds),
     [category, unitIds],
@@ -146,62 +205,43 @@ function ConvertibleResult({
       ? formatNumber(display as number, digits)
       : ': '
   const current = isPretty ? PRETTY_DEF : getUnit(unitId)
-  const resolvedTip = tip ?? tipForLabel(label)
+
+  const unitMeta =
+    options.length > 0 ? (
+      <UnitMeta label={label}>
+        <select
+          value={unitId}
+          onChange={(e) => setUnitId(e.target.value)}
+          className={cn(
+            'box-border h-8 max-w-[6rem] cursor-pointer appearance-none border border-border-strong bg-surface py-0 pl-2 pr-6 sm:h-7',
+            // Always ≥16px — iOS zooms focused <select> under 16px
+            'font-mono text-base uppercase tracking-wider text-signal',
+            'outline-none transition-colors hover:border-muted hover:text-fg',
+            'focus:border-border-strong focus:text-fg',
+          )}
+        >
+          {options.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.short}
+            </option>
+          ))}
+        </select>
+        <span
+          aria-hidden
+          className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 font-mono text-[8px] text-subtle"
+        >
+          ▾
+        </span>
+      </UnitMeta>
+    ) : current ? (
+      <span className="max-w-full break-all font-mono text-[10px] uppercase tracking-wider text-signal sm:text-[11px]">
+        {current.short}
+      </span>
+    ) : undefined
 
   return (
-    <div
-      className={cn(
-        'sidus-card-soft min-w-0 max-w-full p-3 sm:p-3.5',
-        accent && 'border-border-strong bg-surface-hover',
-      )}
-    >
-      {/* Label + unit on one row (same rhythm as UiUnitField / PARAMETERS) */}
-      <div className="mb-1.5 flex min-w-0 flex-wrap items-baseline justify-between gap-x-2 gap-y-1 overflow-visible">
-        <p className="min-w-0 max-w-full flex-1 overflow-visible break-words font-mono text-[10px] uppercase leading-tight tracking-[0.12em] text-muted sm:text-[11px]">
-          <TooltipLabel tip={resolvedTip}>{label}</TooltipLabel>
-        </p>
-        {options.length > 0 ? (
-          <label
-            {...tooltipProps(
-              t('common.unit_converts'),
-              'relative inline-flex max-w-full shrink-0 items-center overflow-visible',
-              'above-end',
-            )}
-          >
-            <span className="sr-only">{t('common.unit_for', { label })}</span>
-            <select
-              value={unitId}
-              onChange={(e) => setUnitId(e.target.value)}
-              className={cn(
-                'box-border h-7 max-w-[6rem] cursor-pointer appearance-none border border-border-strong bg-surface py-0 pl-2 pr-6 sm:h-6',
-                // Always ≥16px — iOS zooms focused <select> under 16px
-                'font-mono text-base uppercase tracking-wider text-signal',
-                'outline-none transition-colors hover:border-muted hover:text-fg',
-                'focus:border-border-strong focus:text-fg',
-              )}
-            >
-              {options.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.short}
-                </option>
-              ))}
-            </select>
-            <span
-              aria-hidden
-              className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 font-mono text-[8px] text-subtle"
-            >
-              ▾
-            </span>
-          </label>
-        ) : current ? (
-          <span className="max-w-full shrink-0 break-all font-mono text-[10px] uppercase tracking-wider text-signal">
-            {current.short}
-          </span>
-        ) : null}
-      </div>
-      <p className="min-w-0 break-words font-mono text-lg tabular text-fg sm:text-xl">
-        {text}
-      </p>
-    </div>
+    <ResultShell label={label} tip={tip} accent={accent} meta={unitMeta}>
+      {text}
+    </ResultShell>
   )
 }

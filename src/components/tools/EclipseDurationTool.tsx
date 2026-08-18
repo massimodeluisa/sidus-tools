@@ -26,7 +26,7 @@ export function EclipseDurationTool() {
         <BodySelect value={p.body} onChange={(body) => setP({ body })} />
         <UiUnitField label={t('fields.altitude')} category="length" unitIds={TOOL_UNIT_SETS.altitude} unitId={p.hu} value={p.h} min={0} onValueChange={(h) => setP({ h })} onUnitChange={(hu, h) => setP({ hu, h })} hint={t('fields.hint_eclipse_cylinder')} />
       </ParamsGrid>}
-      results={res ? <div className="grid gap-3 sm:grid-cols-2">
+      results={res ? <div className="sidus-results">
         <ResultCard label={t('fields.eclipse_duration')} si={res.eclipseS} category="time" unitId="pretty" unitIds={TOOL_UNIT_SETS.timePretty} digits={4} accent />
         <ResultCard label={t('fields.orbit_period')} si={res.period} category="time" unitId="pretty" unitIds={TOOL_UNIT_SETS.timePretty} digits={4} />
         <ResultCard label={t('fields.fraction_in_shadow')} value={(res.fraction * 100).toFixed(2)} unit="%" />

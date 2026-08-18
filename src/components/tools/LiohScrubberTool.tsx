@@ -135,7 +135,7 @@ export function LiohScrubberTool() {
         !res ? (
           <p className="font-mono text-sm text-muted">{t('fields.invalid_lioh_inputs')}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard
               label={t('fields.co_capacity')}
               si={res.capacityKg}

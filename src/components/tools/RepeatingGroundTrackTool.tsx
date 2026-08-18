@@ -36,7 +36,7 @@ export function RepeatingGroundTrackTool() {
         res == null || (typeof res === 'number' && !Number.isFinite(res)) ? (
           <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.disc_t')} si={res} category="time" unitId="s" unitIds={TOOL_UNIT_SETS.time} digits={4} accent />
           </div>
         )

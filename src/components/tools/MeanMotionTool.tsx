@@ -42,7 +42,7 @@ export function MeanMotionTool() {
           ))}
         </FieldPresets>
       </ParamsGrid>}
-      results={res ? <div className="grid gap-3 sm:grid-cols-2">
+      results={res ? <div className="sidus-results">
         <ResultCard label={t('fields.mean_motion_n')} value={res.n.toExponential(6)} unit="rad/s" accent />
         <ResultCard label={t('fields.n')} value={(res.n * 86400).toFixed(4)} unit="rad/day" />
         <ResultCard label={t('fields.period')} si={res.period} category="time" unitId="pretty" unitIds={TOOL_UNIT_SETS.timePretty} digits={4} />

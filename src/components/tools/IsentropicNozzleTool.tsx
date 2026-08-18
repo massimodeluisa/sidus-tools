@@ -48,7 +48,7 @@ export function IsentropicNozzleTool() {
         res == null || (typeof res === 'number' && !Number.isFinite(res)) ? (
           <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.disc_me')} value={formatNumber(res.Me,6)} accent />
             <ResultCard label={t('fields.ae_at')} value={formatNumber(res.areaRatio,6)} />
             <ResultCard label={t('fields.disc_ve')} si={res.ve} category="velocity" unitId="kmps" unitIds={TOOL_UNIT_SETS.velocity} digits={4} />

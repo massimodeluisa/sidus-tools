@@ -60,7 +60,7 @@ export function BatteryTool() {
       }
       results={
         res ? (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard
               label={t('fields.stored_energy')}
               si={res.E}

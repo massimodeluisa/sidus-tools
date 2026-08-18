@@ -71,7 +71,7 @@ export function GeoPropellantBudgetTool() {
         res == null || (typeof res === 'number' && !Number.isFinite(res)) ? (
           <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.mprop')} si={res.mProp} category="mass" unitId="kg" unitIds={TOOL_UNIT_SETS.mass} digits={4} accent />
             <ResultCard label={t('fields.disc_m0')} si={res.m0} category="mass" unitId="kg" unitIds={TOOL_UNIT_SETS.mass} digits={4} />
             <ResultCard label={t('fields.dvtot')} si={res.dvTotal} category="velocity" unitId="kmps" unitIds={TOOL_UNIT_SETS.velocity} digits={4} />

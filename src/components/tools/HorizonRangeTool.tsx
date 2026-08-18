@@ -31,7 +31,7 @@ export function HorizonRangeTool() {
         <BodySelect value={p.body} onChange={(body) => setP({ body })} />
         <UiUnitField label={t('fields.observer_sat_altitude')} category="length" unitIds={TOOL_UNIT_SETS.altitude} unitId={p.hu} value={p.h} min={0} onValueChange={(h) => setP({ h })} onUnitChange={(hu, h) => setP({ hu, h })} hint={t('fields.hint_horizon_geom')} />
       </ParamsGrid>}
-      results={res ? <div className="grid gap-3 sm:grid-cols-2">
+      results={res ? <div className="sidus-results">
         <ResultCard label={t('fields.slant_range_to_horizon')} si={res.d} category="length" unitId="km" unitIds={TOOL_UNIT_SETS.length} digits={2} accent />
         {res.t != null ? <ResultCard label={t('fields.one_way_light_time')} value={`${(res.t * 1000).toFixed(2)} ms`} /> : null}
       </div> : <p className="font-mono text-sm text-muted">{t('fields.invalid_altitude')}</p>}

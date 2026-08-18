@@ -139,7 +139,7 @@ export function ThermalLoopTool() {
           <p className="font-mono text-[10px] uppercase tracking-wider text-subtle">
             {t('fields.thermal_optional_stack')}
           </p>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <UiField
               label={t('fields.crew')}
               type="number"
@@ -175,7 +175,7 @@ export function ThermalLoopTool() {
         !res ? (
           <p className="font-mono text-sm text-muted">{t('fields.invalid_thermal_inputs')}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             {res.kind === 'fromQ' ? (
               <ResultCard
                 label={t('fields.required')}

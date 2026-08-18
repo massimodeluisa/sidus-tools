@@ -69,7 +69,7 @@ export function DynamicPressureTool() {
         !res ? (
           <p className="font-mono text-sm text-muted">{t('fields.altitude_isa_range')}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard
               label={t('fields.dynamic_pressure')}
               si={res.q}

@@ -86,7 +86,7 @@ export function CircularOrbitTool() {
       }
       results={
         results ? (
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap [&>*]:min-w-0 [&>*]:flex-1 [&>*]:basis-full sm:[&>*]:basis-[calc(50%-0.375rem)]">
+          <div className="sidus-results">
             <ResultCard
               label={t('fields.orbital_speed')}
               si={results.v}

@@ -52,7 +52,7 @@ export function SunSensorConeTool() {
         res == null || (typeof res === 'number' && !Number.isFinite(res)) ? (
           <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.angle')} si={res.ang} category="angle" unitId="deg" unitIds={TOOL_UNIT_SETS.angle} digits={4} accent />
             <ResultCard label={t('fields.infov')} value={formatNumber(res.inFov,6)} />
           </div>

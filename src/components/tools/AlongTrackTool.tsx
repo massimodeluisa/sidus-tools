@@ -76,7 +76,7 @@ export function AlongTrackTool() {
       }
       results={
         res.dMfromY != null && res.yFromM != null ? (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard
               label={t('fields.m_from_y')}
               si={res.dMfromY}

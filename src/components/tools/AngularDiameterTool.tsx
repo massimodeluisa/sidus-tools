@@ -27,7 +27,7 @@ export function AngularDiameterTool() {
         <BodySelect value={p.body} onChange={(body) => setP({ body })} />
         <UiUnitField label={t('fields.distance')} category="length" unitIds={TOOL_UNIT_SETS.length} unitId={p.du} value={p.d} min={0.001} onValueChange={(d) => setP({ d })} onUnitChange={(du, d) => setP({ du, d })} />
       </ParamsGrid>}
-      results={a != null ? <div className="grid gap-3 sm:grid-cols-2">
+      results={a != null ? <div className="sidus-results">
         <ResultCard label={t('fields.angular_diameter')} si={a} category="angle" unitId="deg" unitIds={TOOL_UNIT_SETS.angle} digits={4} accent />
       </div> : <p className="font-mono text-sm text-muted">{t('fields.distance_exceed_radius')}</p>}
       code={<CodeExport formulaId="angular-diameter" values={{ d, R: body.radius, body: p.body, du: p.du }} />}

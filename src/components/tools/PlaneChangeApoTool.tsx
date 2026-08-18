@@ -34,7 +34,7 @@ export function PlaneChangeApoTool() {
         <UiUnitField label={t('fields.apoapsis_altitude')} category="length" unitIds={TOOL_UNIT_SETS.altitude} unitId={p.hu} value={p.ha} min={0} onValueChange={(ha) => setP({ ha })} onUnitChange={(hu, ha) => setP({ hu, ha })} />
         <UiUnitField label={t('fields.i_2')} category="angle" unitIds={TOOL_UNIT_SETS.angle} unitId={p.diu} value={p.di} onValueChange={(di) => setP({ di })} onUnitChange={(diu, di) => setP({ diu, di })} />
       </ParamsGrid>}
-      results={res ? <div className="grid gap-3 sm:grid-cols-2">
+      results={res ? <div className="sidus-results">
         <ResultCard label={t('fields.v_at_periapsis')} si={res.dvPeri} category="velocity" unitId="kmps" unitIds={TOOL_UNIT_SETS.velocity} digits={4} />
         <ResultCard label={t('fields.v_at_apoapsis')} si={res.dvApo} category="velocity" unitId="kmps" unitIds={TOOL_UNIT_SETS.velocity} digits={4} accent />
         <ResultCard label={t('fields.cost_ratio_apo_peri')} value={res.ratio.toFixed(4)} />

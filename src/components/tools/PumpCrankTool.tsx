@@ -54,7 +54,7 @@ export function PumpCrankTool() {
         !res ? (
           <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.turn_flyby')} si={res.turn} category="angle" unitId="deg" unitIds={TOOL_UNIT_SETS.angle} digits={3} accent />
             <ResultCard label={t('fields.eccentricity')} value={formatNumber(res.e, 6)} />
             <ResultCard label={t('fields.vinf_out')} si={res.vInfOutMag} category="velocity" unitId="kmps" unitIds={TOOL_UNIT_SETS.velocity} digits={4} />

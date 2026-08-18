@@ -106,7 +106,7 @@ export function PorkchopEarthMarsTool() {
         !res || !res.bestDv ? (
           <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.grid_cells')} value={String(res.cells.length)} />
             <ResultCard
               label={t('fields.porkchop_min_dv')}

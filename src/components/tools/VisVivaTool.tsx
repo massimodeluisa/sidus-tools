@@ -92,7 +92,7 @@ export function VisVivaTool() {
             {t('fields.visviva_negative')}
           </p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard
               label={t('fields.orbital_speed')}
               si={results.v}

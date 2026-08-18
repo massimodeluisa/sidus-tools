@@ -33,7 +33,7 @@ export function ApoRaiseTool() {
         <UiUnitField label={t('fields.circular_altitude_burn')} category="length" unitIds={TOOL_UNIT_SETS.altitude} unitId={p.hu} value={p.h} min={0} onValueChange={(h) => setP({ h })} onUnitChange={(hu, h) => setP({ hu, h })} />
         <UiUnitField label={t('fields.target_apoapsis_altitude')} category="length" unitIds={TOOL_UNIT_SETS.altitude} unitId={p.hu} value={p.ha} min={0} onValueChange={(ha) => setP({ ha })} onUnitChange={(hu, ha) => setP({ hu, ha })} />
       </ParamsGrid>}
-      results={res ? <div className="grid gap-3 sm:grid-cols-2">
+      results={res ? <div className="sidus-results">
         <ResultCard label={t('fields.v_raise_apo')} si={res.dv} category="velocity" unitId="kmps" unitIds={TOOL_UNIT_SETS.velocity} digits={4} accent />
         <ResultCard label={t('fields.v_p_after_burn')} si={res.vp} category="velocity" unitId="kmps" unitIds={TOOL_UNIT_SETS.velocity} digits={4} />
         <ResultCard label={t('fields.transfer_a')} si={res.a} category="length" unitId="km" unitIds={TOOL_UNIT_SETS.length} digits={1} />

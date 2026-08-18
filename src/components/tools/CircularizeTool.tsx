@@ -41,7 +41,7 @@ export function CircularizeTool() {
           ]}
         />
       </ParamsGrid>}
-      results={res ? <div className="grid gap-3 sm:grid-cols-2">
+      results={res ? <div className="sidus-results">
         <ResultCard label={t('fields.delta_v_circularize')} si={res.dv} category="velocity" unitId="kmps" unitIds={TOOL_UNIT_SETS.velocity} digits={4} accent />
         <ResultCard label={t('fields.r_aps')} si={res.r} category="length" unitId="km" unitIds={TOOL_UNIT_SETS.length} digits={2} />
         <ResultCard label={t('fields.v_ellipse')} si={res.vEll} category="velocity" unitId="kmps" unitIds={TOOL_UNIT_SETS.velocity} digits={4} />

@@ -38,7 +38,7 @@ export function TtcEbnoTool() {
         res == null || (typeof res === 'number' && !Number.isFinite(res)) ? (
           <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.ebn0')} value={formatNumber(res.eb,6)} accent />
             <ResultCard label={t('fields.ebn0_db')} value={formatNumber(res.ebDb,4)} unit="dB" />
           </div>

@@ -107,7 +107,7 @@ export function LookAnglesTool() {
         ) : !look ? (
           <p className="font-mono text-sm text-muted">{t('fields.no_look_angles')}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard
               label={t('fields.azimuth')}
               si={look.azimuthRad}

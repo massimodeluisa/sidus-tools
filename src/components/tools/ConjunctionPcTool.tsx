@@ -95,7 +95,7 @@ export function ConjunctionPcTool() {
         !res || primary == null ? (
           <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sidus-results">
             <ResultCard label={t('fields.pc_collision')} value={formatNumber(primary, 6)} accent />
             <ResultCard label={t('fields.pc_chan_value')} value={formatNumber(res.chan, 6)} />
             <ResultCard label={t('fields.pc_foster_value')} value={formatNumber(res.foster, 6)} />

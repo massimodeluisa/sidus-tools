@@ -36,7 +36,7 @@ export function EclipseBetaTool() {
         <UiUnitField label={t('fields.altitude')} category="length" unitIds={TOOL_UNIT_SETS.altitude} unitId={p.hu} value={p.h} min={0} onValueChange={(h) => setP({ h })} onUnitChange={(hu, h) => setP({ hu, h })} />
         <UiUnitField label={t('fields.beta_angle')} category="angle" unitIds={TOOL_UNIT_SETS.angle} unitId={p.betaU} value={p.beta} onValueChange={(beta) => setP({ beta })} onUnitChange={(betaU, beta) => setP({ betaU, beta })} hint={t('fields.sun_elev_hint')} />
       </ParamsGrid>}
-      results={res && res.te != null && res.frac != null ? <div className="grid gap-3 sm:grid-cols-2">
+      results={res && res.te != null && res.frac != null ? <div className="sidus-results">
         <ResultCard label={t('fields.eclipse_duration')} si={res.te} category="time" unitId="pretty" unitIds={TOOL_UNIT_SETS.timePretty} digits={4} accent />
         <ResultCard label={t('fields.fraction')} value={(res.frac * 100).toFixed(2)} unit="%" />
         <ResultCard label={t('fields.orbit_period')} si={res.period} category="time" unitId="pretty" unitIds={TOOL_UNIT_SETS.timePretty} digits={4} />

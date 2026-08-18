@@ -69,7 +69,7 @@ export function MassRatioStagesTool() {
         </ParamsGrid>
       }
       results={
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="sidus-results">
           <ResultCard label={t('fields.gross_payload_ideal')} value={res.grossOverPayload.toFixed(2)} accent />
           <ResultCard
             label={t('fields.gross_mass')}
