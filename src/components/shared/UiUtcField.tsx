@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Field } from '@/components/shared/Field'
+import { tooltipProps } from '@/components/shared/tooltip'
 import {
   fromUtcDatetimeLocalValue,
   nowUtcIso,
@@ -59,21 +60,27 @@ export function UiUtcField({
           <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.12em] text-muted">
             {t('fields.utc_picker')}
           </span>
-          <input
-            type="datetime-local"
-            step={1}
-            value={pickerValue}
-            onChange={(e) => {
-              const v = e.target.value
-              if (!v) {
-                if (emptyMeansNow) onChange('')
-                return
-              }
-              onChange(fromUtcDatetimeLocalValue(v))
-            }}
-            className="h-9 min-w-0 flex-1 border border-border bg-bg px-2.5 font-mono text-base tabular text-white outline-none transition-colors focus:border-border-strong [color-scheme:dark]"
-            title={t('fields.utc_picker_hint')}
-          />
+          <span
+            {...tooltipProps(
+              t('fields.utc_picker_hint'),
+              'min-w-0 flex-1',
+            )}
+          >
+            <input
+              type="datetime-local"
+              step={1}
+              value={pickerValue}
+              onChange={(e) => {
+                const v = e.target.value
+                if (!v) {
+                  if (emptyMeansNow) onChange('')
+                  return
+                }
+                onChange(fromUtcDatetimeLocalValue(v))
+              }}
+              className="h-9 min-w-0 w-full border border-border bg-bg px-2.5 font-mono text-base tabular text-white outline-none transition-colors focus:border-border-strong [color-scheme:dark]"
+            />
+          </span>
         </label>
         <button
           type="button"

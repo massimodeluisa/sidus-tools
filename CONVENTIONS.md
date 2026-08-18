@@ -76,6 +76,7 @@ When adding or renaming a tool:
 | Artifact | Update |
 |----------|--------|
 | `src/data/tools.ts` | `id`, `category`, `title`, `description`, `tags`, `formulaId`, `status`, `sourceIds` |
+| `src/data/toolDates.ts` | `created`, `updated` ISO 8601 dates (YYYY-MM-DD), merged onto `ToolMeta` |
 | `src/components/tools/*Tool.tsx` | Implementation |
 | `src/components/tools/ToolRenderer.tsx` | Lazy map entry |
 | `src/lib/snippets/` | Snippets for `formulaId` |

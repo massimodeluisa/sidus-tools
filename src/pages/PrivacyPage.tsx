@@ -42,6 +42,10 @@ export function PrivacyPage() {
           <p className="mt-2">{t('privacy.gtm_body')}</p>
         </section>
         <section>
+          <h2 className="font-display text-lg font-semibold text-fg">{t('privacy.cf_title')}</h2>
+          <p className="mt-2">{t('privacy.cf_body')}</p>
+        </section>
+        <section>
           <h2 className="font-display text-lg font-semibold text-fg">
             {t('privacy.cookies_title')}
           </h2>

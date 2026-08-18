@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { FieldPresets, PresetChip } from '@/components/shared/Field'
+import { tooltipProps } from '@/components/shared/tooltip'
 import {
   LAUNCH_SITES,
   matchLaunchSite,
@@ -33,11 +34,12 @@ export function LaunchSitePresets({ onSelect, latDeg, lonDeg, className }: Props
         <PresetChip
           key={site.id}
           type="button"
-          title={site.name}
+          {...tooltipProps(site.name)}
           active={active?.id === site.id}
           onClick={() => onSelect(site)}
         >
           {site.label}
+          <span className="sr-only">{site.name}</span>
         </PresetChip>
       ))}
     </FieldPresets>

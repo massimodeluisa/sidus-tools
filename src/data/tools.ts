@@ -1,4 +1,5 @@
 import { normalizeTags } from '../lib/tags'
+import { TOOL_DATES } from './toolDates'
 
 export type ToolCategory =
   | 'orbital'
@@ -18,6 +19,10 @@ export type ToolMeta = {
   formulaId?: string
   status: 'live' | 'wave1' | 'catalog'
   sourceIds?: string[]
+  /** ISO 8601 calendar date (YYYY-MM-DD) when the tool first landed. */
+  created?: string
+  /** ISO 8601 calendar date (YYYY-MM-DD) of the last implementation update. */
+  updated?: string
 }
 
 /**
@@ -1797,6 +1802,146 @@ const TOOLS_RAW: ToolMeta[] = [
     status: 'live' as const,
     sourceIds: ["nasa-grc","curtis"],
   },
+  {
+    id: 'molniya-tundra',
+    category: 'orbital',
+    title: 'Molniya / Tundra orbit',
+    description: 'Critical inclination, period, eccentricity and apogee dwell for HEO class orbits.',
+    tags: ['orbital', 'mission-design', 'geo'],
+    formulaId: 'molniya-tundra',
+    status: 'live' as const,
+    sourceIds: ['vallado', 'curtis'],
+  },
+  {
+    id: 'frozen-orbit',
+    category: 'orbital',
+    title: 'J2/J3 frozen eccentricity',
+    description: 'First-order frozen eccentricity from J2, J3, SMA and inclination.',
+    tags: ['orbital', 'mission-design'],
+    formulaId: 'frozen-orbit',
+    status: 'live' as const,
+    sourceIds: ['vallado', 'curtis'],
+  },
+  {
+    id: 'thrust-to-weight',
+    category: 'propulsion',
+    title: 'Thrust-to-weight',
+    description: 'T/W = F / (m g0) at ignition or landing.',
+    tags: ['propulsion', 'launch', 'analysis'],
+    formulaId: 'thrust-to-weight',
+    status: 'live' as const,
+    sourceIds: ['nasa-grc', 'curtis'],
+  },
+  {
+    id: 'planck-radiance',
+    category: 'utilities',
+    title: 'Planck spectral radiance',
+    description: 'Blackbody B_λ(λ, T) for thermal and optical payload teaching.',
+    tags: ['thermal', 'optical', 'analysis'],
+    formulaId: 'planck-radiance',
+    status: 'live' as const,
+    sourceIds: ['nasa-grc', 'curtis'],
+  },
+  {
+    id: 'eirp-gt',
+    category: 'satellite',
+    title: 'EIRP and G/T',
+    description: 'EIRP = P G and receive figure of merit G/T.',
+    tags: ['RF', 'comms', 'satellite'],
+    formulaId: 'eirp-gt',
+    status: 'live' as const,
+    sourceIds: ['nasa-grc', 'vallado'],
+  },
+  {
+    id: 'quaternion-euler',
+    category: 'satellite',
+    title: 'Quaternion / Euler 3-2-1',
+    description: 'Aerospace yaw-pitch-roll, quaternion and DCM of a rotation.',
+    tags: ['GNC', 'pointing', 'math'],
+    formulaId: 'quaternion-euler',
+    status: 'live' as const,
+    sourceIds: ['vallado', 'curtis'],
+  },
+  {
+    id: 'porkchop-earth-mars',
+    category: 'planetary',
+    title: 'Earth-Mars porkchop sketch',
+    description: 'Circular-heliocentric Lambert grid of departure/arrival dates with C3 and Δv. Chain to patched-conic departure for parking-orbit Δv.',
+    tags: ['planetary', 'trajectory', 'mission-design', 'delta-v'],
+    formulaId: 'porkchop-earth-mars',
+    status: 'live' as const,
+    sourceIds: ['vallado', 'jpl-horizons'],
+  },
+  {
+    id: 'conjunction-pc',
+    category: 'satellite',
+    title: 'Conjunction collision probability',
+    description: 'Educational 2-D Chan or Foster Pc from miss, covariance and hard-body radii.',
+    tags: ['operations', 'satellite', 'analysis'],
+    formulaId: 'conjunction-pc',
+    status: 'live' as const,
+    sourceIds: ['vallado', 'nasa-cara'],
+  },
+  {
+    id: 'b-plane-target',
+    category: 'planetary',
+    title: 'B-plane targeting',
+    description: 'S,T,R triad, impact parameter and B·T / B·R aiming point.',
+    tags: ['planetary', 'hyperbolic', 'mission-design'],
+    formulaId: 'b-plane-target',
+    status: 'live' as const,
+    sourceIds: ['vallado', 'curtis'],
+  },
+  {
+    id: 'quest-attitude',
+    category: 'satellite',
+    title: 'TRIAD / QUEST attitude',
+    description: 'Two-vector TRIAD and Davenport QUEST quaternion.',
+    tags: ['GNC', 'pointing', 'math'],
+    formulaId: 'quest-attitude',
+    status: 'live' as const,
+    sourceIds: ['vallado', 'curtis'],
+  },
+  {
+    id: 'herrick-gibbs',
+    category: 'orbital',
+    title: 'Herrick / Gibbs orbit determination',
+    description: 'Herrick or Gibbs velocity at the middle epoch from three position samples.',
+    tags: ['orbital', 'GNC', 'analysis'],
+    formulaId: 'herrick-gibbs',
+    status: 'live' as const,
+    sourceIds: ['vallado', 'curtis'],
+  },
+  {
+    id: 'lunisolar-rates',
+    category: 'orbital',
+    title: 'Lunisolar averaged rates',
+    description: 'Doubly-averaged third-body Ω̇ and ω̇ with optional i₃, e₃, plus Kozai Θ.',
+    tags: ['orbital', 'mission-design'],
+    formulaId: 'lunisolar-rates',
+    status: 'live' as const,
+    sourceIds: ['vallado', 'curtis'],
+  },
+  {
+    id: 'pump-crank',
+    category: 'planetary',
+    title: 'Pump and crank flyby',
+    description: 'Gravity-assist turning of v∞ with pump and crank angles.',
+    tags: ['planetary', 'hyperbolic', 'mission-design'],
+    formulaId: 'pump-crank',
+    status: 'live' as const,
+    sourceIds: ['vallado', 'curtis'],
+  },
+  {
+    id: 'schweighart-sedwick',
+    category: 'orbital',
+    title: 'Schweighart-Sedwick relative motion',
+    description: 'J2-shifted CW frequencies versus classical Clohessy-Wiltshire.',
+    tags: ['rendezvous', 'relative-motion', 'GNC'],
+    formulaId: 'schweighart-sedwick',
+    status: 'live' as const,
+    sourceIds: ['vallado', 'curtis'],
+  },
 ]
 
 /**
@@ -1806,6 +1951,8 @@ const TOOLS_RAW: ToolMeta[] = [
 export const TOOLS: ToolMeta[] = TOOLS_RAW.map((t) => ({
   ...t,
   tags: normalizeTags([t.category, ...t.tags]),
+  created: t.created ?? TOOL_DATES[t.id]?.created,
+  updated: t.updated ?? TOOL_DATES[t.id]?.updated,
 }))
 
 /** All tags used on at least one tool (sorted). Catalog multi-filter: ?tags=a,b. */

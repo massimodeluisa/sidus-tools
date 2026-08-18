@@ -6,6 +6,7 @@
  */
 
 import { useId, useMemo, useState } from 'react'
+import { TooltipLabel } from '@/components/shared/tooltip'
 import { useElementSize } from './useElementSize'
 import { useVizViewport } from './useVizViewport'
 import { VizControls } from './VizControls'
@@ -534,7 +535,6 @@ export function OrbitDiagram({
             className="inline-flex max-w-full items-center gap-1.5 font-mono text-[10px] text-muted hover:text-fg"
             onMouseEnter={() => setHoverId(l.id)}
             onMouseLeave={() => setHoverId(null)}
-            title={l.detail}
           >
             <span
               className="inline-block h-0 w-3 shrink-0 border-t-2"
@@ -554,7 +554,9 @@ export function OrbitDiagram({
                 opacity: l.opacity != null && l.opacity < 0.4 ? 0.45 : 1,
               }}
             />
-            <span className="truncate">{l.label}</span>
+            <TooltipLabel tip={l.detail} className="min-w-0">
+              <span className="block truncate">{l.label}</span>
+            </TooltipLabel>
           </button>
         ))}
       </div>

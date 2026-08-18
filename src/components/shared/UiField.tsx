@@ -6,7 +6,7 @@ type Props = InputHTMLAttributes<HTMLInputElement> & {
   label: string
   unit?: string
   hint?: string
-  /** Short physical meaning: native hover tooltip on the label (no “?” icon). */
+  /** Short physical meaning: hover tooltip on the label (also in the DOM for AT / SEO). */
   tip?: string
   /** When false, omit reserved hint track (rare). Default true for grid align. */
   reserveHint?: boolean

@@ -222,7 +222,7 @@ Each tool: physics + tests + ToolShell + ParamsGrid + i18n + snippets all langs 
 | P2 | ~12 |
 | **Total backlog ideas** | **~60** (not all will ship) |
 
-Live catalog grew **93 → 175** (cap 200). Remaining room (~25) reserved for user-driven or non-duplicate ideas only.
+Live catalog grew **93 → 175** then **183** (cap 200). Remaining room reserved for user-driven or non-duplicate ideas only.
 
 ---
 
@@ -269,5 +269,86 @@ Further pure-SI ideas that remain are mostly:
 | 2 | 2026-08-11 | Subsystem gap matrix; GEO propellant budget; EP/cold gas; GNSS delay; RF Doppler/rain/radar; GG/mag torque; Libre Space / ESA OSS / smallsat EP survey themes |
 | 3 | 2026-08-11 | Shipped waves A–C (~44 tools) + pass 3 (~26) |
 | 4 | 2026-08-11 | Final high-value pure-SI (~12); **stop condition** recorded at **175** live tools |
+| 5 | 2026-08-17 | Shipped wave 1+2+3: Molniya/Tundra, frozen e, T/W, Planck, EIRP/G/T, quaternion 3-2-1, Earth–Mars porkchop sketch, conjunction Pc. Live catalog **183 / 200**. |
 
-*Discovery complete for this campaign. Next: only exceptional non-duplicate pure-SI requests under cap 200.*
+---
+
+## Pass 5 (2026-08-17): extra non-duplicate candidates not shipped
+
+Found against Omni, Globorious, NASA Ames Trajectory Browser, NASA GRC BGA, ExoAtlas, SatelliteMap TLE calculator, NASA CARA / Celestrak SOCRATES, Parkin 3D orbit, and this catalog. Deferred (cap 200; keep first-class tools educational and non-duplicate).
+
+| Candidate | Why it is interesting | Why deferred |
+|-----------|----------------------|--------------|
+| `tle-elements` | ExoAtlas / satellitemap.space TLE parsers are popular; SIDUS has SGP4 but not a TLE ↔ COE converter UI | Overlaps SGP4 + rv-elements; string-format UX, not new physics |
+| `yo-yo-despin` | Classic spin-up / despin teaching; almost no web calculator | Small ADCS toy; ship later if users ask |
+| `b-dot-detumble` | Magnetic detumble is a standard cubesat first-mode | Needs a B-field model + time integration UI |
+| `lagrange-l1-l2` | Explicit collinear Lagrange distance from CR3BP | Partial overlap with Hill + Jacobi already shipped |
+| `launch-window-leo` | MATLAB/Python COLA launch-window tools (2026) | Needs site + RAAN phasing + calendar UI |
+| `normal-oblique-shock` | NASA BGA / Globorious ascent and reentry teaching | Aero gas-dynamics; adjacent to space but not satellite-core |
+| `radiation-dose-shield` | Crew / GEO dose vs aluminum areal density | Needs empirical tables; medical-claim risk |
+| `eirp-polarization-axial` | Satcom next step after EIRP/G/T | Incremental RF; wait for demand |
+| `relative-orbit-roe` | ROE / Yamanaka–Ankersen beyond CW (already P2) | Integration-heavy; CW already shipped |
+| `nrho-period-sketch` | Trendy cislunar; NRHO period vs Jacobi | Easy to over-claim vs CR3BP design suites |
+
+Porkchop and conjunction Pc were previously P2 / “maybe later” and are now shipped as educational sketches. Ames Trajectory Browser clone, full Horizons porkchop, STK/GMAT, CEA, Smith charts, GNSS-Kalman “solutions”, and aircraft (stall/takeoff/MAC) stay out of scope.
+
+---
+
+## Pass 6 (2026-08-17): agency-dump evaluation (classify only)
+
+Dump of NASA/ESA/CNES/ISRO/JAXA/DLR catalogs and “implement these calculators” lists. **Verdict: resources-only. Do not implement this wave.** Live **183 / 200**.
+
+### Agency products (class)
+
+| Product | Class |
+|---------|-------|
+| NASA Software Catalog | add-as-resource-only |
+| GMAT | add-as-resource-only (do not wrap) |
+| CEA | add-as-resource-only (do not wrap) |
+| ORDEM | add-as-resource-only |
+| EMTG | add-as-resource-only (GitHub/catalog; SourceForge 404) |
+| ESA GODOT | add-as-resource-only (docs SSL fail here; community page 200) |
+| Hera onboard software call | do-not-wrap |
+| ESA polyhedral-gravity-model | add-as-resource-only |
+| NASA Eyes | add-as-resource-only |
+| SNAP / STEP | do-not-wrap |
+| ASI MATISSE | add-as-resource-only (official URL fetch failed) |
+| MapItaly / ASPIS | do-not-wrap |
+| NASA PDS | already on /resources (Open Data / APIs / Horizons / SPICE) |
+| github.com/nasa, github.com/esa, ESSR | add-as-resource-only |
+| PATRIUS, CELESTLAB/PSIMU | add-as-resource-only |
+| CNES 3D sat imagery | do-not-wrap |
+| Fprime, Open MCT, FEAST, Trick/JEOD, OUTPOST, openvocs | do-not-wrap |
+| pykep, Orekit, Ephemerista | add-as-resource-only |
+| JAXA Tellus / QGIS / Panoply | do-not-wrap |
+
+### Calculator ideas (class)
+
+| Idea | Class | Live id if any |
+|------|-------|----------------|
+| Laser / optical link | already live | `laser-link-budget` |
+| Conjunction / debris Pc | already live | `conjunction-pc` |
+| Edelbaum / low-thrust spiral | already live | `edelbaum-dv` |
+| Walker / revisit / swath | already live | `constellation-walker`, `revisit-time-simple`, `coverage-swath` |
+| J2 rates + drag secular | already live | `j2-drift`, `arg-perigee-drift-j2`, `drag-make-up-dv` |
+| Thermal / radiator | already live | `thermal-rad`, `heat-flux` |
+| Multi-burn CW | already live | `cw-rendezvous` |
+| Lambert / porkchop | already live | `lambert`, `porkchop-earth-mars` |
+| CEA-lite Isp | defer | overlaps `characteristic-velocity-cstar`, nozzle, OF |
+| Multi-rev Lambert | defer | incremental on `lambert` |
+| Polyhedral gravity | non-duplicate candidate | not shipped; not this wave |
+| Gibbs OD | non-duplicate candidate | not shipped; not this wave |
+| Yamanaka–Ankersen, ROE, STM, Gauss, zonal J3–J4, KS, equinoctial, covariance | defer | prior P2 / cap |
+| Primer vector, integrator lab | out of SIDUS scope | |
+
+No new survey file. Preferred later `/resources` links (2xx): software.nasa.gov, GMAT SourceForge, CEA, ORDEM, EMTG GitHub, GODOT community, esa/polyhedral-gravity-model, Eyes, PATRIUS, CNES FD, pykep, Orekit, Ephemerista, ESSR.
+
+---
+
+## Pass 7 (2026-08-18): Vallado-class dump (evaluate + ship non-duplicates)
+
+Most named items were already live (`b-plane-impact` magnitude only, `tisserand-parameter`, `frozen-orbit`, `conjunction-pc`, `kepler-propagate` Stumpff/f,g kernel, `cw-rendezvous` two-impulse, `soi`/`hill-sphere`/`patched-conic-depart`, `gravity-loss`/`finite-burn-dv`, `repeating-ground-track`, `hyperbolic-c3` turn).
+
+**Shipped (6):** `b-plane-target`, `quest-attitude`, `herrick-gibbs`, `lunisolar-rates`, `pump-crank`, `schweighart-sedwick`. Live **189 / 200**.
+
+**Deferred:** Brouwer–Lyddane, Laplace 8th-degree, Gooding double-r, batch LS, Q-law, exponential-sinusoid, Kepler solver lab, Stumpff teaching wrapper, RGT J2 designer.

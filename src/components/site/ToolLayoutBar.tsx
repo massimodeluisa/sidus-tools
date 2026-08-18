@@ -21,6 +21,8 @@ import {
   type LayoutPresetId,
   type SlotSize,
 } from '@/lib/toolUiLayout'
+import { catalogFilterPath } from '@/lib/catalogTags'
+import { tooltipProps } from '@/components/shared/tooltip'
 import { cn } from '@/lib/utils'
 
 const BAR_PRESETS: LayoutPresetId[] = ['default', 'fullwidth']
@@ -36,11 +38,9 @@ export type ToolLayoutDoc = {
   title?: string
   showBack?: boolean
   showTitle?: boolean
-  metaLine?: string
   subtitle?: string
   formula?: string
   tags?: string[]
-  showMeta?: boolean
   showSubtitle?: boolean
   showFormula?: boolean
   showTags?: boolean
@@ -323,12 +323,10 @@ export function ToolLayoutBar({
   const title = doc?.title ?? titleProp
   const showBack = doc?.showBack ?? showBackProp
   const showTitle = doc?.showTitle !== false && Boolean(title)
-  const showMeta = Boolean(doc?.showMeta && doc.metaLine)
   const showSubtitle = Boolean(doc?.showSubtitle && doc.subtitle)
   const showFormula = Boolean(doc?.showFormula && doc.formula)
   const showTags = Boolean(doc?.showTags && doc.tags && doc.tags.length > 0)
-  const hasExpandedDoc =
-    showTitle || showMeta || showSubtitle || showFormula || showTags
+  const hasExpandedDoc = showTitle || showSubtitle || showFormula || showTags
 
   // Float → dock on scroll (both breakpoints). Mobile uses fixed when docked.
   const docked = useToolChromeDock(barRef, headerPx, setMobileBarH)
@@ -523,8 +521,11 @@ export function ToolLayoutBar({
               key={id}
               type="button"
               onClick={() => setPreset(id)}
-              className={cn(btn, activePreset === id && btnActive)}
-              title={t(`layout.presets.${id}`)}
+              {...tooltipProps(
+                t(`layout.presets.${id}`),
+                cn(btn, activePreset === id && btnActive),
+                'below-end',
+              )}
             >
               {t(`layout.presets.${id}`)}
             </button>
@@ -533,8 +534,11 @@ export function ToolLayoutBar({
       <button
         type="button"
         onClick={toggleFocus}
-        className={cn(btn, 'size-9 justify-center px-0 sm:size-auto sm:px-2', ui.chrome.focus && btnActive)}
-        title={t('layout.focus_hint')}
+        {...tooltipProps(
+          t('layout.focus_hint'),
+          cn(btn, 'size-9 justify-center px-0 sm:size-auto sm:px-2', ui.chrome.focus && btnActive),
+          'below-end',
+        )}
         aria-label={t('layout.focus')}
       >
         <Maximize2 className="size-3.5" />
@@ -543,8 +547,11 @@ export function ToolLayoutBar({
       <button
         type="button"
         onClick={() => void copyLink()}
-        className={cn(btn, 'size-9 justify-center px-0 sm:size-auto sm:px-2')}
-        title={copied ? t('tool.copied') : t('layout.copy_link')}
+        {...tooltipProps(
+          copied ? t('tool.copied') : t('layout.copy_link'),
+          cn(btn, 'size-9 justify-center px-0 sm:size-auto sm:px-2'),
+          'below-end',
+        )}
         aria-label={copied ? t('tool.copied') : t('layout.copy_link')}
       >
         {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
@@ -555,10 +562,13 @@ export function ToolLayoutBar({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className={cn(btn, 'size-9 justify-center px-0 sm:size-auto sm:px-2', open && btnActive)}
+        {...tooltipProps(
+          t('layout.advanced'),
+          cn(btn, 'size-9 justify-center px-0 sm:size-auto sm:px-2', open && btnActive),
+          'below-end',
+        )}
         aria-expanded={open}
         aria-label={t('layout.advanced')}
-        title={t('layout.advanced')}
       >
         <PanelLeft className="size-3.5" />
         <span className="hidden sm:inline">{t('layout.advanced')}</span>
@@ -634,10 +644,13 @@ export function ToolLayoutBar({
                     <Link
                       to="/tools"
                       aria-label={t('tool.back')}
-                      title={t('tool.back')}
-                      className={cn(
-                        'flex min-w-0 max-w-full items-center gap-1.5 no-underline transition-colors sm:gap-2',
-                        'text-muted hover:text-fg',
+                      {...tooltipProps(
+                        t('tool.back'),
+                        cn(
+                          'flex min-w-0 max-w-full items-center gap-1.5 no-underline transition-colors sm:gap-2',
+                          'text-muted hover:text-fg',
+                        ),
+                        'below-start',
                       )}
                     >
                       {showBack ? (
@@ -722,30 +735,46 @@ export function ToolLayoutBar({
                 {title}
               </h1>
             ) : null}
-            {showMeta ? (
-              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-subtle">
-                {doc?.metaLine}
-              </p>
-            ) : null}
             {showSubtitle ? (
               <p className="prose-measure text-sm leading-relaxed text-muted sm:text-base">
                 {doc?.subtitle}
               </p>
             ) : null}
             {showFormula ? (
-              <p className="font-mono text-sm tracking-wide text-white sm:text-[15px]">
+              <p
+                {...tooltipProps(
+                  doc?.formula,
+                  'w-fit max-w-full cursor-help font-mono text-sm tracking-wide text-white sm:text-[15px]',
+                  'above-start',
+                )}
+              >
                 {doc?.formula}
               </p>
             ) : null}
             {showTags ? (
-              <div className="flex flex-wrap gap-1.5">
+              <div
+                className="flex flex-wrap gap-1.5"
+                role="group"
+                aria-label={t('tools.tags_group')}
+              >
                 {doc!.tags!.map((tg) => (
-                  <span
+                  <Link
                     key={tg}
-                    className="border border-border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-muted"
+                    to={catalogFilterPath([tg])}
+                    aria-label={t('tools.filter_by_tag', { tag: tg })}
+                    {...tooltipProps(
+                      t('tools.filter_by_tag', { tag: tg }),
+                      cn(
+                        'inline-flex cursor-pointer items-center border border-border px-1.5 py-0.5',
+                        'font-mono text-[10px] uppercase tracking-wide text-muted no-underline',
+                        'transition-colors hover:border-border-strong hover:text-fg',
+                        'outline-none focus:border-border-strong focus:text-fg',
+                      ),
+                      'above-start',
+                    )}
                   >
                     #{tg}
-                  </span>
+                  </Link>
                 ))}
               </div>
             ) : null}

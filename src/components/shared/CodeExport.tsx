@@ -13,6 +13,7 @@ import {
   type CodeLang,
 } from '@/lib/snippets'
 import { renderLiveCode, type LiveCodeValues } from '@/lib/snippets/liveValues'
+import { tooltipProps } from '@/components/shared/tooltip'
 import { cn } from '@/lib/utils'
 
 type Props = {
@@ -134,8 +135,11 @@ export function CodeExport({ formulaId, values }: Props) {
               type="button"
               onClick={() => void onRun()}
               disabled={running}
-              title={runOptions[0]?.note ?? t('tool.run_online')}
-              className="pointer-events-auto inline-flex h-8 items-center gap-1.5 border border-border-strong bg-surface/95 px-2.5 font-mono text-[10px] uppercase tracking-[0.12em] text-signal shadow-sm backdrop-blur-sm transition-colors hover:text-fg disabled:opacity-60"
+              {...tooltipProps(
+                runOptions[0]?.note ?? t('tool.run_online'),
+                'pointer-events-auto inline-flex h-8 items-center gap-1.5 border border-border-strong bg-surface/95 px-2.5 font-mono text-[10px] uppercase tracking-[0.12em] text-signal shadow-sm backdrop-blur-sm transition-colors hover:text-fg disabled:opacity-60',
+                'below-end',
+              )}
             >
               <Play size={12} />
               {running ? '…' : t('tool.run')}

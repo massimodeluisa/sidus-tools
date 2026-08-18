@@ -1,4 +1,5 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import { useId, type ButtonHTMLAttributes, type ReactNode } from 'react'
+import { describeControl, TooltipLabel, tooltipProps } from '@/components/shared/tooltip'
 import { tipForLabel } from '@/lib/fieldTips'
 import { cn } from '@/lib/utils'
 
@@ -12,7 +13,7 @@ export type FieldProps = {
   meta?: ReactNode
   /** Helper under the control. Empty still reserves the hint track for alignment. */
   hint?: string
-  /** Native tooltip on the label (falls back to tipForLabel). */
+  /** Physical meaning: styled tooltip + sr-only / aria-describedby (falls back to tipForLabel). */
   tip?: string
   /** Main control: input, select, custom. Stretched to full width. */
   children: ReactNode
@@ -54,33 +55,29 @@ export function Field({
    */
   reserveHint = true,
 }: FieldProps) {
+  const tipId = useId()
   const resolvedTip = tip ?? tipForLabel(label)
   const showHintTrack = reserveHint || Boolean(hint)
-  // Full label always available via title (and tip if present)
-  const titleText = [label, resolvedTip].filter(Boolean).join(': ')
+  const control = describeControl(children, resolvedTip ? tipId : undefined)
 
   return (
     <div
       className={cn(
         // Auto-grow tracks: large text / accessibility zoom must not clip or overflow.
         // minmax keeps ParamsGrid cells roughly aligned when labels stay short.
-        'grid min-w-0 max-w-full grid-rows-[minmax(2.5rem,auto)_minmax(2.75rem,auto)_minmax(1.15rem,auto)] gap-y-1.5',
+        'grid min-w-0 max-w-full grid-rows-[minmax(2.5rem,auto)_minmax(2.75rem,auto)_minmax(1.15rem,auto)] gap-y-1.5 overflow-visible',
         className,
       )}
     >
       {/* Track 1: label wraps; meta shrinks but never forces horizontal page overflow */}
-      <div className="flex min-h-10 min-w-0 items-start justify-between gap-2">
-        <span
-          className={cn(
-            'min-w-0 flex-1 font-mono text-[10px] uppercase leading-tight tracking-[0.12em] text-muted sm:text-[11px]',
-            // Prefer wrap over ellipsis so "Initial P" stays readable
-            'line-clamp-3 break-words hyphens-auto',
-            resolvedTip && 'cursor-help',
-          )}
-          title={titleText}
+      <div className="flex min-h-10 min-w-0 items-start justify-between gap-2 overflow-visible">
+        <TooltipLabel
+          tip={resolvedTip}
+          describeId={resolvedTip ? tipId : undefined}
+          className="min-w-0 flex-1 font-mono text-[10px] uppercase leading-tight tracking-[0.12em] text-muted sm:text-[11px]"
         >
-          {label}
-        </span>
+          <span className="line-clamp-3 break-words hyphens-auto">{label}</span>
+        </TooltipLabel>
         {meta != null ? (
           <div className="flex min-h-6 max-w-[45%] shrink-0 items-center justify-end">
             {meta}
@@ -92,7 +89,7 @@ export function Field({
 
       {/* Track 2: control — min height for 16px mobile type, grows if needed */}
       <div className="flex min-h-11 min-w-0 items-stretch sm:min-h-9 [&_input]:min-h-0 [&_input]:w-full [&_select]:min-h-0 [&_select]:w-full">
-        {children}
+        {control}
       </div>
 
       {/* Track 3: hint — wrap long help text instead of overflowing */}
@@ -187,12 +184,16 @@ export function PresetChip({
 
 /** Static unit text for the Field meta slot (matches unit-select height). */
 export function FieldMetaText({ children }: { children: ReactNode }) {
+  const full = typeof children === 'string' ? children : undefined
   return (
     <span
-      className="max-w-[7rem] truncate font-mono text-[10px] uppercase tracking-wider text-subtle"
-      title={typeof children === 'string' ? children : undefined}
+      {...tooltipProps(
+        full,
+        'max-w-[7rem] font-mono text-[10px] uppercase tracking-wider text-subtle',
+        'above-end',
+      )}
     >
-      {children}
+      <span className="block truncate">{children}</span>
     </span>
   )
 }

@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ToolShell } from '@/components/shared/ToolShell'
 import { ParamsGrid } from '@/components/shared/ParamsGrid'
@@ -67,7 +68,14 @@ export function PatchedConicDepartTool() {
             onUnitChange={(hu, h) => setP({ hu, h })}
           />
           <p className="text-xs leading-relaxed text-muted">
-            {t('fields.patched_conic_note')}
+            {t('fields.patched_conic_note')}{' '}
+            <Link
+              to="/tools/porkchop-earth-mars"
+              className="text-signal underline-offset-2 hover:underline"
+            >
+              {t('fields.patched_conic_window_link')}
+            </Link>
+            .
           </p>
         </ParamsGrid>
       }

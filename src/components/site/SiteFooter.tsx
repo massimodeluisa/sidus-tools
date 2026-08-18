@@ -8,6 +8,7 @@ import {
 
   Terminal,
 } from 'lucide-react'
+import { tooltipProps } from '@/components/shared/tooltip'
 import { openCookiePreferences } from '@/lib/gtm'
 import { cn } from '@/lib/utils'
 
@@ -15,6 +16,11 @@ const GITHUB = 'https://github.com/massimodeluisa/sidus-tools'
 const AUTHOR = 'https://massimo.deluisa.bio'
 const GROK_BUILD = 'https://x.ai/build'
 const MCP_URL = 'https://sidus.tools/api/mcp'
+const UNITS_PATH = '/tools/units'
+const MCP_PATH = '/resources'
+
+const FOOTER_BADGE_CLASS =
+  'inline-flex cursor-pointer items-center gap-1 border border-border bg-surface px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.12em] text-subtle no-underline outline-none transition-colors hover:border-border-strong hover:bg-surface-hover hover:text-fg focus-visible:border-border-strong focus-visible:bg-surface-hover focus-visible:text-fg'
 
 type FooterLink = {
   label: string
@@ -108,7 +114,7 @@ export function SiteFooter() {
 
   return (
     <footer
-      className="relative z-10 mt-auto max-w-full min-w-0 overflow-x-clip border-t border-border"
+      className="relative z-10 mt-auto max-w-full min-w-0 overflow-visible border-t border-border"
       style={{ backgroundColor: 'var(--color-bg-elevated)' }}
     >
       {/*
@@ -177,16 +183,30 @@ export function SiteFooter() {
                 {t('footer.brand_blurb')}
               </p>
               <div className="mt-3 flex flex-wrap gap-1.5">
-                <span className="inline-flex items-center border border-border bg-surface px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.12em] text-subtle">
+                <a
+                  href={GITHUB}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={t('footer.badge_oss_aria')}
+                  {...tooltipProps(t('footer.badge_oss_aria'), FOOTER_BADGE_CLASS, 'above-start')}
+                >
                   {t('footer.badge_oss')}
-                </span>
-                <span className="inline-flex items-center border border-border bg-surface px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.12em] text-subtle">
+                </a>
+                <Link
+                  to={UNITS_PATH}
+                  aria-label={t('footer.badge_si_aria')}
+                  {...tooltipProps(t('footer.badge_si_aria'), FOOTER_BADGE_CLASS, 'above-start')}
+                >
                   {t('footer.badge_si')}
-                </span>
-                <span className="inline-flex items-center gap-1 border border-border bg-surface px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.12em] text-subtle">
-                  <Terminal className="size-2.5" />
+                </Link>
+                <Link
+                  to={MCP_PATH}
+                  aria-label={t('footer.badge_mcp_aria')}
+                  {...tooltipProps(t('footer.badge_mcp_aria'), FOOTER_BADGE_CLASS, 'above-start')}
+                >
+                  <Terminal className="size-2.5" aria-hidden />
                   {t('footer.badge_mcp')}
-                </span>
+                </Link>
               </div>
             </div>
 
@@ -196,7 +216,7 @@ export function SiteFooter() {
 
           {/* Disclaimer + legal in one compact bottom band */}
           <div className="space-y-4 border-t border-border py-5">
-            <p className="max-w-3xl text-[11px] leading-relaxed text-muted sm:text-xs">
+            <p className="text-[11px] leading-relaxed text-muted sm:text-xs">
               {t('footer.disclaimer')}
             </p>
             <div

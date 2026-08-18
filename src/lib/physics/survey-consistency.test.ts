@@ -26,6 +26,15 @@ describe('tools catalog quality gates', () => {
     expect(normalizeTags(['life-support', 'ECLSS'])).toEqual(['ECLSS'])
   })
 
+  it('created and updated are ISO 8601 dates with created <= updated', () => {
+    const iso = /^\d{4}-\d{2}-\d{2}$/
+    for (const tool of TOOLS) {
+      expect(tool.created, `${tool.id} created`).toMatch(iso)
+      expect(tool.updated, `${tool.id} updated`).toMatch(iso)
+      expect(tool.created! <= tool.updated!, tool.id).toBe(true)
+    }
+  })
+
   it('published tags are already normalized (no legacy ppO2 leftover)', () => {
     for (const tool of TOOLS) {
       expect(tool.tags).toEqual(normalizeTags(tool.tags))

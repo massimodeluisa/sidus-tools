@@ -157,6 +157,20 @@ import { solarFluxDistanceSnippets } from './tools/solar-flux-distance'
 import { nyquistRateSnippets } from './tools/nyquist-rate'
 import { dataVolumeSnippets } from './tools/data-volume'
 import { earthIrFluxSnippets } from './tools/earth-ir-flux'
+import { molniyaTundraSnippets } from './tools/molniya-tundra'
+import { frozenOrbitSnippets } from './tools/frozen-orbit'
+import { thrustToWeightSnippets } from './tools/thrust-to-weight'
+import { planckRadianceSnippets } from './tools/planck-radiance'
+import { eirpGtSnippets } from './tools/eirp-gt'
+import { quaternionEulerSnippets } from './tools/quaternion-euler'
+import { porkchopEarthMarsSnippets } from './tools/porkchop-earth-mars'
+import { conjunctionPcSnippets } from './tools/conjunction-pc'
+import { bPlaneTargetSnippets } from './tools/b-plane-target'
+import { questAttitudeSnippets } from './tools/quest-attitude'
+import { herrickGibbsSnippets } from './tools/herrick-gibbs'
+import { lunisolarRatesSnippets } from './tools/lunisolar-rates'
+import { pumpCrankSnippets } from './tools/pump-crank'
+import { schweighartSedwickSnippets } from './tools/schweighart-sedwick'
 
 export * from './types'
 export * from './liveValues'
@@ -338,6 +352,20 @@ const MAP: Record<string, FormulaSnippet> = {
   [nyquistRateSnippets.formulaId]: nyquistRateSnippets,
   [dataVolumeSnippets.formulaId]: dataVolumeSnippets,
   [earthIrFluxSnippets.formulaId]: earthIrFluxSnippets,
+  [molniyaTundraSnippets.formulaId]: molniyaTundraSnippets,
+  [frozenOrbitSnippets.formulaId]: frozenOrbitSnippets,
+  [thrustToWeightSnippets.formulaId]: thrustToWeightSnippets,
+  [planckRadianceSnippets.formulaId]: planckRadianceSnippets,
+  [eirpGtSnippets.formulaId]: eirpGtSnippets,
+  [quaternionEulerSnippets.formulaId]: quaternionEulerSnippets,
+  [porkchopEarthMarsSnippets.formulaId]: porkchopEarthMarsSnippets,
+  [conjunctionPcSnippets.formulaId]: conjunctionPcSnippets,
+  [bPlaneTargetSnippets.formulaId]: bPlaneTargetSnippets,
+  [questAttitudeSnippets.formulaId]: questAttitudeSnippets,
+  [herrickGibbsSnippets.formulaId]: herrickGibbsSnippets,
+  [lunisolarRatesSnippets.formulaId]: lunisolarRatesSnippets,
+  [pumpCrankSnippets.formulaId]: pumpCrankSnippets,
+  [schweighartSedwickSnippets.formulaId]: schweighartSedwickSnippets,
 }
 
 export function getSnippets(formulaId: string): FormulaSnippet | undefined {

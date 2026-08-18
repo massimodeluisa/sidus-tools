@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ToolRenderer } from '@/components/tools/ToolRenderer'
-import { getTool, primaryTag } from '@/data/tools'
+import { getTool } from '@/data/tools'
 import { resolveSources } from '@/data/sources'
 import { Panel } from '@/components/shared/Panel'
 import { SeoHead } from '@/components/site/SeoHead'
@@ -17,6 +17,7 @@ import {
   seedLayoutFromPrefs,
   usesTightPagePad,
 } from '@/lib/toolUiLayout'
+import { tooltipProps } from '@/components/shared/tooltip'
 import { cn } from '@/lib/utils'
 
 export function ToolDetailPage() {
@@ -91,6 +92,8 @@ export function ToolDetailPage() {
           operatingSystem: 'Web',
           offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
           keywords: tool.tags.join(', '),
+          ...(tool.created ? { datePublished: tool.created } : {}),
+          ...(tool.updated ? { dateModified: tool.updated } : {}),
         }}
       />
 
@@ -103,14 +106,6 @@ export function ToolDetailPage() {
             title: tool.title,
             showBack: ui.chrome.back,
             showTitle: ui.chrome.title,
-            showMeta: ui.chrome.meta,
-            metaLine: [
-              `#${primaryTag(tool)}`,
-              tool.status === 'live' ? t('tools.status.live') : null,
-              tool.status === 'wave1' ? t('tools.status.wave1') : null,
-            ]
-              .filter(Boolean)
-              .join(' · '),
             showSubtitle: ui.chrome.subtitle,
             subtitle: tool.description,
             showFormula: ui.chrome.formula,
@@ -172,11 +167,38 @@ export function ToolDetailPage() {
         ) : null}
 
         {showEdit ? (
-          <div className="border-t border-border pt-4">
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-border pt-4">
             <EditOnGitHub path={toolSourcePath(tool.id)} />
+            <ToolFooterDates created={tool.created} updated={tool.updated} />
           </div>
         ) : null}
       </div>
     </div>
+  )
+}
+
+function ToolFooterDates({ created, updated }: { created?: string; updated?: string }) {
+  const { t } = useTranslation()
+  if (!created && !updated) return null
+  return (
+    <p className="flex flex-wrap items-center gap-x-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-subtle">
+      {created ? (
+        <time
+          dateTime={created}
+          {...tooltipProps(t('tool.created', { date: created }), 'cursor-help')}
+        >
+          {t('tool.created', { date: created })}
+        </time>
+      ) : null}
+      {created && updated ? <span aria-hidden> · </span> : null}
+      {updated ? (
+        <time
+          dateTime={updated}
+          {...tooltipProps(t('tool.updated', { date: updated }), 'cursor-help')}
+        >
+          {t('tool.updated', { date: updated })}
+        </time>
+      ) : null}
+    </p>
   )
 }

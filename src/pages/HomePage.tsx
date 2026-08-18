@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowRight } from 'lucide-react'
 import { TOOLS, primaryTag } from '@/data/tools'
+import { catalogFilterPath } from '@/lib/catalogTags'
 import { SeoHead } from '@/components/site/SeoHead'
 import { McpConnectCard } from '@/components/site/McpConnectCard'
 import { AsciiOrbitField } from '@/components/site/AsciiOrbitField'
@@ -54,7 +55,7 @@ export function HomePage() {
       kicker: '01',
       title: t('home.highlights.orbital.title'),
       body: t('home.highlights.orbital.body'),
-      href: '/tools?tags=orbital',
+      href: catalogFilterPath(['orbital']),
       Svg: OrbitSvg,
     },
     {
@@ -62,7 +63,7 @@ export function HomePage() {
       kicker: '02',
       title: t('home.highlights.propulsion.title'),
       body: t('home.highlights.propulsion.body'),
-      href: '/tools?tags=propulsion',
+      href: catalogFilterPath(['propulsion']),
       Svg: TransferSvg,
     },
     {
@@ -272,7 +273,7 @@ export function HomePage() {
           {TAG_CLOUD.map((tg, i) => (
             <Link
               key={tg}
-              to={`/tools?tags=${tg}`}
+              to={catalogFilterPath([tg])}
               style={{ ['--sidus-tag-delay' as string]: `${i * 45}ms` }}
               className="sidus-motion-tag border border-border bg-surface px-3 py-2 font-mono text-[11px] uppercase tracking-wider text-muted no-underline transition-colors hover:border-border-strong hover:text-fg"
             >

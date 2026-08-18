@@ -50,9 +50,11 @@ SIDUS (Latin *sidus* = constellation) is a non-profit educational project with n
 - [Circular -> escape deltav](https://sidus.tools/tools/escape-margin): deltav from circular speed to local escape (sqrt2-1)v_c.
 - [Flight-path angle](https://sidus.tools/tools/flight-path-angle): tan = e sin nu / (1+e cos nu).
 - [Flyby periapsis speed](https://sidus.tools/tools/flyby-speed): v_p = sqrt(v_inf2 + v_esc2) at flyby periapsis.
+- [J2/J3 frozen eccentricity](https://sidus.tools/tools/frozen-orbit): First-order frozen eccentricity from J2, J3, SMA and inclination.
 - [GEO drift rate](https://sidus.tools/tools/geo-drift-rate): Longitude drift from a vs a_GEO.
 - [GEO / sync radius](https://sidus.tools/tools/geo-orbit): Synchronous circular radius and altitude for a given period (Earth sidereal day default).
 - [GEO stationkeeping deltav](https://sidus.tools/tools/geo-stationkeeping-dv): Yearly N/S and E/W deltav sketch.
+- [Herrick / Gibbs orbit determination](https://sidus.tools/tools/herrick-gibbs): Herrick or Gibbs velocity at the middle epoch from three position samples.
 - [Hohmann transfer](https://sidus.tools/tools/hohmann): deltav and time of flight between two circular coplanar orbits.
 - [Hohmann + plane change](https://sidus.tools/tools/hohmann-plane): Combined transfer: Hohmann first burn + circularize with plane change at apoapsis; compare to sequential.
 - [Hohmann TOF focus](https://sidus.tools/tools/hohmann-time): Time of flight and deltav for Hohmann (same physics as Hohmann tool, TOF-first UI).
@@ -61,8 +63,10 @@ SIDUS (Latin *sidus* = constellation) is a non-profit educational project with n
 - [Lambert solver](https://sidus.tools/tools/lambert): r1, r2, TOF -> transfer orbit and required deltav (Apollo-inspired targeting).
 - [Launch azimuth](https://sidus.tools/tools/launch-azimuth): Inertial launch azimuth from site latitude to target inclination + Earth-rotation boost.
 - [LOS range & range-rate](https://sidus.tools/tools/los-range-rate): rho and rho from relative position and velocity vectors (RPO / docking sensors class).
+- [Lunisolar averaged rates](https://sidus.tools/tools/lunisolar-rates): Doubly-averaged third-body and omega with optional i, e, plus Kozai .
 - [Mean anomaly from E](https://sidus.tools/tools/mean-anomaly-from-e): M=E-e sin E.
 - [Mean motion](https://sidus.tools/tools/mean-motion): n, period and circular speed from altitude: ops cadence baseline.
+- [Molniya / Tundra orbit](https://sidus.tools/tools/molniya-tundra): Critical inclination, period, eccentricity and apogee dwell for HEO class orbits.
 - [Oberth effect](https://sidus.tools/tools/oberth): Specific energy gain from the same deltav at periapsis vs apoapsis.
 - [Optical GSD](https://sidus.tools/tools/optical-gsd): Ground sample distance GSD~h.IFOV.
 - [Orbit lifetime (rough)](https://sidus.tools/tools/orbit-lifetime-rough): t~H.beta/(rho.v) educational LEO drag life.
@@ -76,6 +80,7 @@ SIDUS (Latin *sidus* = constellation) is a non-profit educational project with n
 - [Repeating ground track period](https://sidus.tools/tools/repeating-ground-track): T from k orbits in n days.
 - [Revisit time (rough)](https://sidus.tools/tools/revisit-time-simple): Order-of-magnitude revisit from period and swath.
 - [State elements](https://sidus.tools/tools/rv-elements): Convert between Cartesian state vectors and classical orbital elements.
+- [Schweighart-Sedwick relative motion](https://sidus.tools/tools/schweighart-sedwick): J2-shifted CW frequencies versus classical Clohessy-Wiltshire.
 - [Sphere of influence](https://sidus.tools/tools/soi): Laplace SOI radius r ~ a (m/M)^(2/5) for patched-conic teaching.
 - [Specific angular momentum](https://sidus.tools/tools/specific-angular-momentum): h = sqrt(mu a (1-e2)) for elliptical orbits.
 - [Sun-synchronous inclination](https://sidus.tools/tools/sso): J2-driven inclination for circular SSO at a given altitude (Earth observation / LEO design).
@@ -113,17 +118,20 @@ SIDUS (Latin *sidus* = constellation) is a non-profit educational project with n
 - [Solar sail acceleration](https://sidus.tools/tools/solar-sail-accel): a=2 P A/(c m) ideal reflection.
 - [Tank propellant mass](https://sidus.tools/tools/tank-ullage): m=V*fill*rho.
 - [Throat area sizing](https://sidus.tools/tools/throat-area-sizing): At=F/(Cf pc).
+- [Thrust-to-weight](https://sidus.tools/tools/thrust-to-weight): T/W = F / (m g0) at ignition or landing.
 - [Thruster impulse bit](https://sidus.tools/tools/thruster-impulse-bit): I_bit=F.t_on ACS pulse.
 
 ### Satellite ops
 - [Antenna beamwidth](https://sidus.tools/tools/antenna-beamwidth): Approximate half-power beamwidth ~ k lambda/D for parabolic dishes.
 - [Antenna gain and Ae](https://sidus.tools/tools/antenna-gain-effective): Ae=G*lambda^2/(4*pi).
+- [Conjunction collision probability](https://sidus.tools/tools/conjunction-pc): Educational 2-D Chan or Foster Pc from miss, covariance and hard-body radii.
 - [Downlink data volume](https://sidus.tools/tools/data-volume): V=R*T_contact*eta bits.
 - [Diffraction resolution / GSD](https://sidus.tools/tools/diffraction): ~ 1.22 lambda/D and ground sample distance at range.
 - [Diffraction limit angle](https://sidus.tools/tools/diffraction-limit): ~1.22 lambda/D aperture limit.
 - [Doppler shift](https://sidus.tools/tools/doppler-shift-leo): fd=f0*vr/c.
 - [Eclipse vs beta-angle](https://sidus.tools/tools/eclipse-beta): Eclipse duration vs orbit beta-angle (sun elevation from plane).
 - [Eclipse duration (circular)](https://sidus.tools/tools/eclipse-duration): Order-of-magnitude umbra time for circular orbit (cylindrical shadow, coplanar worst case).
+- [EIRP and G/T](https://sidus.tools/tools/eirp-gt): EIRP = P G and receive figure of merit G/T.
 - [GEO light-time](https://sidus.tools/tools/geo-light-time): One-way and RTT delay to GEO altitude (nadir path).
 - [GNSS GDOP](https://sidus.tools/tools/gnss-geometry-gdop): GDOP/PDOP/HDOP/VDOP from 4 LOS vectors.
 - [GNSS ionosphere delay](https://sidus.tools/tools/gnss-ionosphere-klobuchar): Klobuchar-class slant iono delay from TECU and elevation.
@@ -146,6 +154,8 @@ SIDUS (Latin *sidus* = constellation) is a non-profit educational project with n
 - [Optical Q-factor](https://sidus.tools/tools/optical-ber-q): Q~sqrt(SNR) educational.
 - [Pass predictor](https://sidus.tools/tools/pass-predict): Next visible pass over an observer location.
 - [Pointing budget RSS](https://sidus.tools/tools/pointing-budget-rss): sigma=sqrt(s1^2+s2^2+s3^2).
+- [Quaternion / Euler 3-2-1](https://sidus.tools/tools/quaternion-euler): Aerospace yaw-pitch-roll, quaternion and DCM of a rotation.
+- [TRIAD / QUEST attitude](https://sidus.tools/tools/quest-attitude): Two-vector TRIAD and Davenport QUEST quaternion.
 - [Radar equation](https://sidus.tools/tools/radar-equation): Monostatic Pr from Pt G lambda RCS range.
 - [Radar range resolution](https://sidus.tools/tools/radar-range-resolution): _r=c/(2 B).
 - [Rain attenuation (toy)](https://sidus.tools/tools/rain-attenuation-simple): A=k R^alpha L educational.
@@ -175,11 +185,14 @@ SIDUS (Latin *sidus* = constellation) is a non-profit educational project with n
 
 ### Planetary / interplanetary
 - [B-plane impact parameter](https://sidus.tools/tools/b-plane-impact): b=(mu/vinf2)/tan(/2) educational.
+- [B-plane targeting](https://sidus.tools/tools/b-plane-target): S,T,R triad, impact parameter and B.T / B.R aiming point.
 - [Capture circularize deltav](https://sidus.tools/tools/capture-circularize): deltav=vp_hyp-v_circ at periapsis.
 - [Heliocentric Hohmann](https://sidus.tools/tools/helio-hohmann): Coplanar circular Sun-centered Hohmann between two planetary SMAs: heliocentric deltav, TOF, phase angle, synodic window.
 - [Hill sphere](https://sidus.tools/tools/hill-sphere): r_H approx a (m/(3M))^(1/3).
 - [Hyperbolic eccentricity](https://sidus.tools/tools/hyperbolic-eccentricity): e=1+rp vinf2/mu.
 - [Patched-conic departure](https://sidus.tools/tools/patched-conic-depart): Parking-orbit deltav and C3 to inject onto a coplanar heliocentric Hohmann (educational patched conic).
+- [Earth-Mars porkchop sketch](https://sidus.tools/tools/porkchop-earth-mars): Circular-heliocentric Lambert grid of departure/arrival dates with C3 and deltav. Chain to patched-conic departure for parking-orbit deltav.
+- [Pump and crank flyby](https://sidus.tools/tools/pump-crank): Gravity-assist turning of vinf with pump and crank angles.
 - [Surface access](https://sidus.tools/tools/surface-access): Surface g, escape speed, parking circular speed, circ->esc deltav, and SOI estimate for any catalog body.
 - [Tisserand parameter](https://sidus.tools/tools/tisserand-parameter): Tisserand invariant for flyby classification.
 
@@ -205,6 +218,7 @@ SIDUS (Latin *sidus* = constellation) is a non-profit educational project with n
 - [Orbit 3D view](https://sidus.tools/tools/orbit-3d): Interactive 3D circular orbits and Hohmann-class transfer ellipse (drag to rotate, scroll to zoom).
 - [Solar panel EOL power](https://sidus.tools/tools/panel-eol-power): P=P0 (1-d)^years degradation.
 - [Parachute descent rate](https://sidus.tools/tools/parachute-descent): Terminal velocity under chute Cd A.
+- [Planck spectral radiance](https://sidus.tools/tools/planck-radiance): Blackbody B_lambda(lambda, T) for thermal and optical payload teaching.
 - [Function plotter](https://sidus.tools/tools/plotter): Plot f(x) offline with SVG: orbital and math presets.
 - [Relativistic clock rate](https://sidus.tools/tools/relativity-clock-rate): df/f ~ dPhi/c^2 - v^2/(2c^2).
 - [Exponential atmosphere rho(h)](https://sidus.tools/tools/scale-height): rho = rho0 exp(-h/H) density model.
@@ -234,4 +248,4 @@ SIDUS (Latin *sidus* = constellation) is a non-profit educational project with n
 - https://github.com/massimodeluisa/sidus-tools/blob/main/docs/IMPLEMENTATION_TODO.md
 - https://github.com/massimodeluisa/sidus-tools/blob/main/AGENTS.md
 
-<!-- generated by scripts/generate-llms-txt.ts - 175 tools - 2026-08-13 -->
+<!-- generated by scripts/generate-llms-txt.ts - 189 tools - 2026-08-18 -->

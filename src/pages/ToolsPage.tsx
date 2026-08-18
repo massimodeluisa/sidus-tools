@@ -2,43 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowRight, ListFilter, Search } from 'lucide-react'
-import { ALL_TAGS, TOOLS, primaryTag } from '@/data/tools'
+import { TOOLS, primaryTag } from '@/data/tools'
+import { parseCatalogTagsParam, serializeCatalogTags } from '@/lib/catalogTags'
+import { tooltipProps } from '@/components/shared/tooltip'
 import { cn } from '@/lib/utils'
 import { SeoHead } from '@/components/site/SeoHead'
 import { EditOnGitHub } from '@/components/site/EditOnGitHub'
-
-/** Resolve a raw tag token against catalog tags (case-insensitive). */
-function resolveTag(raw: string): string | null {
-  const bare = raw.trim().replace(/^#/, '').toLowerCase()
-  if (!bare) return null
-  return ALL_TAGS.find((t) => t.toLowerCase() === bare) ?? null
-}
-
-/**
- * Parse multi-select tags from URL.
- * Canonical: `?tags=orbital,crew` (comma-separated).
- * Legacy: `?tag=` / `?cat=` rewritten to `tags=`.
- */
-function parseTagsParam(params: URLSearchParams): string[] {
-  const multi = params.get('tags')
-  const single = params.get('tag') ?? params.get('cat')
-  const raw = multi ?? single ?? ''
-  if (!raw.trim()) return []
-  const out: string[] = []
-  const seen = new Set<string>()
-  for (const part of raw.split(/[,+|]/)) {
-    const hit = resolveTag(part)
-    if (hit && !seen.has(hit)) {
-      seen.add(hit)
-      out.push(hit)
-    }
-  }
-  return out.sort((a, b) => a.localeCompare(b))
-}
-
-function serializeTags(tags: string[]): string {
-  return [...tags].sort((a, b) => a.localeCompare(b)).join(',')
-}
 
 function useSiteHeaderOffsetPx(): number {
   const [px, setPx] = useState(() =>
@@ -206,7 +175,7 @@ export function ToolsPage() {
   }, [compact, compactFiltersOpen, headerPx])
 
   const q = searchParams.get('q') ?? ''
-  const selectedTags = useMemo(() => parseTagsParam(searchParams), [searchParams])
+  const selectedTags = useMemo(() => parseCatalogTagsParam(searchParams), [searchParams])
   const isAll = selectedTags.length === 0
 
   const patchParams = useCallback(
@@ -224,7 +193,7 @@ export function ToolsPage() {
           if ('tags' in patch) {
             const list = patch.tags ?? []
             if (list.length === 0) next.delete('tags')
-            else next.set('tags', serializeTags(list))
+            else next.set('tags', serializeCatalogTags(list))
           }
           return next
         },
@@ -238,13 +207,13 @@ export function ToolsPage() {
   useEffect(() => {
     const hasLegacy = searchParams.has('tag') || searchParams.has('cat')
     if (!hasLegacy) return
-    const merged = parseTagsParam(searchParams)
+    const merged = parseCatalogTagsParam(searchParams)
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev)
         next.delete('cat')
         next.delete('tag')
-        if (merged.length) next.set('tags', serializeTags(merged))
+        if (merged.length) next.set('tags', serializeCatalogTags(merged))
         else next.delete('tags')
         return next
       },
@@ -354,12 +323,15 @@ export function ToolsPage() {
             aria-expanded={opts.filtersOpen}
             aria-controls={opts.tagsId}
             aria-label={t('tools.filters_toggle')}
-            title={t('tools.filters_toggle')}
-            className={cn(
-              'inline-flex h-10 shrink-0 items-center gap-1.5 border px-2.5 font-mono text-[10px] uppercase tracking-[0.12em] transition-colors sm:px-3',
-              opts.filtersOpen || filterActive
-                ? 'border-border-strong bg-surface text-fg'
-                : 'border-border bg-bg/60 text-muted hover:text-fg',
+            {...tooltipProps(
+              t('tools.filters_toggle'),
+              cn(
+                'inline-flex h-10 shrink-0 items-center gap-1.5 border px-2.5 font-mono text-[10px] uppercase tracking-[0.12em] transition-colors sm:px-3',
+                opts.filtersOpen || filterActive
+                  ? 'border-border-strong bg-surface text-fg'
+                  : 'border-border bg-bg/60 text-muted hover:text-fg',
+              ),
+              'below-end',
             )}
           >
             <ListFilter className="size-3.5 shrink-0" aria-hidden />

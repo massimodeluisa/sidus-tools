@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Field } from '@/components/shared/Field'
+import { tooltipProps } from '@/components/shared/tooltip'
 import {
   formatEditableNumber,
   isPartialLocaleNumber,
@@ -24,7 +25,7 @@ type Props = {
    */
   onUnitChange: (unitId: string, convertedValue: number) => void
   hint?: string
-  /** Short physical meaning: native hover tooltip on the label (no “?” icon). */
+  /** Short physical meaning: hover tooltip on the label (also in the DOM for AT / SEO). */
   tip?: string
   min?: number
   max?: number
@@ -57,7 +58,7 @@ export function UiUnitField({
   className,
   reserveHint,
 }: Props) {
-  const { i18n } = useTranslation()
+  const { t, i18n } = useTranslation()
   const locale = i18n.language ?? 'en'
   const [draft, setDraft] = useState<string | null>(null)
   const options = (unitIds?.length
@@ -77,9 +78,17 @@ export function UiUnitField({
   }
 
   // Compact unit chrome: short symbols (Pa, mm, K) must not steal label width
+  // Tooltip lives on the <label>: ::before does not render on <select>
+  const unitTip = t('common.unit_converts')
   const unitSelect = (
-    <label className="relative inline-flex min-h-7 max-w-full shrink-0 items-center">
-      <span className="sr-only">Unit for {label}</span>
+    <label
+      {...tooltipProps(
+        unitTip,
+        'relative inline-flex min-h-7 max-w-full shrink-0 items-center overflow-visible',
+        'above-end',
+      )}
+    >
+      <span className="sr-only">{t('common.unit_for', { label })}</span>
       <select
         value={effectiveId}
         disabled={Boolean(disabled)}
@@ -92,7 +101,6 @@ export function UiUnitField({
           'focus:border-border-strong focus:text-fg',
           'disabled:cursor-not-allowed disabled:opacity-50',
         )}
-        title={`Unit: ${current?.short ?? unitId} (value converts on change)`}
       >
         {options.map((u) => (
           <option key={u.id} value={u.id}>

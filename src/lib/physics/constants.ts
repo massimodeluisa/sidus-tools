@@ -4,6 +4,7 @@ export const EARTH_MU = 3.986004418e14
 export const EARTH_RADIUS = 6_378_137
 export const EARTH_MASS = 5.9722e24
 export const SUN_MU = 1.32712440018e20
+export const MOON_MU = 4.9028e12
 export const SOLAR_MASS = 1.98847e30
 export const G = 6.6743e-11
 export const G0 = 9.80665

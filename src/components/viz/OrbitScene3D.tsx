@@ -5,7 +5,9 @@
  * Transfer geometry matches OrbitDiagram (Hohmann half-ellipse, bielliptic two legs).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Minus, Plus, RotateCcw } from 'lucide-react'
+import { tooltipProps } from '@/components/shared/tooltip'
 import { cn } from '@/lib/utils'
 
 export type TransferArc = {
@@ -263,6 +265,7 @@ export function OrbitScene3D({
   height,
   showEscapeCircularRef = true,
 }: OrbitScene3DProps) {
+  const { t } = useTranslation()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [cam, setCam] = useState<Cam>(CAM0)
   const drag = useRef<{ x: number; y: number; yaw: number; pitch: number } | null>(null)
@@ -512,28 +515,37 @@ export function OrbitScene3D({
         <div className="pointer-events-auto flex items-center gap-0.5 rounded border border-border/80 bg-bg/85 p-0.5 shadow-sm backdrop-blur-sm">
           <button
             type="button"
-            aria-label="Zoom in"
-            title="Zoom in"
+            aria-label={t('common.zoom_in')}
             onClick={() => zoomBy(1.2)}
-            className="inline-flex size-6 items-center justify-center text-muted transition-colors hover:bg-surface hover:text-fg"
+            {...tooltipProps(
+              t('common.zoom_in'),
+              'inline-flex size-6 items-center justify-center text-muted transition-colors hover:bg-surface hover:text-fg',
+              'below-end',
+            )}
           >
             <Plus size={13} aria-hidden />
           </button>
           <button
             type="button"
-            aria-label="Zoom out"
-            title="Zoom out"
+            aria-label={t('common.zoom_out')}
             onClick={() => zoomBy(1 / 1.2)}
-            className="inline-flex size-6 items-center justify-center text-muted transition-colors hover:bg-surface hover:text-fg"
+            {...tooltipProps(
+              t('common.zoom_out'),
+              'inline-flex size-6 items-center justify-center text-muted transition-colors hover:bg-surface hover:text-fg',
+              'below-end',
+            )}
           >
             <Minus size={13} aria-hidden />
           </button>
           <button
             type="button"
-            aria-label="Reset view"
-            title="Reset view"
+            aria-label={t('common.reset_view')}
             onClick={resetCam}
-            className="inline-flex size-6 items-center justify-center text-muted transition-colors hover:bg-surface hover:text-fg"
+            {...tooltipProps(
+              t('common.reset_view'),
+              'inline-flex size-6 items-center justify-center text-muted transition-colors hover:bg-surface hover:text-fg',
+              'below-end',
+            )}
           >
             <RotateCcw size={13} aria-hidden />
           </button>

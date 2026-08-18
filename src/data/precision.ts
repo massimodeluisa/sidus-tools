@@ -103,6 +103,44 @@ export const TOOL_PRECISION: Record<string, ToolPrecision> = {
   'nyquist-rate': TWO_BODY,
   'data-volume': TWO_BODY,
   'earth-ir-flux': TWO_BODY,
+  'molniya-tundra': J2,
+  'frozen-orbit': J2,
+  'thrust-to-weight': TWO_BODY,
+  'planck-radiance': TWO_BODY,
+  'eirp-gt': TWO_BODY,
+  'quaternion-euler': TWO_BODY,
+  'porkchop-earth-mars': {
+    modelClass: 'two-body-exact',
+    errorClass:
+      'Circular coplanar heliocentric Lambert. C3 and Δv are order-of-magnitude, not a JPL porkchop. Parking Δv is a separate patched-conic step.',
+    limits: `Sketch grid only. No DE440, no plane change, no launch-site constraints. ${IEEE}`,
+    referenceHint: 'Vallado Lambert + circular heliocentric elements; chain patched-conic-depart',
+  },
+  'conjunction-pc': {
+    modelClass: 'two-body-series',
+    errorClass:
+      'Chan is first-order (best when R ≪ σ). Foster is a polar quadrature of the 2-D Gaussian over the hard-body disk. Neither is NASA CARA.',
+    limits: `Educational 2-D encounter-plane Pc. Circular hard-body, miss along +x, no 3-D TCA. ${IEEE}`,
+    referenceHint: 'Chan 2008 first-order; Foster & Estes 1992 (NASA JSC 25898)',
+  },
+  'b-plane-target': TWO_BODY,
+  'quest-attitude': TWO_BODY,
+  'herrick-gibbs': {
+    modelClass: 'two-body-exact',
+    errorClass:
+      'Gibbs is exact for a two-body conic. Herrick is a short-arc Taylor method (percent-level if the arc is tens of degrees).',
+    limits: `Three-position OD. Gibbs needs coplanar samples and fails near 0°/180°. Herrick needs the sample times. ${IEEE}`,
+    referenceHint: 'Vallado Alg. 54 (Gibbs) and Herrick–Gibbs (Alg. 55 class)',
+  },
+  'lunisolar-rates': {
+    modelClass: 'j2-secular',
+    errorClass:
+      'Doubly-averaged Cook quadrupole. Optional P2(i3) and (1-e3^2)^{-3/2}. No 2ω Kozai cycles, no lunar node, no ephemeris.',
+    limits: `Secular third-body rates only. i3=e3=0 is the circular equatorial perturber. ${IEEE}`,
+    referenceHint: 'Cook 1962 / Vallado third-body; P2 and elliptic time-average of 1/r³',
+  },
+  'pump-crank': TWO_BODY,
+  'schweighart-sedwick': J2,
   'gnss-ionosphere-klobuchar': TWO_BODY,
   'optical-gsd': TWO_BODY,
   'solar-sail-accel': TWO_BODY,

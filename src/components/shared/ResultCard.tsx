@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { TooltipLabel, tooltipProps } from '@/components/shared/tooltip'
 import { tipForLabel } from '@/lib/fieldTips'
 import {
   fromSi,
@@ -90,15 +92,9 @@ export function ResultCard(props: Props) {
         accent && 'border-border-strong bg-surface-hover',
       )}
     >
-      <div className="mb-1.5 flex min-w-0 flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
-        <p
-          className={cn(
-            'min-w-0 max-w-full flex-1 break-words font-mono text-[10px] uppercase tracking-[0.16em] text-muted',
-            resolvedTip && 'cursor-help',
-          )}
-          title={resolvedTip || undefined}
-        >
-          {label}
+      <div className="mb-1.5 flex min-w-0 flex-wrap items-baseline justify-between gap-x-2 gap-y-1 overflow-visible">
+        <p className="min-w-0 max-w-full flex-1 overflow-visible break-words font-mono text-[10px] uppercase leading-tight tracking-[0.12em] text-muted sm:text-[11px]">
+          <TooltipLabel tip={resolvedTip}>{label}</TooltipLabel>
         </p>
         {unit ? (
           <span className="max-w-full shrink-0 break-all font-mono text-[10px] uppercase tracking-wider text-signal">
@@ -121,6 +117,7 @@ function ConvertibleResult({
   tip,
   accent,
 }: ConvertibleProps) {
+  const { t } = useTranslation()
   const options = useMemo(
     () => resolveOptions(category, unitIds),
     [category, unitIds],
@@ -159,19 +156,19 @@ function ConvertibleResult({
       )}
     >
       {/* Label + unit on one row (same rhythm as UiUnitField / PARAMETERS) */}
-      <div className="mb-1.5 flex min-w-0 flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
-        <p
-          className={cn(
-            'min-w-0 max-w-full flex-1 break-words font-mono text-[10px] uppercase tracking-[0.16em] text-muted',
-            resolvedTip && 'cursor-help',
-          )}
-          title={resolvedTip || undefined}
-        >
-          {label}
+      <div className="mb-1.5 flex min-w-0 flex-wrap items-baseline justify-between gap-x-2 gap-y-1 overflow-visible">
+        <p className="min-w-0 max-w-full flex-1 overflow-visible break-words font-mono text-[10px] uppercase leading-tight tracking-[0.12em] text-muted sm:text-[11px]">
+          <TooltipLabel tip={resolvedTip}>{label}</TooltipLabel>
         </p>
         {options.length > 0 ? (
-          <label className="relative inline-flex max-w-full shrink-0 items-center">
-            <span className="sr-only">Unit for {label}</span>
+          <label
+            {...tooltipProps(
+              t('common.unit_converts'),
+              'relative inline-flex max-w-full shrink-0 items-center overflow-visible',
+              'above-end',
+            )}
+          >
+            <span className="sr-only">{t('common.unit_for', { label })}</span>
             <select
               value={unitId}
               onChange={(e) => setUnitId(e.target.value)}
@@ -182,7 +179,6 @@ function ConvertibleResult({
                 'outline-none transition-colors hover:border-muted hover:text-fg',
                 'focus:border-border-strong focus:text-fg',
               )}
-              title="Change unit (value is converted from SI)"
             >
               {options.map((u) => (
                 <option key={u.id} value={u.id}>

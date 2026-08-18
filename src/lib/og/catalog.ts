@@ -761,6 +761,76 @@ export const TOOL_OG: Record<string, ToolOgMeta> = {
     accent: '#a8c5a0',
     blurb: "Earth IR flux at altitude",
   },
+  'molniya-tundra': {
+    formula: 'T = T_sid/2 or T_sid',
+    accent: '#7a9bb8',
+    blurb: 'Molniya / Tundra HEO sizing',
+  },
+  'frozen-orbit': {
+    formula: 'e ≈ −(J3/2J2)(R/a) sin i',
+    accent: '#9ec4c8',
+    blurb: 'J2/J3 frozen eccentricity',
+  },
+  'thrust-to-weight': {
+    formula: 'T/W = F/(m g0)',
+    accent: '#c47a5a',
+    blurb: 'Rocket thrust-to-weight',
+  },
+  'planck-radiance': {
+    formula: 'B_λ(λ, T)',
+    accent: '#e8d5a3',
+    blurb: 'Planck spectral radiance',
+  },
+  'eirp-gt': {
+    formula: 'EIRP = P G',
+    accent: '#b0b0b0',
+    blurb: 'EIRP and G/T',
+  },
+  'quaternion-euler': {
+    formula: 'q ↔ 3-2-1 Euler',
+    accent: '#c4a882',
+    blurb: 'Quaternion / Euler 3-2-1',
+  },
+  'porkchop-earth-mars': {
+    formula: 'C3(t_dep, t_arr)',
+    accent: '#c47a5a',
+    blurb: 'Earth-Mars porkchop sketch',
+  },
+  'conjunction-pc': {
+    formula: 'Pc = e^{−ξ²/2}(1−e^{−R²/2σσ})',
+    accent: '#7a9bb8',
+    blurb: 'Educational conjunction Pc',
+  },
+  'b-plane-target': {
+    formula: 'B · T, B · R',
+    accent: '#c47a5a',
+    blurb: 'B-plane targeting triad',
+  },
+  'quest-attitude': {
+    formula: 'TRIAD / QUEST',
+    accent: '#9ec4c8',
+    blurb: 'Two-vector attitude',
+  },
+  'herrick-gibbs': {
+    formula: 'v₂(r₁,r₂,r₃)',
+    accent: '#7a9bb8',
+    blurb: 'Herrick-Gibbs OD',
+  },
+  'lunisolar-rates': {
+    formula: 'Ω̇₃, ω̇₃',
+    accent: '#e8d5a3',
+    blurb: 'Averaged lunisolar rates',
+  },
+  'pump-crank': {
+    formula: 'δ(α, κ)',
+    accent: '#c4a882',
+    blurb: 'Pump and crank flyby',
+  },
+  'schweighart-sedwick': {
+    formula: 'n̄ = n√(1+s)',
+    accent: '#b0b0b0',
+    blurb: 'J2 relative motion',
+  },
 }
 
 export function toolOgMeta(toolId: string): ToolOgMeta {

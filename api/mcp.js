@@ -21670,6 +21670,8 @@ function rocketMassInitial(ispS, deltaV, mf, g0 = 9.80665) {
 var UNIT_DEFS = [
   { id: "m", label: "metre (m)", short: "m", toBase: 1, category: "length" },
   { id: "km", label: "kilometre (km)", short: "km", toBase: 1e3, category: "length" },
+  { id: "nm", label: "nanometre (nm)", short: "nm", toBase: 1e-9, category: "length" },
+  { id: "um", label: "micrometre (\xB5m)", short: "\xB5m", toBase: 1e-6, category: "length" },
   { id: "mm", label: "millimetre (mm)", short: "mm", toBase: 1e-3, category: "length" },
   { id: "cm", label: "centimetre (cm)", short: "cm", toBase: 0.01, category: "length" },
   { id: "au", label: "astronomical unit (AU)", short: "AU", toBase: 149597870700, category: "length" },
@@ -21751,18 +21753,155 @@ var UNIT_DEFS = [
 ];
 
 // src/lib/physics/vector.ts
+function vadd(a, b) {
+  return [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+}
 function vsub(a, b) {
   return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+}
+function vscale(a, s) {
+  return [a[0] * s, a[1] * s, a[2] * s];
 }
 function vdot(a, b) {
   return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 }
+function vcross(a, b) {
+  return [
+    a[1] * b[2] - a[2] * b[1],
+    a[2] * b[0] - a[0] * b[2],
+    a[0] * b[1] - a[1] * b[0]
+  ];
+}
 function vnorm(a) {
   return Math.hypot(a[0], a[1], a[2]);
+}
+function vunit(a) {
+  const n = vnorm(a);
+  if (!(n > 0)) return [0, 0, 0];
+  return vscale(a, 1 / n);
 }
 
 // src/lib/physics/elements.ts
 var TWO_PI = 2 * Math.PI;
+
+// src/lib/physics/kepler.ts
+function stumpffC(z) {
+  if (z > 1e-8) {
+    const sqrtz = Math.sqrt(z);
+    return (1 - Math.cos(sqrtz)) / z;
+  }
+  if (z < -1e-8) {
+    const sqrtz = Math.sqrt(-z);
+    return (1 - Math.cosh(sqrtz)) / z;
+  }
+  return 1 / 2 - z / 24 + z * z / 720;
+}
+function stumpffS(z) {
+  if (z > 1e-8) {
+    const sqrtz = Math.sqrt(z);
+    return (sqrtz - Math.sin(sqrtz)) / (sqrtz * sqrtz * sqrtz);
+  }
+  if (z < -1e-8) {
+    const sqrtz = Math.sqrt(-z);
+    return (Math.sinh(sqrtz) - sqrtz) / (sqrtz * sqrtz * sqrtz);
+  }
+  return 1 / 6 - z / 120 + z * z / 5040;
+}
+
+// src/lib/physics/lambert.ts
+function lambertSolve(mu2, r1, r2, tof, shortWay = true) {
+  if (!(mu2 > 0) || !(tof > 0)) return null;
+  const r1n = vnorm(r1);
+  const r2n = vnorm(r2);
+  if (!(r1n > 0) || !(r2n > 0)) return null;
+  const cosDnu = Math.min(1, Math.max(-1, vdot(r1, r2) / (r1n * r2n)));
+  let dnu = Math.acos(cosDnu);
+  const crossZ = vcross(r1, r2)[2];
+  if (shortWay) {
+    if (crossZ < 0 && Math.abs(crossZ) > 1e-14) {
+      if (dnu > Math.PI) dnu = 2 * Math.PI - dnu;
+    }
+    if (dnu > Math.PI) dnu = 2 * Math.PI - dnu;
+  } else {
+    dnu = 2 * Math.PI - dnu;
+  }
+  const A = Math.sin(dnu) * Math.sqrt(r1n * r2n / (1 - cosDnu));
+  if (!Number.isFinite(A) || Math.abs(A) < 1e-14) return null;
+  let z = 0;
+  const tol = 1e-10;
+  const maxIter = 60;
+  let y = 0;
+  let C2 = 0.5;
+  let S = 1 / 6;
+  for (let iter = 0; iter < maxIter; iter++) {
+    C2 = stumpffC(z);
+    S = stumpffS(z);
+    y = r1n + r2n + A * (z * S - 1) / Math.sqrt(C2);
+    if (A > 0 && y < 0) {
+      z += 0.1;
+      continue;
+    }
+    const chi = Math.sqrt(y / C2);
+    const dt = (chi * chi * chi * S + A * Math.sqrt(y)) / Math.sqrt(mu2);
+    let dtdz;
+    if (Math.abs(z) > 1e-6) {
+      dtdz = (chi * chi * chi * (0.5 / z) * (C2 - 3 * S / (2 * C2)) + 0.75 * (S / C2) * A * Math.sqrt(y) / C2 + A * (0.5 / Math.sqrt(y))) / Math.sqrt(mu2);
+      const dz2 = 1e-4;
+      const Cp = stumpffC(z + dz2);
+      const Sp = stumpffS(z + dz2);
+      const yp = r1n + r2n + A * ((z + dz2) * Sp - 1) / Math.sqrt(Cp);
+      if (yp > 0) {
+        const chip = Math.sqrt(yp / Cp);
+        const dtp = (chip * chip * chip * Sp + A * Math.sqrt(yp)) / Math.sqrt(mu2);
+        dtdz = (dtp - dt) / dz2;
+      }
+    } else {
+      dtdz = Math.sqrt(2) / 40 * y ** 1.5 + A / 8 * (Math.sqrt(y) + A * Math.sqrt(1 / (2 * y)));
+      dtdz /= Math.sqrt(mu2);
+    }
+    if (!Number.isFinite(dtdz) || Math.abs(dtdz) < 1e-18) break;
+    const dz = (tof - dt) / dtdz;
+    z += dz;
+    if (Math.abs(dz) < tol) break;
+  }
+  C2 = stumpffC(z);
+  S = stumpffS(z);
+  y = r1n + r2n + A * (z * S - 1) / Math.sqrt(C2);
+  if (!(y > 0)) return null;
+  const f = 1 - y / r1n;
+  const g = A * Math.sqrt(y / mu2);
+  const gdot = 1 - y / r2n;
+  const v1 = [
+    (r2[0] - f * r1[0]) / g,
+    (r2[1] - f * r1[1]) / g,
+    (r2[2] - f * r1[2]) / g
+  ];
+  const v2 = [
+    (gdot * r2[0] - r1[0]) / g,
+    (gdot * r2[1] - r1[1]) / g,
+    (gdot * r2[2] - r1[2]) / g
+  ];
+  const v1n = vnorm(v1);
+  const energy = v1n * v1n / 2 - mu2 / r1n;
+  const a = Math.abs(energy) > 1e-16 ? -mu2 / (2 * energy) : Infinity;
+  const hvec = [
+    r1[1] * v1[2] - r1[2] * v1[1],
+    r1[2] * v1[0] - r1[0] * v1[2],
+    r1[0] * v1[1] - r1[1] * v1[0]
+  ];
+  const h = vnorm(hvec);
+  const evec = vscale(
+    [
+      (v1n * v1n - mu2 / r1n) * r1[0] - vdot(r1, v1) * v1[0],
+      (v1n * v1n - mu2 / r1n) * r1[1] - vdot(r1, v1) * v1[1],
+      (v1n * v1n - mu2 / r1n) * r1[2] - vdot(r1, v1) * v1[2]
+    ],
+    1 / mu2
+  );
+  const e = vnorm(evec);
+  void h;
+  return { v1, v2, a, e, dnu };
+}
 
 // node_modules/satellite.js/dist/constants.js
 var pi = Math.PI;
@@ -23053,6 +23192,472 @@ function earthIrFlux(altitude, te = 255, bodyR = EARTH_RADIUS, sigma = 567037441
   return Number.isFinite(F) && F > 0 ? F : null;
 }
 
+// src/lib/physics/wave10.ts
+var EARTH_SIDEREAL_DAY_S = 86164.0905;
+var EARTH_J3 = -25326564853324e-19;
+var PLANCK_H = 662607015e-42;
+var BOLTZMANN_K = 1380649e-29;
+var MARS_SMA_M = 1.523679 * AU;
+var EARTH_HELIO_L0 = 100.46435 * Math.PI / 180;
+var MARS_HELIO_L0 = 355.45332 * Math.PI / 180;
+var J2000_UNIX_S = 946728e3;
+function criticalInclinationRad() {
+  return Math.acos(Math.sqrt(1 / 5));
+}
+function heoPeriodS(kind) {
+  return kind === "tundra" ? EARTH_SIDEREAL_DAY_S : EARTH_SIDEREAL_DAY_S / 2;
+}
+function smaFromPeriod(mu2, periodS) {
+  if (!(mu2 > 0) || !(periodS > 0)) return null;
+  const a = Math.cbrt(mu2 * periodS * periodS / (4 * Math.PI * Math.PI));
+  return Number.isFinite(a) && a > 0 ? a : null;
+}
+function trueAnomalyToMean(nu, e) {
+  if (!(e >= 0) || e >= 1 || !Number.isFinite(nu)) return null;
+  const s = Math.sqrt((1 - e) / (1 + e));
+  const E = 2 * Math.atan2(s * Math.sin(nu / 2), Math.cos(nu / 2));
+  return E - e * Math.sin(E);
+}
+function heoOrbitFromPerigee(opts) {
+  const mu2 = opts.mu ?? EARTH_MU;
+  const R = opts.bodyR ?? EARTH_RADIUS;
+  if (!(opts.perigeeAlt >= 0) || !(R > 0)) return null;
+  const T = heoPeriodS(opts.kind);
+  const a = smaFromPeriod(mu2, T);
+  if (a == null) return null;
+  const rp = R + opts.perigeeAlt;
+  if (!(rp > 0) || !(rp < a)) return null;
+  const ra = 2 * a - rp;
+  if (!(ra > rp)) return null;
+  const e = (ra - rp) / (ra + rp);
+  if (!(e > 0) || e >= 1) return null;
+  const i0 = criticalInclinationRad();
+  const i = opts.retrograde ? Math.PI - i0 : i0;
+  const delta = opts.dwellHalfAngle ?? Math.PI / 6;
+  if (!(delta > 0) || delta >= Math.PI) return null;
+  const n = 2 * Math.PI / T;
+  const M1 = trueAnomalyToMean(Math.PI - delta, e);
+  if (M1 == null) return null;
+  const t1 = (M1 % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) / n;
+  const dwell = Math.max(0, Math.min(T, T - 2 * t1));
+  return { kind: opts.kind, inclination: i, period: T, a, rp, ra, e, dwell };
+}
+function frozenEccentricityJ2J3(a, iRad, j22 = EARTH_J2, j32 = EARTH_J3, bodyR = EARTH_RADIUS) {
+  if (!(a > 0) || !(bodyR > 0) || !Number.isFinite(iRad)) return null;
+  if (!(Math.abs(j22) > 0)) return null;
+  const e = -(j32 / (2 * j22) * (bodyR / a) * Math.sin(iRad));
+  if (!Number.isFinite(e) || e <= 0 || e >= 1) return null;
+  return e;
+}
+function thrustToWeight(force, mass, g0 = G0) {
+  if (!(force > 0) || !(mass > 0) || !(g0 > 0)) return null;
+  const r = force / (mass * g0);
+  return Number.isFinite(r) ? r : null;
+}
+function planckSpectralRadiance(lambdaM, tempK) {
+  if (!(lambdaM > 0) || !(tempK > 0)) return null;
+  const x = PLANCK_H * C / (lambdaM * BOLTZMANN_K * tempK);
+  if (!Number.isFinite(x) || x <= 0) return null;
+  if (x > 700) return 0;
+  const num = 2 * PLANCK_H * C * C / lambdaM ** 5;
+  const B = num / (Math.exp(x) - 1);
+  return Number.isFinite(B) && B >= 0 ? B : null;
+}
+function eirpLinear(pt, gainLin) {
+  if (!(pt > 0) || !(gainLin > 0)) return null;
+  const p = pt * gainLin;
+  return Number.isFinite(p) ? p : null;
+}
+function eirpDbW(pt, gainLin) {
+  const p = eirpLinear(pt, gainLin);
+  if (p == null) return null;
+  return 10 * Math.log10(p);
+}
+function figureOfMeritGT(gainLin, tSys) {
+  if (!(gainLin > 0) || !(tSys > 0)) return null;
+  const g = gainLin / tSys;
+  return Number.isFinite(g) ? g : null;
+}
+function figureOfMeritGTDb(gainLin, tSys) {
+  const g = figureOfMeritGT(gainLin, tSys);
+  if (g == null) return null;
+  return 10 * Math.log10(g);
+}
+function quatNormalize(q) {
+  const n = Math.hypot(q.w, q.x, q.y, q.z);
+  if (!(n > 0)) return null;
+  return { w: q.w / n, x: q.x / n, y: q.y / n, z: q.z / n };
+}
+function quatToDcm(qIn) {
+  const q = quatNormalize(qIn);
+  if (!q) return null;
+  const { w, x, y, z } = q;
+  return [
+    [1 - 2 * (y * y + z * z), 2 * (x * y - w * z), 2 * (x * z + w * y)],
+    [2 * (x * y + w * z), 1 - 2 * (x * x + z * z), 2 * (y * z - w * x)],
+    [2 * (x * z - w * y), 2 * (y * z + w * x), 1 - 2 * (x * x + y * y)]
+  ];
+}
+function euler321ToQuat(yaw, pitch, roll) {
+  if (![yaw, pitch, roll].every(Number.isFinite)) return null;
+  const cy = Math.cos(yaw / 2);
+  const sy = Math.sin(yaw / 2);
+  const cp = Math.cos(pitch / 2);
+  const sp = Math.sin(pitch / 2);
+  const cr = Math.cos(roll / 2);
+  const sr = Math.sin(roll / 2);
+  return {
+    w: cr * cp * cy + sr * sp * sy,
+    x: sr * cp * cy - cr * sp * sy,
+    y: cr * sp * cy + sr * cp * sy,
+    z: cr * cp * sy - sr * sp * cy
+  };
+}
+function heliocentricCircularState(a, L0, tUnix, mu2 = SUN_MU) {
+  if (!(a > 0) || !(mu2 > 0) || !Number.isFinite(tUnix) || !Number.isFinite(L0)) return null;
+  const n = Math.sqrt(mu2 / (a * a * a));
+  const L = L0 + n * (tUnix - J2000_UNIX_S);
+  const c = Math.cos(L);
+  const s = Math.sin(L);
+  const r = [a * c, a * s, 0];
+  const v = [-n * a * s, n * a * c, 0];
+  return { r, v, L };
+}
+function porkchopTransfer(tDep, tArr, mu2 = SUN_MU) {
+  const tof = tArr - tDep;
+  if (!(tof > 0)) return null;
+  const earth = heliocentricCircularState(AU, EARTH_HELIO_L0, tDep, mu2);
+  const mars = heliocentricCircularState(MARS_SMA_M, MARS_HELIO_L0, tArr, mu2);
+  if (!earth || !mars) return null;
+  let sol = lambertSolve(mu2, earth.r, mars.r, tof, true);
+  if (!sol) sol = lambertSolve(mu2, earth.r, mars.r, tof, false);
+  if (!sol) return null;
+  const dvDep = vnorm(vsub(sol.v1, earth.v));
+  const dvArr = vnorm(vsub(sol.v2, mars.v));
+  if (!Number.isFinite(dvDep) || !Number.isFinite(dvArr)) return null;
+  return {
+    tDep,
+    tArr,
+    tof,
+    c3: dvDep * dvDep,
+    dvDep,
+    dvArr,
+    dvTot: dvDep + dvArr,
+    v1: sol.v1
+  };
+}
+function porkchopEarthMarsGrid(opts) {
+  const { depStart, depCount, depStep, tofMin, tofCount, tofStep } = opts;
+  if (!(depCount >= 2) || !(tofCount >= 2) || !(depStep > 0) || !(tofStep > 0) || !(tofMin > 0)) {
+    return null;
+  }
+  const cells = [];
+  for (let i = 0; i < depCount; i++) {
+    const tDep = depStart + i * depStep;
+    for (let j = 0; j < tofCount; j++) {
+      const tof = tofMin + j * tofStep;
+      const cell = porkchopTransfer(tDep, tDep + tof);
+      if (cell) cells.push(cell);
+    }
+  }
+  if (cells.length < 2) return null;
+  let bestDv = cells[0];
+  let bestC3 = cells[0];
+  for (const c of cells) {
+    if (c.dvTot < bestDv.dvTot) bestDv = c;
+    if (c.c3 < bestC3.c3) bestC3 = c;
+  }
+  return { cells, bestDv, bestC3 };
+}
+function conjunctionPc2d(missM, sigmaX, sigmaY, radiusM) {
+  if (!(missM >= 0) || !(sigmaX > 0) || !(sigmaY > 0) || !(radiusM > 0)) return null;
+  const xi2 = missM * missM / (sigmaX * sigmaX);
+  const u = radiusM * radiusM / (sigmaX * sigmaY);
+  const pc = Math.exp(-xi2 / 2) * (1 - Math.exp(-u / 2));
+  if (!Number.isFinite(pc)) return null;
+  return Math.min(1, Math.max(0, pc));
+}
+
+// src/lib/physics/wave11.ts
+var Z_HAT = [0, 0, 1];
+function bPlaneTarget(opts) {
+  const { vInf, mu: mu2, rp } = opts;
+  const clock = opts.clock ?? 0;
+  const v = vnorm(vInf);
+  if (!(mu2 > 0) || !(rp > 0) || !(v > 0) || !Number.isFinite(clock)) return null;
+  const e = hyperbolicEccentricity(mu2, rp, v);
+  if (e == null || !(e > 1)) return null;
+  const turn = gravityAssistTurn(e);
+  if (turn == null) return null;
+  const aAbs = mu2 / (v * v);
+  const b = aAbs * Math.sqrt(e * e - 1);
+  const sHat = vunit(vInf);
+  let tHat = vunit(vcross(Z_HAT, sHat));
+  if (vnorm(tHat) < 1e-12) tHat = vunit(vcross([1, 0, 0], sHat));
+  if (vnorm(tHat) < 1e-12) return null;
+  const rHat = vunit(vcross(sHat, tHat));
+  const bDotT = b * Math.cos(clock);
+  const bDotR = b * Math.sin(clock);
+  return { vInf: v, e, turn, b, rp, sHat, tHat, rHat, bDotT, bDotR };
+}
+function dcmFromTriad(w1, w2, v1, v2) {
+  const tb1 = vunit(w1);
+  const tb2 = vunit(vcross(w1, w2));
+  if (vnorm(tb2) < 1e-12) return null;
+  const tb3 = vcross(tb1, tb2);
+  const tr1 = vunit(v1);
+  const tr2 = vunit(vcross(v1, v2));
+  if (vnorm(tr2) < 1e-12) return null;
+  const tr3 = vcross(tr1, tr2);
+  const Bt = [tb1, tb2, tb3];
+  const Rt = [tr1, tr2, tr3];
+  const A = [
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0]
+  ];
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      A[i][j] = Bt[0][i] * Rt[0][j] + Bt[1][i] * Rt[1][j] + Bt[2][i] * Rt[2][j];
+    }
+  }
+  return A;
+}
+function dcmToQuat(A) {
+  const t = A[0][0] + A[1][1] + A[2][2];
+  let q;
+  if (t > 0) {
+    const s = Math.sqrt(t + 1) * 2;
+    q = {
+      w: 0.25 * s,
+      x: (A[2][1] - A[1][2]) / s,
+      y: (A[0][2] - A[2][0]) / s,
+      z: (A[1][0] - A[0][1]) / s
+    };
+  } else if (A[0][0] > A[1][1] && A[0][0] > A[2][2]) {
+    const s = Math.sqrt(1 + A[0][0] - A[1][1] - A[2][2]) * 2;
+    q = {
+      w: (A[2][1] - A[1][2]) / s,
+      x: 0.25 * s,
+      y: (A[0][1] + A[1][0]) / s,
+      z: (A[0][2] + A[2][0]) / s
+    };
+  } else if (A[1][1] > A[2][2]) {
+    const s = Math.sqrt(1 + A[1][1] - A[0][0] - A[2][2]) * 2;
+    q = {
+      w: (A[0][2] - A[2][0]) / s,
+      x: (A[0][1] + A[1][0]) / s,
+      y: 0.25 * s,
+      z: (A[1][2] + A[2][1]) / s
+    };
+  } else {
+    const s = Math.sqrt(1 + A[2][2] - A[0][0] - A[1][1]) * 2;
+    q = {
+      w: (A[1][0] - A[0][1]) / s,
+      x: (A[0][2] + A[2][0]) / s,
+      y: (A[1][2] + A[2][1]) / s,
+      z: 0.25 * s
+    };
+  }
+  return quatNormalize(q);
+}
+function apply3(A, v) {
+  return [
+    A[0][0] * v[0] + A[0][1] * v[1] + A[0][2] * v[2],
+    A[1][0] * v[0] + A[1][1] * v[1] + A[1][2] * v[2],
+    A[2][0] * v[0] + A[2][1] * v[1] + A[2][2] * v[2]
+  ];
+}
+function residualAngle(A, w, v) {
+  const pred = apply3(A, vunit(v));
+  const c = Math.min(1, Math.max(-1, vdot(vunit(w), pred)));
+  return Math.acos(c);
+}
+function questQuat(w1, w2, v1, v2) {
+  const a1 = 0.5;
+  const a2 = 0.5;
+  const B = [
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0]
+  ];
+  const pairs = [
+    [vunit(w1), vunit(v1), a1],
+    [vunit(w2), vunit(v2), a2]
+  ];
+  for (const [w, v, a] of pairs) {
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) B[i][j] += a * w[i] * v[j];
+    }
+  }
+  const sigma = B[0][0] + B[1][1] + B[2][2];
+  const z = [B[1][2] - B[2][1], B[2][0] - B[0][2], B[0][1] - B[1][0]];
+  const S = [
+    [B[0][0] + B[0][0], B[0][1] + B[1][0], B[0][2] + B[2][0]],
+    [B[1][0] + B[0][1], B[1][1] + B[1][1], B[1][2] + B[2][1]],
+    [B[2][0] + B[0][2], B[2][1] + B[1][2], B[2][2] + B[2][2]]
+  ];
+  const K = [
+    [sigma + 4, z[0], z[1], z[2]],
+    [z[0], S[0][0] - sigma + 4, S[0][1], S[0][2]],
+    [z[1], S[1][0], S[1][1] - sigma + 4, S[1][2]],
+    [z[2], S[2][0], S[2][1], S[2][2] - sigma + 4]
+  ];
+  let qv = [1, 0, 0, 0];
+  for (let n = 0; n < 80; n++) {
+    const next = [0, 0, 0, 0];
+    for (let i = 0; i < 4; i++) {
+      for (let j = 0; j < 4; j++) next[i] += K[i][j] * qv[j];
+    }
+    const nn = Math.hypot(next[0], next[1], next[2], next[3]);
+    if (!(nn > 0)) return null;
+    qv = next.map((x) => x / nn);
+  }
+  return quatNormalize({ w: qv[0], x: qv[1], y: qv[2], z: qv[3] });
+}
+function triadQuest(opts) {
+  const { w1, w2, v1, v2 } = opts;
+  if ([w1, w2, v1, v2].some((u) => vnorm(u) < 1e-12)) return null;
+  const A = dcmFromTriad(w1, w2, v1, v2);
+  if (!A) return null;
+  const triad = dcmToQuat(A);
+  const quest = questQuat(w1, w2, v1, v2);
+  if (!triad || !quest) return null;
+  const Aq0 = quatToDcm(quest);
+  if (!Aq0) return null;
+  let Aq = [
+    [Aq0[0][0], Aq0[0][1], Aq0[0][2]],
+    [Aq0[1][0], Aq0[1][1], Aq0[1][2]],
+    [Aq0[2][0], Aq0[2][1], Aq0[2][2]]
+  ];
+  let qOut = quest;
+  let rQ = residualAngle(Aq, w1, v1);
+  if (rQ > Math.PI / 2) {
+    Aq = [
+      [Aq[0][0], Aq[1][0], Aq[2][0]],
+      [Aq[0][1], Aq[1][1], Aq[2][1]],
+      [Aq[0][2], Aq[1][2], Aq[2][2]]
+    ];
+    qOut = { w: quest.w, x: -quest.x, y: -quest.y, z: -quest.z };
+    rQ = residualAngle(Aq, w1, v1);
+  }
+  return {
+    triad,
+    quest: qOut,
+    residualTriad: residualAngle(A, w1, v1),
+    residualQuest: rQ
+  };
+}
+function herrickGibbs(opts) {
+  const { r1, r2, r3, t1, t2, t3, mu: mu2 } = opts;
+  const dt21 = t2 - t1;
+  const dt32 = t3 - t2;
+  const dt31 = t3 - t1;
+  if (!(mu2 > 0) || !(dt21 > 0) || !(dt32 > 0) || !(dt31 > 0)) return null;
+  const r1n = vnorm(r1);
+  const r2n = vnorm(r2);
+  const r3n = vnorm(r3);
+  if (!(r1n > 0) || !(r2n > 0) || !(r3n > 0)) return null;
+  const c1 = -dt32 * (1 / (dt21 * dt31) + mu2 / (12 * r1n ** 3));
+  const c2 = (dt32 - dt21) * (1 / (dt21 * dt32) + mu2 / (12 * r2n ** 3));
+  const c3 = dt21 * (1 / (dt32 * dt31) + mu2 / (12 * r3n ** 3));
+  const v2 = vadd(vadd(vscale(r1, c1), vscale(r2, c2)), vscale(r3, c3));
+  const v2n = vnorm(v2);
+  if (!Number.isFinite(v2n) || !(v2n > 0)) return null;
+  return { v2, r2n, v2n };
+}
+var HERRICK_ARC_LIMIT_RAD = 5 * Math.PI / 180;
+var MOON_I3_RAD = 5.145 * Math.PI / 180;
+var SUN_I3_RAD = 23.439281 * Math.PI / 180;
+function lunisolarRates(opts) {
+  const { a, e, iRad, mu: mu2, mu3, d3 } = opts;
+  const i3 = opts.i3 ?? 0;
+  const e3 = opts.e3 ?? 0;
+  if (!(a > 0) || !(e >= 0) || e >= 1 || !(mu2 > 0) || !(mu3 > 0) || !(d3 > 0)) return null;
+  if (!Number.isFinite(iRad) || !Number.isFinite(i3) || !(e3 >= 0) || e3 >= 1) return null;
+  const nSat = Math.sqrt(mu2 / (a * a * a));
+  const n3 = Math.sqrt(mu3 / (d3 * d3 * d3));
+  const se = Math.sqrt(1 - e * e);
+  if (!(se > 0) || !(nSat > 0)) return null;
+  const ci3 = Math.cos(i3);
+  const p2 = 0.5 * (3 * ci3 * ci3 - 1);
+  const e3Fac = (1 - e3 * e3) ** -1.5;
+  const scale = p2 * e3Fac;
+  if (!Number.isFinite(scale)) return null;
+  const k = n3 * n3 / nSat * scale;
+  const si = Math.sin(iRad);
+  const raanRate = -0.75 * k * (1 / se) * Math.cos(iRad);
+  const argpRate = 0.375 * k * se * (4 - 5 * si * si);
+  const kozaiTheta = se * Math.cos(iRad);
+  const argpPeriod = Math.abs(argpRate) > 1e-20 ? 2 * Math.PI / Math.abs(argpRate) : null;
+  return { nSat, n3, raanRate, argpRate, kozaiTheta, argpPeriod, p2, e3Fac, scale };
+}
+function pumpCrankFlyby(opts) {
+  const { vInf, mu: mu2, rp, pump, crank, vPlanet } = opts;
+  if (!(vInf > 0) || !(mu2 > 0) || !(rp > 0) || !(vPlanet > 0)) return null;
+  if (![pump, crank].every(Number.isFinite)) return null;
+  const e = hyperbolicEccentricity(mu2, rp, vInf);
+  if (e == null || !(e > 1)) return null;
+  const turn = gravityAssistTurn(e);
+  if (turn == null) return null;
+  const vin = [-vInf * Math.cos(pump), 0, vInf * Math.sin(pump)];
+  const sHat = vunit(vin);
+  let ref = vunit(vcross(sHat, [0, 1, 0]));
+  if (vnorm(ref) < 1e-12) ref = vunit(vcross(sHat, [0, 0, 1]));
+  if (vnorm(ref) < 1e-12) return null;
+  const turnAxis = rotateAbout(ref, sHat, crank);
+  const vout = rotateAbout(vin, turnAxis, turn);
+  const vInfOutMag = vnorm(vout);
+  const vp = [vPlanet, 0, 0];
+  const vinH = vadd(vp, vin);
+  const voutH = vadd(vp, vout);
+  const energyGain = 0.5 * (vdot(voutH, voutH) - vdot(vinH, vinH));
+  const dvHelio = vnorm(vsub(voutH, vinH));
+  return { e, turn, vInfOut: vout, vInfOutMag, dvHelio, energyGain };
+}
+function rotateAbout(v, axisIn, ang) {
+  const k = vunit(axisIn);
+  const c = Math.cos(ang);
+  const s = Math.sin(ang);
+  const kxv = vcross(k, v);
+  const kdv = vdot(k, v);
+  return vadd(vadd(vscale(v, c), vscale(kxv, s)), vscale(k, kdv * (1 - c)));
+}
+function schweighartSedwick(opts) {
+  const mu2 = opts.mu ?? EARTH_MU;
+  const j22 = opts.j2 ?? EARTH_J2;
+  const bodyR = opts.bodyR ?? EARTH_RADIUS;
+  const { a, iRad, state0, dt } = opts;
+  if (!(a > 0) || !(mu2 > 0) || !Number.isFinite(iRad) || !Number.isFinite(dt)) return null;
+  const n = Math.sqrt(mu2 / (a * a * a));
+  const s = 3 / 8 * j22 * (bodyR / a) ** 2 * (1 + 3 * Math.cos(2 * iRad));
+  if (!Number.isFinite(s) || s <= -1 || s >= 1) return null;
+  const c = Math.sqrt(1 + s);
+  const nBar = n * c;
+  const omega = n * Math.sqrt(1 - s);
+  const nZ = n * Math.sqrt(3 * c * c - 2);
+  if (!(omega > 0) || !(nZ > 0)) return null;
+  const cw = cwPropagate(n, state0, dt);
+  if (!cw) return null;
+  const { x: x0, y: y0, z: z0, vx: vx0, vy: vy0, vz: vz0 } = state0;
+  const xp = (4 * c * c * x0 + 2 * c * vy0 / n) / (1 - s);
+  const A = x0 - xp;
+  const B = vx0 / omega;
+  const wt = omega * dt;
+  const cwv = Math.cos(wt);
+  const sw = Math.sin(wt);
+  const x = A * cwv + B * sw + xp;
+  const vx = -A * omega * sw + B * omega * cwv;
+  const integ = A / omega * sw + B / omega * (1 - cwv) + (xp - x0) * dt;
+  const y = y0 + vy0 * dt - 2 * n * c * integ;
+  const vy = vy0 - 2 * n * c * (x - x0);
+  const zt = nZ * dt;
+  const z = z0 * Math.cos(zt) + vz0 / nZ * Math.sin(zt);
+  const vz = -z0 * nZ * Math.sin(zt) + vz0 * Math.cos(zt);
+  if (![x, y, z, vx, vy, vz].every(Number.isFinite)) return null;
+  return { s, nBar, nZ, state: { x, y, z, vx, vy, vz }, cw };
+}
+
 // src/lib/physics/sites.ts
 var LAUNCH_SITES = [
   {
@@ -23228,7 +23833,7 @@ var EARTH_ALTITUDE_CHIPS = [
 
 // mcp/full-catalog.ts
 var SIDUS_MCP_DISCLAIMER = "Educational pure-SI model (SIDUS). Not flight software. No affiliation with NASA, ESA, or SpaceX.";
-var CATALOG_NAMES = ["list_bodies", "list_mcp_tools", "circular_orbit", "hohmann", "escape_velocity", "bielliptic", "plane_change", "vis_viva", "apsides", "rocket_equation", "multi_stage", "j2_drift", "launch_azimuth", "sso_inclination", "dynamic_pressure", "cw_rendezvous", "link_budget", "phasing", "metabolic_load", "cabin_atmosphere", "lioh_scrubber", "cabin_leak", "thermal_loop", "custom_body", "hyperbolic_c3", "hohmann_plane", "propellant_mass", "ideal_thrust", "sphere_of_influence", "synodic_period", "eclipse_duration", "light_time", "solar_pressure", "circularize", "geo_radius", "delta_a_burn", "plane_change_apo", "heat_flux", "coelliptic", "los_range_rate", "oberth", "deorbit", "mean_motion", "solar_array", "rcs_delta_v", "apo_raise", "delta_v_budget", "equal_stage", "period_to_sma", "ballistic_drag", "horizon_range", "antenna_beamwidth", "battery", "angular_diameter", "diffraction", "thermal_rad", "drag_force", "reaction_wheel", "along_track", "ground_track", "eclipse_beta", "hohmann_time", "orbital_energy", "true_anomaly", "flyby_speed", "nodal_period", "eccentric_anomaly", "scale_height", "rendezvous_catchup", "impulse_budget", "sso_period", "mass_ratio_stack", "critical_inclination", "relative_period", "energy_vinf", "geo_light_time", "payload_fraction", "specific_angular_momentum", "escape_margin", "spherical_distance", "elevation_azimuth", "vector_angle", "helio_hohmann", "patched_conic_depart", "surface_access", "orbit_3d", "isentropic_nozzle", "characteristic_velocity_cstar", "throat_area_sizing", "rocket_thrust_chamber", "mixture_ratio", "tank_ullage", "blowdown_tank", "propellant_density_impulse", "cold_gas_thrust", "ion_thruster_efficiency", "hall_thruster_isp", "gnss_pseudorange", "gnss_geometry_gdop", "laser_link_budget", "laser_pointing_jitter", "laser_time_of_flight", "impedance_matching", "antenna_gain_effective", "doppler_shift_leo", "radar_equation", "rain_attenuation_simple", "ttc_ebno", "optical_ber_q", "gnss_troposphere_delay", "free_fall_time", "ballistic_range", "terminal_velocity", "parachute_descent", "coordinated_turn_bank", "slew_rate_pointing", "magnetic_torque", "gravity_gradient_torque", "rw_momentum_capacity", "sun_sensor_cone", "star_tracker_noise", "constellation_walker", "coverage_swath", "revisit_time_simple", "geo_stationkeeping_dv", "geo_propellant_budget", "drag_make_up_dv", "tisserand_parameter", "eps_orbit_average", "relativity_clock_rate", "gnss_ionosphere_klobuchar", "optical_gsd", "solar_sail_accel", "finite_burn_dv", "b_plane_impact", "cr3bp_jacobi", "orbit_lifetime_rough", "geo_drift_rate", "stefan_boltzmann", "wien_peak", "thruster_impulse_bit", "arg_perigee_drift_j2", "sar_azimuth_resolution", "radar_range_resolution", "link_margin", "aerobraking_pass", "diffraction_limit", "panel_eol_power", "magnetorquer_moment", "hyperbolic_eccentricity", "capture_circularize", "gravity_loss", "battery_dod", "umbra_length", "mean_anomaly_from_e", "flight_path_angle", "hoop_stress", "exponential_density", "hill_sphere", "edelbaum_dv", "repeating_ground_track", "pointing_budget_rss", "boiloff_rate", "residual_dipole_torque", "solar_flux_distance", "nyquist_rate", "data_volume", "earth_ir_flux", "bodies", "units", "plotter", "kepler_propagate", "lambert", "rv_elements", "sgp4", "look_angles", "pass_predict"];
+var CATALOG_NAMES = ["list_bodies", "list_mcp_tools", "circular_orbit", "hohmann", "escape_velocity", "bielliptic", "plane_change", "vis_viva", "apsides", "rocket_equation", "multi_stage", "j2_drift", "launch_azimuth", "sso_inclination", "dynamic_pressure", "cw_rendezvous", "link_budget", "phasing", "metabolic_load", "cabin_atmosphere", "lioh_scrubber", "cabin_leak", "thermal_loop", "custom_body", "hyperbolic_c3", "hohmann_plane", "propellant_mass", "ideal_thrust", "sphere_of_influence", "synodic_period", "eclipse_duration", "light_time", "solar_pressure", "circularize", "geo_radius", "delta_a_burn", "plane_change_apo", "heat_flux", "coelliptic", "los_range_rate", "oberth", "deorbit", "mean_motion", "solar_array", "rcs_delta_v", "apo_raise", "delta_v_budget", "equal_stage", "period_to_sma", "ballistic_drag", "horizon_range", "antenna_beamwidth", "battery", "angular_diameter", "diffraction", "thermal_rad", "drag_force", "reaction_wheel", "along_track", "ground_track", "eclipse_beta", "hohmann_time", "orbital_energy", "true_anomaly", "flyby_speed", "nodal_period", "eccentric_anomaly", "scale_height", "rendezvous_catchup", "impulse_budget", "sso_period", "mass_ratio_stack", "critical_inclination", "relative_period", "energy_vinf", "geo_light_time", "payload_fraction", "specific_angular_momentum", "escape_margin", "spherical_distance", "elevation_azimuth", "vector_angle", "helio_hohmann", "patched_conic_depart", "surface_access", "orbit_3d", "isentropic_nozzle", "characteristic_velocity_cstar", "throat_area_sizing", "rocket_thrust_chamber", "mixture_ratio", "tank_ullage", "blowdown_tank", "propellant_density_impulse", "cold_gas_thrust", "ion_thruster_efficiency", "hall_thruster_isp", "gnss_pseudorange", "gnss_geometry_gdop", "laser_link_budget", "laser_pointing_jitter", "laser_time_of_flight", "impedance_matching", "antenna_gain_effective", "doppler_shift_leo", "radar_equation", "rain_attenuation_simple", "ttc_ebno", "optical_ber_q", "gnss_troposphere_delay", "free_fall_time", "ballistic_range", "terminal_velocity", "parachute_descent", "coordinated_turn_bank", "slew_rate_pointing", "magnetic_torque", "gravity_gradient_torque", "rw_momentum_capacity", "sun_sensor_cone", "star_tracker_noise", "constellation_walker", "coverage_swath", "revisit_time_simple", "geo_stationkeeping_dv", "geo_propellant_budget", "drag_make_up_dv", "tisserand_parameter", "eps_orbit_average", "relativity_clock_rate", "gnss_ionosphere_klobuchar", "optical_gsd", "solar_sail_accel", "finite_burn_dv", "b_plane_impact", "cr3bp_jacobi", "orbit_lifetime_rough", "geo_drift_rate", "stefan_boltzmann", "wien_peak", "thruster_impulse_bit", "arg_perigee_drift_j2", "sar_azimuth_resolution", "radar_range_resolution", "link_margin", "aerobraking_pass", "diffraction_limit", "panel_eol_power", "magnetorquer_moment", "hyperbolic_eccentricity", "capture_circularize", "gravity_loss", "battery_dod", "umbra_length", "mean_anomaly_from_e", "flight_path_angle", "hoop_stress", "exponential_density", "hill_sphere", "edelbaum_dv", "repeating_ground_track", "pointing_budget_rss", "boiloff_rate", "residual_dipole_torque", "solar_flux_distance", "nyquist_rate", "data_volume", "earth_ir_flux", "molniya_tundra", "frozen_orbit", "thrust_to_weight", "planck_radiance", "eirp_gt", "quaternion_euler", "porkchop_earth_mars", "conjunction_pc", "b_plane_target", "quest_attitude", "herrick_gibbs", "lunisolar_rates", "pump_crank", "schweighart_sedwick", "bodies", "units", "plotter", "kepler_propagate", "lambert", "rv_elements", "sgp4", "look_angles", "pass_predict"];
 var MCP_TOOL_DEFS = [
   {
     name: "list_bodies",
@@ -25640,6 +26245,272 @@ var MCP_TOOL_DEFS = [
       const f = earthIrFlux(args.altitude_m, args.t_earth_k, args.body_radius_m);
       return f == null ? null : { flux_w_m2: f };
     }
+  },
+  {
+    name: "molniya_tundra",
+    description: "Molniya or Tundra HEO sizing: period, critical i, e, apogee dwell.",
+    inputSchema: {
+      kind: _enum(["molniya", "tundra"]).optional(),
+      perigee_alt_m: number2(),
+      dwell_half_rad: number2().optional()
+    },
+    sample: { kind: "molniya", perigee_alt_m: 1e6 },
+    run: (args) => {
+      const o = heoOrbitFromPerigee({
+        kind: args.kind === "tundra" ? "tundra" : "molniya",
+        perigeeAlt: args.perigee_alt_m,
+        dwellHalfAngle: args.dwell_half_rad
+      });
+      return o;
+    }
+  },
+  {
+    name: "frozen_orbit",
+    description: "J2/J3 frozen eccentricity.",
+    inputSchema: {
+      a_m: number2(),
+      i_rad: number2()
+    },
+    sample: { a_m: 7178137, i_rad: 1.71042 },
+    run: (args) => {
+      const e = frozenEccentricityJ2J3(args.a_m, args.i_rad);
+      return e == null ? null : { e };
+    }
+  },
+  {
+    name: "thrust_to_weight",
+    description: "Thrust-to-weight ratio F/(m g0).",
+    inputSchema: {
+      force_n: number2(),
+      mass_kg: number2()
+    },
+    sample: { force_n: 76e5, mass_kg: 55e4 },
+    run: (args) => {
+      const tw = thrustToWeight(args.force_n, args.mass_kg);
+      return tw == null ? null : { tw };
+    }
+  },
+  {
+    name: "planck_radiance",
+    description: "Planck spectral radiance B_lambda (W/m2/sr/m).",
+    inputSchema: {
+      lambda_m: number2(),
+      temp_k: number2()
+    },
+    sample: { lambda_m: 5e-7, temp_k: 5800 },
+    run: (args) => {
+      const B = planckSpectralRadiance(args.lambda_m, args.temp_k);
+      return B == null ? null : { B_w_m2_sr_m: B };
+    }
+  },
+  {
+    name: "eirp_gt",
+    description: "EIRP = P G and G/T figure of merit.",
+    inputSchema: {
+      pt_w: number2(),
+      gain_lin: number2(),
+      tsys_k: number2()
+    },
+    sample: { pt_w: 10, gain_lin: 100, tsys_k: 150 },
+    run: (args) => {
+      const eirp = eirpLinear(args.pt_w, args.gain_lin);
+      const eirp_dbw = eirpDbW(args.pt_w, args.gain_lin);
+      const gt = figureOfMeritGT(args.gain_lin, args.tsys_k);
+      const gt_db = figureOfMeritGTDb(args.gain_lin, args.tsys_k);
+      if (eirp == null || eirp_dbw == null || gt == null || gt_db == null) return null;
+      return { eirp_w: eirp, eirp_dbw, gt_per_k: gt, gt_db_k: gt_db };
+    }
+  },
+  {
+    name: "quaternion_euler",
+    description: "Aerospace 3-2-1 Euler to quaternion.",
+    inputSchema: {
+      yaw_rad: number2(),
+      pitch_rad: number2(),
+      roll_rad: number2()
+    },
+    sample: { yaw_rad: 1.57079632679, pitch_rad: 0, roll_rad: 0 },
+    run: (args) => euler321ToQuat(args.yaw_rad, args.pitch_rad, args.roll_rad)
+  },
+  {
+    name: "porkchop_earth_mars",
+    description: "Earth-Mars circular-heliocentric porkchop grid (educational).",
+    inputSchema: {
+      dep_start_unix: number2(),
+      dep_count: number2(),
+      dep_step_s: number2(),
+      tof_min_s: number2(),
+      tof_count: number2(),
+      tof_step_s: number2()
+    },
+    sample: {
+      dep_start_unix: 1793491200,
+      dep_count: 4,
+      dep_step_s: 1728e3,
+      tof_min_s: 1296e4,
+      tof_count: 4,
+      tof_step_s: 2592e3
+    },
+    run: (args) => {
+      const g = porkchopEarthMarsGrid({
+        depStart: args.dep_start_unix,
+        depCount: args.dep_count,
+        depStep: args.dep_step_s,
+        tofMin: args.tof_min_s,
+        tofCount: args.tof_count,
+        tofStep: args.tof_step_s
+      });
+      if (!g) return null;
+      return {
+        n_cells: g.cells.length,
+        best_dv_mps: g.bestDv?.dvTot,
+        best_c3_m2_s2: g.bestC3?.c3,
+        best_dep_unix: g.bestDv?.tDep,
+        best_arr_unix: g.bestDv?.tArr
+      };
+    }
+  },
+  {
+    name: "conjunction_pc",
+    description: "Educational 2-D Chan/Alfriend conjunction Pc. Not operational CARA.",
+    inputSchema: {
+      miss_m: number2(),
+      sigma_x_m: number2(),
+      sigma_y_m: number2(),
+      radius_m: number2()
+    },
+    sample: { miss_m: 50, sigma_x_m: 80, sigma_y_m: 120, radius_m: 15 },
+    run: (args) => {
+      const pc = conjunctionPc2d(args.miss_m, args.sigma_x_m, args.sigma_y_m, args.radius_m);
+      return pc == null ? null : { pc, note: "Educational model. Not NASA CARA." };
+    }
+  },
+  {
+    name: "b_plane_target",
+    description: "B-plane S,T,R triad and B\xB7T / B\xB7R.",
+    inputSchema: {
+      vx: number2(),
+      vy: number2(),
+      vz: number2(),
+      rp_m: number2(),
+      clock_rad: number2().optional(),
+      mu: number2().optional()
+    },
+    sample: { vx: 3e3, vy: 400, vz: 200, rp_m: 6878137 },
+    run: (args) => bPlaneTarget({
+      vInf: [args.vx, args.vy, args.vz],
+      mu: args.mu ?? 3986004418e5,
+      rp: args.rp_m,
+      clock: args.clock_rad
+    })
+  },
+  {
+    name: "quest_attitude",
+    description: "TRIAD and QUEST from two vector pairs.",
+    inputSchema: {
+      w1x: number2(),
+      w1y: number2(),
+      w1z: number2(),
+      w2x: number2(),
+      w2y: number2(),
+      w2z: number2(),
+      v1x: number2(),
+      v1y: number2(),
+      v1z: number2(),
+      v2x: number2(),
+      v2y: number2(),
+      v2z: number2()
+    },
+    sample: { w1x: 0, w1y: 1, w1z: 0, w2x: 0, w2y: 0, w2z: 1, v1x: 1, v1y: 0, v1z: 0, v2x: 0, v2y: 0, v2z: 1 },
+    run: (args) => triadQuest({
+      w1: [args.w1x, args.w1y, args.w1z],
+      w2: [args.w2x, args.w2y, args.w2z],
+      v1: [args.v1x, args.v1y, args.v1z],
+      v2: [args.v2x, args.v2y, args.v2z]
+    })
+  },
+  {
+    name: "herrick_gibbs",
+    description: "Herrick-Gibbs middle-epoch velocity from three radii.",
+    inputSchema: {
+      r1_m: number2(),
+      r2_m: number2(),
+      r3_m: number2(),
+      t1_s: number2(),
+      t2_s: number2(),
+      t3_s: number2(),
+      mu: number2().optional()
+    },
+    sample: { r1_m: 7078e3, r2_m: 708e4, r3_m: 7075e3, t1_s: -300, t2_s: 0, t3_s: 400 },
+    run: (args) => herrickGibbs({
+      r1: [args.r1_m, 0, 0],
+      r2: [args.r2_m * 0.999, args.r2_m * 0.04, 0],
+      r3: [args.r3_m * 0.996, args.r3_m * 0.08, 0],
+      t1: args.t1_s,
+      t2: args.t2_s,
+      t3: args.t3_s,
+      mu: args.mu ?? 3986004418e5
+    })
+  },
+  {
+    name: "lunisolar_rates",
+    description: "Doubly-averaged third-body nodal and apsidal rates.",
+    inputSchema: {
+      a_m: number2(),
+      e: number2(),
+      i_rad: number2(),
+      mu3: number2(),
+      d3_m: number2(),
+      mu: number2().optional()
+    },
+    sample: { a_m: 7178e3, e: 0.01, i_rad: 0.9, mu3: 49028e8, d3_m: 3844e5 },
+    run: (args) => lunisolarRates({
+      a: args.a_m,
+      e: args.e,
+      iRad: args.i_rad,
+      mu: args.mu ?? 3986004418e5,
+      mu3: args.mu3,
+      d3: args.d3_m
+    })
+  },
+  {
+    name: "pump_crank",
+    description: "Pump/crank gravity-assist turning of v_inf.",
+    inputSchema: {
+      vinf_mps: number2(),
+      rp_m: number2(),
+      pump_rad: number2(),
+      crank_rad: number2(),
+      v_planet_mps: number2(),
+      mu: number2().optional()
+    },
+    sample: { vinf_mps: 5e3, rp_m: 7378e3, pump_rad: 0.4, crank_rad: 0.3, v_planet_mps: 29780 },
+    run: (args) => pumpCrankFlyby({
+      vInf: args.vinf_mps,
+      mu: args.mu ?? 3986004418e5,
+      rp: args.rp_m,
+      pump: args.pump_rad,
+      crank: args.crank_rad,
+      vPlanet: args.v_planet_mps
+    })
+  },
+  {
+    name: "schweighart_sedwick",
+    description: "J2-shifted CW frequencies vs Clohessy-Wiltshire.",
+    inputSchema: {
+      a_m: number2(),
+      i_rad: number2(),
+      x_m: number2(),
+      z_m: number2(),
+      dt_s: number2()
+    },
+    sample: { a_m: 7078e3, i_rad: 0.9, x_m: 1e3, z_m: 500, dt_s: 600 },
+    run: (args) => schweighartSedwick({
+      a: args.a_m,
+      iRad: args.i_rad,
+      state0: { x: args.x_m, y: 0, z: args.z_m, vx: 0, vy: 0.2, vz: 0 },
+      dt: args.dt_s
+    })
   },
   {
     name: "bodies",

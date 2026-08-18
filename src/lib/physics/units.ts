@@ -46,6 +46,8 @@ export type UnitDef = {
 export const UNIT_DEFS: UnitDef[] = [
   { id: 'm', label: 'metre (m)', short: 'm', toBase: 1, category: 'length' },
   { id: 'km', label: 'kilometre (km)', short: 'km', toBase: 1000, category: 'length' },
+  { id: 'nm', label: 'nanometre (nm)', short: 'nm', toBase: 1e-9, category: 'length' },
+  { id: 'um', label: 'micrometre (µm)', short: 'µm', toBase: 1e-6, category: 'length' },
   { id: 'mm', label: 'millimetre (mm)', short: 'mm', toBase: 0.001, category: 'length' },
   { id: 'cm', label: 'centimetre (cm)', short: 'cm', toBase: 0.01, category: 'length' },
   { id: 'au', label: 'astronomical unit (AU)', short: 'AU', toBase: 149_597_870_700, category: 'length' },
@@ -248,7 +250,8 @@ export function convertAllInCategory(
 export const TOOL_UNIT_SETS = {
   altitude: ['km', 'm', 'mm', 'nmi', 'mi'],
   length: ['km', 'm', 'mm', 'cm', 'au', 'nmi', 'mi'],
-  lengthSmall: ['mm', 'cm', 'm', 'km'],
+  lengthSmall: ['nm', 'um', 'mm', 'cm', 'm', 'km'],
+  wavelength: ['nm', 'um', 'mm', 'm'],
   velocity: ['kmps', 'mps', 'kmph', 'mph'],
   mass: ['kg', 'g_mass', 't', 'lb'],
   time: ['s', 'ms', 'min', 'h', 'd', 'yr'],

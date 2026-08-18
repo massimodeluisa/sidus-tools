@@ -39,6 +39,8 @@ describe('units conversion', () => {
     expect(toSi(86400, 'kgpd')).toBeCloseTo(1, 10) // 86400 kg/day → 1 kg/s
     expect(fromSi(1 / 86400, 'kgpd')).toBeCloseTo(1, 10)
     expect(toSi(1, 'km2ps2')).toBe(1e6) // C3: 1 km²/s² = 1e6 J/kg
+    expect(toSi(500, 'nm')).toBeCloseTo(5e-7, 15)
+    expect(toSi(1, 'um')).toBeCloseTo(1e-6, 15)
   })
 
   it('pretty duration is virtual SI-seconds bridge', () => {

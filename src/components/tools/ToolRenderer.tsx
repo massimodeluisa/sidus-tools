@@ -182,6 +182,20 @@ const MAP: Record<string, LazyTool> = {
   'nyquist-rate': L(() => import('./NyquistRateTool').then((m) => ({ default: m.NyquistRateTool }))),
   'data-volume': L(() => import('./DataVolumeTool').then((m) => ({ default: m.DataVolumeTool }))),
   'earth-ir-flux': L(() => import('./EarthIrFluxTool').then((m) => ({ default: m.EarthIrFluxTool }))),
+  'molniya-tundra': L(() => import('./MolniyaTundraTool').then((m) => ({ default: m.MolniyaTundraTool }))),
+  'frozen-orbit': L(() => import('./FrozenOrbitTool').then((m) => ({ default: m.FrozenOrbitTool }))),
+  'thrust-to-weight': L(() => import('./ThrustToWeightTool').then((m) => ({ default: m.ThrustToWeightTool }))),
+  'planck-radiance': L(() => import('./PlanckRadianceTool').then((m) => ({ default: m.PlanckRadianceTool }))),
+  'eirp-gt': L(() => import('./EirpGtTool').then((m) => ({ default: m.EirpGtTool }))),
+  'quaternion-euler': L(() => import('./QuaternionEulerTool').then((m) => ({ default: m.QuaternionEulerTool }))),
+  'porkchop-earth-mars': L(() => import('./PorkchopEarthMarsTool').then((m) => ({ default: m.PorkchopEarthMarsTool }))),
+  'conjunction-pc': L(() => import('./ConjunctionPcTool').then((m) => ({ default: m.ConjunctionPcTool }))),
+  'b-plane-target': L(() => import('./BPlaneTargetTool').then((m) => ({ default: m.BPlaneTargetTool }))),
+  'quest-attitude': L(() => import('./QuestAttitudeTool').then((m) => ({ default: m.QuestAttitudeTool }))),
+  'herrick-gibbs': L(() => import('./HerrickGibbsTool').then((m) => ({ default: m.HerrickGibbsTool }))),
+  'lunisolar-rates': L(() => import('./LunisolarRatesTool').then((m) => ({ default: m.LunisolarRatesTool }))),
+  'pump-crank': L(() => import('./PumpCrankTool').then((m) => ({ default: m.PumpCrankTool }))),
+  'schweighart-sedwick': L(() => import('./SchweighartSedwickTool').then((m) => ({ default: m.SchweighartSedwickTool }))),
 }
 
 type Props = { id: string }

@@ -99,6 +99,13 @@ export const SOURCES: Record<string, SourceRef> = {
     url: 'https://www.nasa.gov/ohp/standards/',
     note: 'Human-system standards context (ppO₂ / atmosphere). SIDUS flags are educational. They are not flight-rule substitutes.',
   },
+  'nasa-cara': {
+    id: 'nasa-cara',
+    name: 'NASA Conjunction Assessment Risk Analysis (CARA)',
+    org: 'NASA',
+    url: 'https://www.nasa.gov/cara/step-2-close-approach-risk-assessment/',
+    note: 'Public conjunction Pc practice. SIDUS implements an educational 2-D Chan/Alfriend-class formula, not an operational CARA product.',
+  },
   iau: {
     id: 'iau',
     name: 'IAU / planetary constants practice',

@@ -364,3 +364,141 @@
     font-size: 16px !important;
   }
 }
+
+/*
+ * Styled tooltips (native `title` cannot be themed and is delayed).
+ * Visual: class `sidus-tooltip` + `data-tip="…"`.
+ * AT / SEO / GEO: same sentence in the DOM via aria-describedby / .sr-only,
+ * or aria-label when the control has no visible text. `alt` is only for <img>.
+ * Modifiers: sidus-tooltip-below, sidus-tooltip-start, sidus-tooltip-end.
+ */
+@utility sidus-tooltip {
+  --sidus-tip-x: -50%;
+  --sidus-tip-y: 0.2rem;
+  --sidus-tip-scale: 0.95;
+  --sidus-tip-arrow-x: -50%;
+  position: relative;
+  overflow: visible;
+
+  &[data-tip]:not([data-tip=''])::before,
+  &[data-tip]:not([data-tip=''])::after {
+    pointer-events: none;
+    position: absolute;
+    z-index: 80;
+    opacity: 0;
+    transition:
+      opacity 140ms ease,
+      transform 140ms ease;
+  }
+
+  &[data-tip]:not([data-tip=''])::before {
+    content: attr(data-tip);
+    bottom: calc(100% + 0.45rem);
+    left: 50%;
+    width: max-content;
+    max-width: min(18rem, calc(100vw - 2rem));
+    padding: 0.35rem 0.6rem;
+    border: 1px solid var(--color-border-strong);
+    background-color: var(--color-surface);
+    color: var(--color-fg);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-weight: 400;
+    line-height: 1.4;
+    letter-spacing: 0.02em;
+    text-align: left;
+    text-transform: none;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    box-shadow: 0 10px 28px -14px color-mix(in oklab, var(--color-fg) 42%, transparent);
+    transform: translateX(var(--sidus-tip-x)) translateY(var(--sidus-tip-y)) scale(var(--sidus-tip-scale));
+  }
+
+  &[data-tip]:not([data-tip=''])::after {
+    content: '';
+    bottom: calc(100% + 0.18rem);
+    left: 50%;
+    width: 0.4rem;
+    height: 0.4rem;
+    border-right: 1px solid var(--color-border-strong);
+    border-bottom: 1px solid var(--color-border-strong);
+    background-color: var(--color-surface);
+    transform: translateX(var(--sidus-tip-arrow-x)) translateY(var(--sidus-tip-y)) rotate(45deg)
+      scale(var(--sidus-tip-scale));
+  }
+
+  &[data-tip]:not([data-tip='']):hover,
+  &[data-tip]:not([data-tip='']):focus-visible,
+  &[data-tip]:not([data-tip='']):focus-within {
+    --sidus-tip-y: -0.12rem;
+    --sidus-tip-scale: 1;
+  }
+
+  &[data-tip]:not([data-tip='']):hover::before,
+  &[data-tip]:not([data-tip='']):hover::after,
+  &[data-tip]:not([data-tip='']):focus-visible::before,
+  &[data-tip]:not([data-tip='']):focus-visible::after,
+  &[data-tip]:not([data-tip='']):focus-within::before,
+  &[data-tip]:not([data-tip='']):focus-within::after {
+    opacity: 1;
+  }
+}
+
+@utility sidus-tooltip-below {
+  &[data-tip]:not([data-tip=''])::before {
+    bottom: auto;
+    top: calc(100% + 0.45rem);
+  }
+
+  &[data-tip]:not([data-tip=''])::after {
+    bottom: auto;
+    top: calc(100% + 0.18rem);
+    border-right: none;
+    border-bottom: none;
+    border-left: 1px solid var(--color-border-strong);
+    border-top: 1px solid var(--color-border-strong);
+  }
+
+  &[data-tip]:not([data-tip='']):hover,
+  &[data-tip]:not([data-tip='']):focus-visible,
+  &[data-tip]:not([data-tip='']):focus-within {
+    --sidus-tip-y: 0.12rem;
+  }
+}
+
+@utility sidus-tooltip-start {
+  --sidus-tip-x: 0%;
+  --sidus-tip-arrow-x: 0.85rem;
+
+  &[data-tip]:not([data-tip=''])::before,
+  &[data-tip]:not([data-tip=''])::after {
+    left: 0;
+  }
+}
+
+@utility sidus-tooltip-end {
+  --sidus-tip-x: 0%;
+  --sidus-tip-arrow-x: -0.85rem;
+
+  &[data-tip]:not([data-tip=''])::before,
+  &[data-tip]:not([data-tip=''])::after {
+    left: auto;
+    right: 0;
+  }
+
+  &[data-tip]:not([data-tip=''])::before {
+    transform: translateX(0) translateY(var(--sidus-tip-y)) scale(var(--sidus-tip-scale));
+  }
+
+  &[data-tip]:not([data-tip=''])::after {
+    transform: translateX(var(--sidus-tip-arrow-x)) translateY(var(--sidus-tip-y)) rotate(45deg)
+      scale(var(--sidus-tip-scale));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidus-tooltip[data-tip]:not([data-tip=''])::before,
+  .sidus-tooltip[data-tip]:not([data-tip=''])::after {
+    transition: opacity 80ms linear;
+  }
+}

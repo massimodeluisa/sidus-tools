@@ -31,7 +31,6 @@ export type ToolUiChrome = {
   back: boolean
   edit: boolean
   tags: boolean
-  meta: boolean
   precision: boolean
   sources: boolean
 }
@@ -97,7 +96,6 @@ export function parseToolUiLayout(params: URLSearchParams): ToolUiLayout {
       back: flag(params, 'back', chromeDefault),
       edit: flag(params, 'edit', chromeDefault),
       tags: flag(params, 'tags', chromeDefault),
-      meta: flag(params, 'meta', chromeDefault),
       precision: flag(params, 'precision', true),
       sources: flag(params, 'sources', !focus),
     },
@@ -150,7 +148,10 @@ export function usesTightPagePad(ui: Pick<ToolUiLayout, 'slots'>): boolean {
   return sizes.length > 0 && sizes.every((s) => s === 'full')
 }
 
-/** URL keys owned by the layout system (never tool physics). */
+/**
+ * URL keys owned by the layout system (never tool physics).
+ * `meta` is a legacy chrome flag (removed `#tag · live` eyebrow); still stripped.
+ */
 export const LAYOUT_PARAM_KEYS = [
   'focus',
   'chrome',
