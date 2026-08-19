@@ -1,0 +1,52 @@
+name: snippets
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 3 * * *'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install apt toolchains
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gfortran octave
+      - name: Install zig 0.14.1 (pinned)
+        run: |
+          curl -fsSL https://ziglang.org/download/0.14.1/zig-x86_64-linux-0.14.1.tar.xz -o zig.tar.xz
+          mkdir -p "$HOME/zig"
+          tar -xf zig.tar.xz -C "$HOME/zig" --strip-components=1
+          echo "$HOME/zig" >> "$GITHUB_PATH"
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.11'
+      - name: Install tectonic (latex compile check)
+        run: |
+          curl -fsSL https://drop-sh.fullyjustified.net | sh
+          sudo mv tectonic /usr/local/bin/
+      - name: Install python snippet libraries (pinned range)
+        run: python3 -m pip install --user 'sgp4~=2.23' 'numpy>=1.26,<3'
+      - name: Verify snippets
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            npx tsx scripts/verify-snippets.ts --changed --require-all
+          else
+            npx tsx scripts/verify-snippets.ts --require-all
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verify-matrix
+          path: docs/verify-matrix/
