@@ -14,6 +14,8 @@ export type GoldenDomain =
   | 'mission'
   | 'ops-aero'
   | 'eclss'
+  | 'sgp4'
+  | 'systems'
 
 export type GoldenCheck = {
   /** Short metric name shown in failures */
@@ -53,8 +55,11 @@ export const DOMAIN_DEFAULT_REL_TOL: Record<GoldenDomain, number> = {
   'link-rf': 1e-10,
   mission: 1e-12,
   'ops-aero': 1e-12,
+  systems: 1e-12,
   // Teaching models / published bands
   planetary: 1e-9,
   geometry: 1e-10,
   eclss: 1e-9,
+  // Backstop only: SGP4 cases must set cited absTol in meters / m/s (absTol wins in the runner).
+  sgp4: 1e-6,
 }

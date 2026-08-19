@@ -32,6 +32,8 @@ CI fails if any case exceeds its tolerance.
 - **mission**: μ, g, SOI, light-time, eclipse
 - **ops-aero**: Sutton-Graves, solar array, RCS
 - **eclss**: metabolic, LiOH
+- **systems**: reaction wheel momentum, EPS orbit-average power, panel EOL power, magnetorquer moment, battery DoD, cryogen boiloff, residual dipole torque
+- **sgp4**: SGP4/SDP4 TLE propagation vs published AIAA 2006-6753 verification vectors (tcppver.out; satellite.js)
 
 ## Adding a case
 
@@ -40,6 +42,18 @@ CI fails if any case exceeds its tolerance.
 3. Cite source class in `source` (Curtis / Vallado / JPL / ITU / OCHMO…).
 4. Prefer tight `relTol` (1e-12…1e-15) for algebraic identities; wider for textbook “class” numbers.
 
+## Coverage inventory (2026-08-19)
+
+Method: a tool page counts as anchored only if a physics function its component calls is exercised by a golden case or a physics unit test. This is function-level coverage. It does not certify the exact numeric scenario shown on each page, and it is not a marketing claim.
+
+Do not claim test coverage for these tool pages (no golden case or physics unit test exercises their physics functions):
+
+| Tool id | Physics function | Note |
+|---------|------------------|------|
+| `plotter` | none | expression compiler unit test (not a physics golden) |
+
+Regenerate this list when tools or tests change: map each tool component's `lib/physics` imports against the functions referenced in `golden/cases.ts` and `src/lib/physics/*.test.ts`.
+
 ## What this is not
 
-Educational two-body teaching models. Not flight certification, and not a match to GMAT or STK ephemerides.
+Educational two-body teaching models. Not flight certification, and not a match to GMAT or STK ephemerides. SGP4 golden cases verify the shipped satellite.js propagator against the published AIAA 2006-6753 verification vectors; they do not certify operational conjunction or reentry products.

@@ -49,6 +49,20 @@ import {
 import { freeSpacePathLossDb, linkBudget } from '../link'
 import { suttonGravesHeatFlux, SUTTON_GRAVES_K_EARTH } from '../ops'
 import {
+  effectiveAperture,
+  rainAttenuationDb,
+  ebN0FromCn0,
+  nyquistSampleRate,
+  rwMomentum,
+  epsOrbitAverage,
+  panelEolPower,
+  magnetorquerMoment,
+  batteryDepthOfDischarge,
+  boiloffRate,
+  residualDipoleTorque,
+} from '../discovery-wave'
+import { opticalQFromSnr } from '../gnss-optical'
+import {
   propellantForDeltaV,
   idealThrust,
   massRatioForDeltaV,
@@ -72,6 +86,10 @@ import {
 import { getBody } from '../bodies'
 import { metabolicBudget, liohDuration } from '../eclss'
 import { solarArrayPower, rcsDeltaV, angularDiameter } from '../power'
+import { parseTle, propagateEci } from '../sgp4'
+import { keplerPropagate } from '../kepler'
+import { lambertSolve } from '../lambert'
+import type { Vec3 } from '../vector'
 import type { GoldenCase } from './types'
 
 const R = EARTH_RADIUS
@@ -306,6 +324,55 @@ const twoBody: GoldenCase[] = [
         relTol: 0.02,
       },
     ],
+  },
+  {
+    id: 'tb-kepler-vallado-2-4',
+    domain: 'two-body',
+    name: 'Universal-variable Kepler propagation: Vallado Example 2-4 (Algorithm 8)',
+    source:
+      'Vallado, "Fundamentals of Astrodynamics and Applications", Example 2-4 (Algorithm 8). ' +
+      'Inputs confirmed from Vallado book software https://github.com/poliastro/vallado-software/blob/master/matlab/ex2_4.m; ' +
+      'expected values confirmed from the poliastro test reproduction "Data from Vallado, example 2.4" ' +
+      'https://github.com/poliastro/poliastro/blob/main/tests/tests_twobody/test_propagation.py (test_propagation). ' +
+      'Published km / km-s values converted to m / m-s (x1000).',
+    checks: (() => {
+      const r0: Vec3 = [1131340, -2282343, 6672423]
+      const v0: Vec3 = [-5643.05, 4303.33, 2428.79]
+      const dt = 2400
+      const g = () => keplerPropagate(MU, { r: r0, v: v0 }, dt)!
+      return [
+        { key: 'r_x_m', expected: -4219752.7, got: () => g().r[0], absTol: 1.0 },
+        { key: 'r_y_m', expected: 4363029.2, got: () => g().r[1], absTol: 1.0 },
+        { key: 'r_z_m', expected: -3958766.6, got: () => g().r[2], absTol: 1.0 },
+        { key: 'v_x_ms', expected: 3689.866, got: () => g().v[0], absTol: 1e-3 },
+        { key: 'v_y_ms', expected: -1916.735, got: () => g().v[1], absTol: 1e-3 },
+        { key: 'v_z_ms', expected: -6112.511, got: () => g().v[2], absTol: 1e-3 },
+      ]
+    })(),
+  },
+  {
+    id: 'tb-lambert-vallado-5-5',
+    domain: 'two-body',
+    name: 'Universal-variable Lambert solve: Vallado Example 5-5 (prograde, short way)',
+    source:
+      'Vallado, "Fundamentals of Astrodynamics and Applications", Example 5-5, as reproduced in the poliastro ' +
+      'documentation https://docs.poliastro.space/en/stable/examples/Revisiting%20Lamberts%20problem%20in%20Python.html. ' +
+      'absTol 0.05 m/s: printed digits are 1e-6 km/s but different book editions differ around 1e-5 km/s in the last ' +
+      'digits. Published km / km-s values converted to m / m-s (x1000).',
+    checks: (() => {
+      const r1: Vec3 = [15945340, 0, 0]
+      const r2: Vec3 = [12214833.99, 10249467.31, 0]
+      const tof = 4560
+      const g = () => lambertSolve(MU, r1, r2, tof, true)!
+      return [
+        { key: 'v1_x_ms', expected: 2058.925, got: () => g().v1[0], absTol: 0.05 },
+        { key: 'v1_y_ms', expected: 2915.956, got: () => g().v1[1], absTol: 0.05 },
+        { key: 'v1_z_ms', expected: 0, got: () => g().v1[2], absTol: 0.05 },
+        { key: 'v2_x_ms', expected: -3451.569, got: () => g().v2[0], absTol: 0.05 },
+        { key: 'v2_y_ms', expected: 910.301, got: () => g().v2[1], absTol: 0.05 },
+        { key: 'v2_z_ms', expected: 0, got: () => g().v2[2], absTol: 0.05 },
+      ]
+    })(),
   },
 ]
 
@@ -1038,6 +1105,71 @@ const linkRf: GoldenCase[] = [
       },
     ],
   },
+  {
+    id: 'antenna-gain-effective',
+    domain: 'link-rf',
+    name: 'Effective aperture from gain and wavelength (S-band dish class)',
+    source: 'Friis/antenna theory: Ae = G*lambda^2/(4*pi); ITU/NASA GRC class',
+    checks: [
+      {
+        key: 'Ae',
+        expected: (1000 * 0.1 ** 2) / (4 * Math.PI),
+        got: () => effectiveAperture(1000, 0.1)!,
+      },
+    ],
+  },
+  {
+    id: 'rain-attenuation-simple',
+    domain: 'link-rf',
+    name: 'Rain attenuation 20 mm/h over 5 km path',
+    source: 'ITU-R-class rain attenuation teaching model: A = k*R^alpha*L; k=0.01 alpha=1.1 defaults',
+    checks: [
+      {
+        key: 'A_db',
+        expected: 0.01 * 20 ** 1.1 * 5,
+        got: () => rainAttenuationDb(20, 5)!,
+      },
+    ],
+  },
+  {
+    id: 'ttc-ebno',
+    domain: 'link-rf',
+    name: 'TT&C Eb/N0 from CN0 and 1 kbps bit rate',
+    source: 'Link-budget theory: Eb/N0 = CN0/Rb linear; SMAD/Wertz-class TT&C relation',
+    checks: [
+      {
+        key: 'ebn0_lin',
+        expected: 50_000 / 1000,
+        got: () => ebN0FromCn0(50_000, 1000)!,
+      },
+    ],
+  },
+  {
+    id: 'optical-ber-q',
+    domain: 'link-rf',
+    name: 'Optical link Q-factor at SNR=100 (20 dB)',
+    source: 'Optical/OOK link theory: Q = sqrt(SNR) educational BER sketch; SMAD/Wertz-class',
+    checks: [
+      {
+        key: 'Q',
+        expected: Math.sqrt(100),
+        got: () => opticalQFromSnr(100)!,
+      },
+    ],
+  },
+  {
+    id: 'nyquist-rate',
+    domain: 'link-rf',
+    name: 'Nyquist rate for 1 MHz baseband signal',
+    source: 'Nyquist sampling theorem: fs >= 2*fmax',
+    checks: [
+      {
+        key: 'fs',
+        expected: 2 * 1e6,
+        got: () => nyquistSampleRate(1e6)!,
+      },
+    ],
+  },
 ]
 
 // ─── mission ──────────────────────────────────────────────────────────────
@@ -1284,6 +1416,213 @@ const eclss: GoldenCase[] = [
   },
 ]
 
+// ─── systems ──────────────────────────────────────────────────────────────
+
+const systems: GoldenCase[] = [
+  {
+    id: 'rw-momentum-capacity',
+    domain: 'systems',
+    name: 'Reaction wheel momentum capacity 0.05 kg m^2 at 500 rad/s',
+    source: 'SMAD/Wertz (Space Mission Analysis and Design): h = I*omega reaction wheel momentum; SI',
+    checks: [
+      {
+        key: 'h',
+        expected: 0.05 * 500,
+        got: () => rwMomentum(0.05, 500)!,
+      },
+    ],
+  },
+  {
+    id: 'eps-orbit-average',
+    domain: 'systems',
+    name: 'Orbit-average EPS power with 35% eclipse fraction',
+    source:
+      'SMAD/Wertz (Space Mission Analysis and Design): P = P_sun*(1-f_ecl)*eta orbit-average power; SI',
+    checks: [
+      {
+        key: 'P_avg',
+        expected: 3000 * (1 - 0.35) * 0.3,
+        got: () => epsOrbitAverage(3000, 0.35, 0.3)!,
+      },
+    ],
+  },
+  {
+    id: 'panel-eol-power',
+    domain: 'systems',
+    name: 'Solar panel EOL power after 10 years at 2.5%/yr degradation',
+    source:
+      'SMAD/Wertz (Space Mission Analysis and Design): P = P0*(1-d)^years solar array end-of-life degradation; SI',
+    checks: [
+      {
+        key: 'P_eol',
+        expected: 200 * (1 - 0.025) ** 10,
+        got: () => panelEolPower(200, 0.025, 10)!,
+      },
+    ],
+  },
+  {
+    id: 'magnetorquer-moment',
+    domain: 'systems',
+    name: 'Magnetorquer magnetic moment, 500-turn coil',
+    source:
+      'SMAD/Wertz (Space Mission Analysis and Design): m = N*I*A magnetorquer magnetic moment; SI',
+    checks: [
+      {
+        key: 'm',
+        expected: 500 * 0.5 * 0.02,
+        got: () => magnetorquerMoment(500, 0.5, 0.02)!,
+      },
+    ],
+  },
+  {
+    id: 'battery-dod',
+    domain: 'systems',
+    name: 'Battery depth of discharge, 1.5 MJ used of 5 MJ capacity',
+    source:
+      'SMAD/Wertz (Space Mission Analysis and Design): DoD = E_used/E_capacity battery depth of discharge; SI',
+    checks: [
+      {
+        key: 'DoD',
+        expected: 1.5e6 / 5e6,
+        got: () => batteryDepthOfDischarge(1.5e6, 5e6)!,
+      },
+    ],
+  },
+  {
+    id: 'boiloff-rate',
+    domain: 'systems',
+    name: 'Cryogen boiloff rate at 50 W heat leak (LOX-class h_fg)',
+    source: 'Latent heat: mdot = Q/h_fg',
+    checks: [
+      {
+        key: 'mdot',
+        expected: 50 / 2.13e5,
+        got: () => boiloffRate(50, 2.13e5)!,
+      },
+    ],
+  },
+  {
+    id: 'residual-dipole-torque',
+    domain: 'systems',
+    name: 'Residual dipole torque in LEO field (30 uT)',
+    source:
+      'SMAD/Wertz (Space Mission Analysis and Design): tau = m_res*B residual dipole torque; SI',
+    checks: [
+      {
+        key: 'tau',
+        expected: 0.5 * 3e-5,
+        got: () => residualDipoleTorque(0.5, 3e-5)!,
+      },
+    ],
+  },
+]
+
+// ─── SGP4 ─────────────────────────────────────────────────────────────────
+
+const SGP4_SOURCE =
+  "Vallado, Crawford, Hujsak, Kelso, 'Revisiting Spacetrack Report #3', AIAA 2006-6753. " +
+  'Verification files SGP4-VER.TLE and tcppver.out, https://celestrak.org/publications/AIAA/2006-6753/ ' +
+  '(mirror: https://github.com/brandon-rhodes/python-sgp4/blob/master/sgp4/tcppver.out). ' +
+  'Values copied verbatim; km and km/s converted to m and m/s (x1000).'
+
+/** Parses via shipped parseTle and propagates via shipped propagateEci; SI output. */
+function sgp4StateSi(
+  l1: string,
+  l2: string,
+  tMin: number,
+): { r: [number, number, number]; v: [number, number, number] } {
+  const p = parseTle(`${l1}\n${l2}`)
+  if (!p.ok) throw new Error(`sgp4StateSi: parseTle failed: ${p.error}`)
+  const epochMs = (p.satrec.jdsatepoch - 2440587.5) * 86400000
+  const date = new Date(Math.round(epochMs + tMin * 60000))
+  const st = propagateEci(p.satrec, date)
+  if (!st) throw new Error('sgp4StateSi: propagateEci returned null')
+  return { r: st.r, v: st.v }
+}
+
+const sgp4: GoldenCase[] = [
+  {
+    id: 'sgp4-00005-str3',
+    domain: 'sgp4',
+    name: 'STR#3 SGP4 test object 00005 at t=360 min',
+    source: `${SGP4_SOURCE} tcppver.out satnum section 00005.`,
+    checks: (() => {
+      const l1 = '1 00005U 58002B   00179.78495062  .00000023  00000-0  28098-4 0  4753'
+      const l2 = '2 00005  34.2682 348.7242 1859667 331.7664  19.3264 10.82419157413667'
+      const t = 360
+      const g = () => sgp4StateSi(l1, l2, t)
+      return [
+        { key: 'r_x_m', expected: -7154031.20202, got: () => g().r[0], absTol: 10 },
+        { key: 'r_y_m', expected: -3783176.82504, got: () => g().r[1], absTol: 10 },
+        { key: 'r_z_m', expected: -3536194.12294, got: () => g().r[2], absTol: 10 },
+        { key: 'v_x_ms', expected: 4741.887409, got: () => g().v[0], absTol: 0.01 },
+        { key: 'v_y_ms', expected: -4151.817765, got: () => g().v[1], absTol: 0.01 },
+        { key: 'v_z_ms', expected: -2093.935425, got: () => g().v[2], absTol: 0.01 },
+      ]
+    })(),
+  },
+  {
+    id: 'sgp4-06251-drag',
+    domain: 'sgp4',
+    name: 'DELTA 1 DEB 06251 near-earth drag at t=120 min',
+    source: `${SGP4_SOURCE} tcppver.out satnum section 06251.`,
+    checks: (() => {
+      const l1 = '1 06251U 62025E   06176.82412014  .00008885  00000-0  12808-3 0  3985'
+      const l2 = '2 06251  58.0579  54.0425 0030035 139.1568 221.1854 15.56387291  6774'
+      const t = 120
+      const g = () => sgp4StateSi(l1, l2, t)
+      return [
+        { key: 'r_x_m', expected: -3935698.00083, got: () => g().r[0], absTol: 10 },
+        { key: 'r_y_m', expected: 409109.80837, got: () => g().r[1], absTol: 10 },
+        { key: 'r_z_m', expected: 5471335.77327, got: () => g().r[2], absTol: 10 },
+        { key: 'v_x_ms', expected: -3374.784183, got: () => g().v[0], absTol: 0.01 },
+        { key: 'v_y_ms', expected: -6635.211043, got: () => g().v[1], absTol: 0.01 },
+        { key: 'v_z_ms', expected: -1942.056221, got: () => g().v[2], absTol: 0.01 },
+      ]
+    })(),
+  },
+  {
+    id: 'sdp4-28129-gps',
+    domain: 'sgp4',
+    name: 'NAVSTAR 53 GPS 12h SDP4 at t=720 min',
+    source: `${SGP4_SOURCE} tcppver.out satnum section 28129.`,
+    checks: (() => {
+      const l1 = '1 28129U 03058A   06175.57071136 -.00000104  00000-0  10000-3 0   459'
+      const l2 = '2 28129  54.7298 324.8098 0048506 266.2640  93.1663  2.00562768 18443'
+      const t = 720
+      const g = () => sgp4StateSi(l1, l2, t)
+      return [
+        { key: 'r_x_m', expected: 21858238.38148, got: () => g().r[0], absTol: 10 },
+        { key: 'r_y_m', expected: -15101516.61554, got: () => g().r[1], absTol: 10 },
+        { key: 'r_z_m', expected: 387345.17048, got: () => g().r[2], absTol: 10 },
+        { key: 'v_x_ms', expected: 1247.973967, got: () => g().v[0], absTol: 0.01 },
+        { key: 'v_y_ms', expected: 1856.017403, got: () => g().v[1], absTol: 0.01 },
+        { key: 'v_z_ms', expected: 3161.439948, got: () => g().v[2], absTol: 0.01 },
+      ]
+    })(),
+  },
+  {
+    id: 'sdp4-24208-geo',
+    domain: 'sgp4',
+    name: 'ITALSAT 2 GEO 24h resonant SDP4 at t=720 min',
+    source: `${SGP4_SOURCE} tcppver.out satnum section 24208.`,
+    checks: (() => {
+      const l1 = '1 24208U 96044A   06177.04061740 -.00000094  00000-0  10000-3 0  1600'
+      const l2 = '2 24208   3.8536  80.0121 0026640 311.0977  48.3000  1.00778054 36119'
+      const t = 720
+      const g = () => sgp4StateSi(l1, l2, t)
+      return [
+        { key: 'r_x_m', expected: -6874779.75542, got: () => g().r[0], absTol: 10 },
+        { key: 'r_y_m', expected: -41530383.29422, got: () => g().r[1], absTol: 10 },
+        { key: 'r_z_m', expected: -46602.45459, got: () => g().r[2], absTol: 10 },
+        { key: 'v_x_ms', expected: 3027.415087, got: () => g().v[0], absTol: 0.01 },
+        { key: 'v_y_ms', expected: -494.671177, got: () => g().v[1], absTol: 0.01 },
+        { key: 'v_z_ms', expected: -207.33726, got: () => g().v[2], absTol: 0.01 },
+      ]
+    })(),
+  },
+]
+
 export const GOLDEN_CASES: GoldenCase[] = [
   ...twoBody,
   ...maneuvers,
@@ -1295,6 +1634,8 @@ export const GOLDEN_CASES: GoldenCase[] = [
   ...mission,
   ...opsAero,
   ...eclss,
+  ...systems,
+  ...sgp4,
 ]
 
 export function casesByDomain(): Record<string, GoldenCase[]> {
