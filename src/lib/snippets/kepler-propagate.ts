@@ -170,117 +170,220 @@ const v_x = state.v[0]
 const v_y = state.v[1]
 const v_z = state.v[2]`,
 
-    c: `/* Universal Kepler: educational core: ${ASSUMPTIONS}
- * Free vars: mu, rx,ry,rz, vx,vy,vz, dt_s. Newton on χ then Lagrange f,g.
- * Stumpff series near z≈0 (full cos/cosh branches in Python/JS).
+    c: `/* Universal Kepler: full universal-variable propagator: ${ASSUMPTIONS}
+ * Free vars: mu, rx,ry,rz, vx,vy,vz, dt_s. Newton on chi (Vallado Alg. 8),
+ * Stumpff c2(z)/c3(z): trig for z>1e-8, hyperbolic for z<-1e-8, series near 0.
  */
 const double r0n = sqrt(rx*rx + ry*ry + rz*rz);
 const double v0n = sqrt(vx*vx + vy*vy + vz*vz);
 const double rdv = rx*vx + ry*vy + rz*vz;
 const double alpha = 2.0/r0n - (v0n*v0n)/mu;
-const double chi = sqrt(mu) * fabs(alpha) * dt_s; /* initial guess; iterate in full solver */
-const double z = alpha * chi * chi;
-const double C = 0.5 - z/24.0 + z*z/720.0;
-const double S = 1.0/6.0 - z/120.0 + z*z/5040.0;
-const double f = 1.0 - (chi*chi/r0n)*C;
-const double g = dt_s - (chi*chi*chi)/sqrt(mu)*S;
-const double rx1 = f*rx + g*vx;
-const double ry1 = f*ry + g*vy;
-const double rz1 = f*rz + g*vz;
-const double rn = sqrt(rx1*rx1 + ry1*ry1 + rz1*rz1);
-const double fd = sqrt(mu)/(rn*r0n)*(z*S - 1.0)*chi;
-const double gd = 1.0 - (chi*chi/rn)*C;
-const double vx1 = fd*rx + gd*vx;
-const double vy1 = fd*ry + gd*vy;
-const double vz1 = fd*rz + gd*vz;`,
+double chi = sqrt(mu) * fabs(alpha) * dt_s;
+double z = 0.0, c2 = 0.5, c3 = 1.0/6.0;
+for (int iter = 0; iter < 50; iter++) {
+  double s, rmag, dchi;
+  z = alpha * chi * chi;
+  if (z > 1e-8) {
+    s = sqrt(z);
+    c2 = (1.0 - cos(s)) / z;
+    c3 = (s - sin(s)) / (s*s*s);
+  } else if (z < -1e-8) {
+    s = sqrt(-z);
+    c2 = (1.0 - cosh(s)) / z;
+    c3 = (sinh(s) - s) / (s*s*s);
+  } else {
+    c2 = 0.5 - z/24.0 + z*z/720.0;
+    c3 = 1.0/6.0 - z/120.0 + z*z/5040.0;
+  }
+  rmag = chi*chi*c2 + (rdv/sqrt(mu))*chi*(1.0 - z*c3) + r0n*(1.0 - z*c2);
+  dchi = (sqrt(mu)*dt_s - chi*chi*chi*c3 - (rdv/sqrt(mu))*chi*chi*c2 - r0n*chi*(1.0 - z*c3)) / rmag;
+  chi += dchi;
+  if (fabs(dchi) < 1e-10) break;
+}
+const double f = 1.0 - (chi*chi/r0n)*c2;
+const double g = dt_s - (chi*chi*chi/sqrt(mu))*c3;
+const double r_x = f*rx + g*vx;
+const double r_y = f*ry + g*vy;
+const double r_z = f*rz + g*vz;
+const double rn = sqrt(r_x*r_x + r_y*r_y + r_z*r_z);
+const double fd = sqrt(mu)/(rn*r0n)*(z*c3 - 1.0)*chi;
+const double gd = 1.0 - (chi*chi/rn)*c2;
+const double v_x = fd*rx + gd*vx;
+const double v_y = fd*ry + gd*vy;
+const double v_z = fd*rz + gd*vz;`,
 
-    cpp: `// Universal Kepler: educational core: ${ASSUMPTIONS}
-// Free vars: mu, rx,ry,rz, vx,vy,vz, dt_s. Stumpff series + Lagrange f,g.
+    cpp: `// Universal Kepler: full universal-variable propagator: ${ASSUMPTIONS}
+// Free vars: mu, rx,ry,rz, vx,vy,vz, dt_s. Newton on chi (Vallado Alg. 8),
+// Stumpff c2(z)/c3(z): trig for z>1e-8, hyperbolic for z<-1e-8, series near 0.
 const double r0n = std::sqrt(rx*rx + ry*ry + rz*rz);
 const double v0n = std::sqrt(vx*vx + vy*vy + vz*vz);
 const double rdv = rx*vx + ry*vy + rz*vz;
 const double alpha = 2.0/r0n - (v0n*v0n)/mu;
-const double chi = std::sqrt(mu) * std::fabs(alpha) * dt_s;
-const double z = alpha * chi * chi;
-const double C = 0.5 - z/24.0 + z*z/720.0;
-const double S = 1.0/6.0 - z/120.0 + z*z/5040.0;
-const double f = 1.0 - (chi*chi/r0n)*C;
-const double g = dt_s - (chi*chi*chi)/std::sqrt(mu)*S;
-const double rx1 = f*rx + g*vx;
-const double ry1 = f*ry + g*vy;
-const double rz1 = f*rz + g*vz;
-const double rn = std::sqrt(rx1*rx1 + ry1*ry1 + rz1*rz1);
-const double fd = std::sqrt(mu)/(rn*r0n)*(z*S - 1.0)*chi;
-const double gd = 1.0 - (chi*chi/rn)*C;
-const double vx1 = fd*rx + gd*vx;
-const double vy1 = fd*ry + gd*vy;
-const double vz1 = fd*rz + gd*vz;`,
+double chi = std::sqrt(mu) * std::fabs(alpha) * dt_s;
+double z = 0.0, c2 = 0.5, c3 = 1.0/6.0;
+for (int iter = 0; iter < 50; iter++) {
+  double s, rmag, dchi;
+  z = alpha * chi * chi;
+  if (z > 1e-8) {
+    s = std::sqrt(z);
+    c2 = (1.0 - std::cos(s)) / z;
+    c3 = (s - std::sin(s)) / (s*s*s);
+  } else if (z < -1e-8) {
+    s = std::sqrt(-z);
+    c2 = (1.0 - std::cosh(s)) / z;
+    c3 = (std::sinh(s) - s) / (s*s*s);
+  } else {
+    c2 = 0.5 - z/24.0 + z*z/720.0;
+    c3 = 1.0/6.0 - z/120.0 + z*z/5040.0;
+  }
+  rmag = chi*chi*c2 + (rdv/std::sqrt(mu))*chi*(1.0 - z*c3) + r0n*(1.0 - z*c2);
+  dchi = (std::sqrt(mu)*dt_s - chi*chi*chi*c3 - (rdv/std::sqrt(mu))*chi*chi*c2 - r0n*chi*(1.0 - z*c3)) / rmag;
+  chi += dchi;
+  if (std::fabs(dchi) < 1e-10) break;
+}
+const double f = 1.0 - (chi*chi/r0n)*c2;
+const double g = dt_s - (chi*chi*chi/std::sqrt(mu))*c3;
+const double r_x = f*rx + g*vx;
+const double r_y = f*ry + g*vy;
+const double r_z = f*rz + g*vz;
+const double rn = std::sqrt(r_x*r_x + r_y*r_y + r_z*r_z);
+const double fd = std::sqrt(mu)/(rn*r0n)*(z*c3 - 1.0)*chi;
+const double gd = 1.0 - (chi*chi/rn)*c2;
+const double v_x = fd*rx + gd*vx;
+const double v_y = fd*ry + gd*vy;
+const double v_z = fd*rz + gd*vz;`,
 
-    rust: `// Universal Kepler: educational core: ${ASSUMPTIONS}
-// Free vars: mu, rx,ry,rz, vx,vy,vz, dt_s. Stumpff series + Lagrange f,g.
+    rust: `// Universal Kepler: full universal-variable propagator: ${ASSUMPTIONS}
+// Free vars: mu, rx,ry,rz, vx,vy,vz, dt_s. Newton on chi (Vallado Alg. 8),
+// Stumpff c2(z)/c3(z): trig for z>1e-8, hyperbolic for z<-1e-8, series near 0.
 let r0n = (rx*rx + ry*ry + rz*rz).sqrt();
 let v0n = (vx*vx + vy*vy + vz*vz).sqrt();
 let rdv = rx*vx + ry*vy + rz*vz;
 let alpha = 2.0/r0n - (v0n*v0n)/mu;
-let chi = mu.sqrt() * alpha.abs() * dt_s;
-let z = alpha * chi * chi;
-let c = 0.5 - z/24.0 + z*z/720.0;
-let s = 1.0/6.0 - z/120.0 + z*z/5040.0;
-let f = 1.0 - (chi*chi/r0n)*c;
-let g = dt_s - (chi*chi*chi)/mu.sqrt()*s;
-let rx1 = f*rx + g*vx;
-let ry1 = f*ry + g*vy;
-let rz1 = f*rz + g*vz;
-let rn = (rx1*rx1 + ry1*ry1 + rz1*rz1).sqrt();
-let fd = mu.sqrt()/(rn*r0n)*(z*s - 1.0)*chi;
-let gd = 1.0 - (chi*chi/rn)*c;
-let vx1 = fd*rx + gd*vx;
-let vy1 = fd*ry + gd*vy;
-let vz1 = fd*rz + gd*vz;`,
+let mut chi = mu.sqrt() * alpha.abs() * dt_s;
+let mut z = 0.0;
+let mut c2 = 0.5;
+let mut c3 = 1.0/6.0;
+for _ in 0..50 {
+    z = alpha * chi * chi;
+    if z > 1e-8 {
+        let s = z.sqrt();
+        c2 = (1.0 - s.cos()) / z;
+        c3 = (s - s.sin()) / (s*s*s);
+    } else if z < -1e-8 {
+        let s = (-z).sqrt();
+        c2 = (1.0 - s.cosh()) / z;
+        c3 = (s.sinh() - s) / (s*s*s);
+    } else {
+        c2 = 0.5 - z/24.0 + z*z/720.0;
+        c3 = 1.0/6.0 - z/120.0 + z*z/5040.0;
+    }
+    let rmag = chi*chi*c2 + (rdv/mu.sqrt())*chi*(1.0 - z*c3) + r0n*(1.0 - z*c2);
+    let dchi = (mu.sqrt()*dt_s - chi*chi*chi*c3 - (rdv/mu.sqrt())*chi*chi*c2 - r0n*chi*(1.0 - z*c3)) / rmag;
+    chi += dchi;
+    if dchi.abs() < 1e-10 { break; }
+}
+let f = 1.0 - (chi*chi/r0n)*c2;
+let g = dt_s - (chi*chi*chi/mu.sqrt())*c3;
+let r_x = f*rx + g*vx;
+let r_y = f*ry + g*vy;
+let r_z = f*rz + g*vz;
+let rn = (r_x*r_x + r_y*r_y + r_z*r_z).sqrt();
+let fd = mu.sqrt()/(rn*r0n)*(z*c3 - 1.0)*chi;
+let gd = 1.0 - (chi*chi/rn)*c2;
+let v_x = fd*rx + gd*vx;
+let v_y = fd*ry + gd*vy;
+let v_z = fd*rz + gd*vz;`,
 
-    zig: `// Universal Kepler: educational core: ${ASSUMPTIONS}
-// Free vars: mu, rx,ry,rz, vx,vy,vz, dt_s. Stumpff series + Lagrange f,g.
+    zig: `// Universal Kepler: full universal-variable propagator: ${ASSUMPTIONS}
+// Free vars: mu, rx,ry,rz, vx,vy,vz, dt_s. Newton on chi (Vallado Alg. 8),
+// Stumpff c2(z)/c3(z): trig for z>1e-8, hyperbolic for z<-1e-8, series near 0.
 const r0n = std.math.sqrt(rx*rx + ry*ry + rz*rz);
 const v0n = std.math.sqrt(vx*vx + vy*vy + vz*vz);
 const rdv = rx*vx + ry*vy + rz*vz;
 const alpha = 2.0/r0n - (v0n*v0n)/mu;
-const chi = std.math.sqrt(mu) * @abs(alpha) * dt_s;
-const z = alpha * chi * chi;
-const C = 0.5 - z/24.0 + z*z/720.0;
-const S = 1.0/6.0 - z/120.0 + z*z/5040.0;
-const f = 1.0 - (chi*chi/r0n)*C;
-const g = dt_s - (chi*chi*chi)/std.math.sqrt(mu)*S;
-const rx1 = f*rx + g*vx;
-const ry1 = f*ry + g*vy;
-const rz1 = f*rz + g*vz;
-const rn = std.math.sqrt(rx1*rx1 + ry1*ry1 + rz1*rz1);
-const fd = std.math.sqrt(mu)/(rn*r0n)*(z*S - 1.0)*chi;
-const gd = 1.0 - (chi*chi/rn)*C;
-const vx1 = fd*rx + gd*vx;
-const vy1 = fd*ry + gd*vy;
-const vz1 = fd*rz + gd*vz;`,
+var chi = std.math.sqrt(mu) * @abs(alpha) * dt_s;
+var z: f64 = 0.0;
+var c2: f64 = 0.5;
+var c3: f64 = 1.0 / 6.0;
+var iter: usize = 0;
+while (iter < 50) : (iter += 1) {
+    z = alpha * chi * chi;
+    if (z > 1e-8) {
+        const s = std.math.sqrt(z);
+        c2 = (1.0 - std.math.cos(s)) / z;
+        c3 = (s - std.math.sin(s)) / (s * s * s);
+    } else if (z < -1e-8) {
+        const s = std.math.sqrt(-z);
+        c2 = (1.0 - std.math.cosh(s)) / z;
+        c3 = (std.math.sinh(s) - s) / (s * s * s);
+    } else {
+        c2 = 0.5 - z / 24.0 + z * z / 720.0;
+        c3 = 1.0 / 6.0 - z / 120.0 + z * z / 5040.0;
+    }
+    const rmag = chi*chi*c2 + (rdv/std.math.sqrt(mu))*chi*(1.0 - z*c3) + r0n*(1.0 - z*c2);
+    const dchi = (std.math.sqrt(mu)*dt_s - chi*chi*chi*c3 - (rdv/std.math.sqrt(mu))*chi*chi*c2 - r0n*chi*(1.0 - z*c3)) / rmag;
+    chi += dchi;
+    if (@abs(dchi) < 1e-10) break;
+}
+const f = 1.0 - (chi*chi/r0n)*c2;
+const g = dt_s - (chi*chi*chi/std.math.sqrt(mu))*c3;
+const r_x = f*rx + g*vx;
+const r_y = f*ry + g*vy;
+const r_z = f*rz + g*vz;
+const rn = std.math.sqrt(r_x*r_x + r_y*r_y + r_z*r_z);
+const fd = std.math.sqrt(mu)/(rn*r0n)*(z*c3 - 1.0)*chi;
+const gd = 1.0 - (chi*chi/rn)*c2;
+const v_x = fd*rx + gd*vx;
+const v_y = fd*ry + gd*vy;
+const v_z = fd*rz + gd*vz;`,
 
-    fortran: `! Universal Kepler: educational core: ${ASSUMPTIONS}
-! Free vars: mu, rx,ry,rz, vx,vy,vz, dt_s. Stumpff series + Lagrange f,g.
+    fortran: `! Universal Kepler: full universal-variable propagator: ${ASSUMPTIONS}
+! Free vars: mu, rx,ry,rz, vx,vy,vz, dt_s. Newton on chi (Vallado Alg. 8),
+! Stumpff c2(z)/c3(z): trig for z>1e-8, hyperbolic for z<-1e-8, series near 0.
 r0n = sqrt(rx*rx + ry*ry + rz*rz)
 v0n = sqrt(vx*vx + vy*vy + vz*vz)
 rdv = rx*vx + ry*vy + rz*vz
 alpha = 2.0d0/r0n - (v0n*v0n)/mu
 chi = sqrt(mu) * abs(alpha) * dt_s
-z = alpha * chi * chi
-C = 0.5d0 - z/24.0d0 + z*z/720.0d0
-S = 1.0d0/6.0d0 - z/120.0d0 + z*z/5040.0d0
-f = 1.0d0 - (chi*chi/r0n)*C
-g = dt_s - (chi*chi*chi)/sqrt(mu)*S
-rx1 = f*rx + g*vx
-ry1 = f*ry + g*vy
-rz1 = f*rz + g*vz
-rn = sqrt(rx1*rx1 + ry1*ry1 + rz1*rz1)
-fd = sqrt(mu)/(rn*r0n)*(z*S - 1.0d0)*chi
-gd = 1.0d0 - (chi*chi/rn)*C
-vx1 = fd*rx + gd*vx
-vy1 = fd*ry + gd*vy
-vz1 = fd*rz + gd*vz`,
+z = 0.0d0
+c2 = 0.5d0
+c3 = 1.0d0/6.0d0
+s = 0.0d0
+rmag = r0n
+dchi = 0.0d0
+iter = 0.0d0
+do while (iter < 50.0d0)
+  z = alpha * chi * chi
+  if (z > 1.0d-8) then
+    s = sqrt(z)
+    c2 = (1.0d0 - cos(s)) / z
+    c3 = (s - sin(s)) / (s*s*s)
+  else if (z < -1.0d-8) then
+    s = sqrt(-z)
+    c2 = (1.0d0 - cosh(s)) / z
+    c3 = (sinh(s) - s) / (s*s*s)
+  else
+    c2 = 0.5d0 - z/24.0d0 + z*z/720.0d0
+    c3 = 1.0d0/6.0d0 - z/120.0d0 + z*z/5040.0d0
+  end if
+  rmag = chi*chi*c2 + (rdv/sqrt(mu))*chi*(1.0d0 - z*c3) + r0n*(1.0d0 - z*c2)
+  dchi = (sqrt(mu)*dt_s - chi*chi*chi*c3 - (rdv/sqrt(mu))*chi*chi*c2 - r0n*chi*(1.0d0 - z*c3)) / rmag
+  chi = chi + dchi
+  iter = iter + 1.0d0
+  if (abs(dchi) < 1.0d-10) exit
+end do
+f = 1.0d0 - (chi*chi/r0n)*c2
+g = dt_s - (chi*chi*chi/sqrt(mu))*c3
+r_x = f*rx + g*vx
+r_y = f*ry + g*vy
+r_z = f*rz + g*vz
+rn = sqrt(r_x*r_x + r_y*r_y + r_z*r_z)
+fd = sqrt(mu)/(rn*r0n)*(z*c3 - 1.0d0)*chi
+gd = 1.0d0 - (chi*chi/rn)*c2
+v_x = fd*rx + gd*vx
+v_y = fd*ry + gd*vy
+v_z = fd*rz + gd*vz`,
 
     matlab: `% Universal Kepler: ${ASSUMPTIONS}
 % Full Newton on chi with Stumpff C,S; free vars mu,rx,ry,rz,vx,vy,vz,dt_s
