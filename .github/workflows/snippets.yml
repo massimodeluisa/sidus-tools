@@ -19,6 +19,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Verify native SGP4 against AIAA 2006-6753
+        run: npx tsx scripts/verify-native-sgp4.ts
       - name: Install apt toolchains
         run: |
           sudo apt-get update
