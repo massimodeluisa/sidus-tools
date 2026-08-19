@@ -18,7 +18,9 @@ docs/ENGINEERING_TOOLS_SURVEY.md
 docs/AGENCY_OPEN_SOURCE_SURVEY.md
 
 # Generated / review artifacts — never in public history
+.verify-tmp/
 docs/godbolt-matrix/
+docs/verify-matrix/
 docs/reviews/
 docs/**/*.log
 /.cursor
