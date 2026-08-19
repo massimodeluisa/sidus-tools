@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ToolShell } from '@/components/shared/ToolShell'
 import { ParamsGrid } from '@/components/shared/ParamsGrid'
@@ -10,14 +10,14 @@ import { Chip } from '@/components/shared/Chip'
 import { ResultCard } from '@/components/shared/ResultCard'
 import { CodeExport } from '@/components/shared/CodeExport'
 import { OrbitScene3D } from '@/components/viz/OrbitScene3D'
-import { WorldMap, type WorldMapTrack } from '@/components/viz/WorldMap'
+import { GlobeMap } from '@/components/viz/GlobeMap'
+import type { GlobeSatellite, GlobeTrackPoint } from '@/components/viz/globe/types'
 import {
   DEFAULT_LAUNCH_SITE,
   EARTH_RADIUS,
   eciSiToEcefSi,
   eciSiToGeodetic,
   findNextPass,
-  groundTrack,
   observerEciPosition,
   parseTle,
   propagateEci,
@@ -321,43 +321,53 @@ export function PassPredictTool() {
     [issState, instant],
   )
 
-  const groundTrackA = useMemo(() => {
-    if (!parsed.ok) return []
-    return groundTrack(
-      parsed.satrec,
-      new Date(trailCenterMs - TRAIL_HALF_SPAN_S * 1000),
-      TRAIL_HALF_SPAN_S * 2,
-      92,
-    )
-  }, [parsed, trailCenterMs])
+  // Globe view: the same propagated trail the 3D view uses, as lon/lat/alt.
+  const globeTrack = useMemo(() => {
+    const out: GlobeTrackPoint[] = []
+    for (const pt of trailPoints) {
+      const date = new Date(pt.tMs)
+      const g = eciSiToGeodetic(pt.r, date)
+      if (!g) continue
+      out.push({ lon: g.lonDeg, lat: g.latDeg, altKm: g.heightM / 1000, date })
+    }
+    return out
+  }, [trailPoints])
 
-  const groundTrackB = useMemo(() => {
-    if (!parsed.ok || !pass) return []
-    return groundTrack(parsed.satrec, pass.aos, pass.durationS, 40)
-  }, [parsed, pass])
+  // Per-frame provider for the globe's follow chase: propagates at the
+  // requested instant instead of interpolating the 30 s trail samples.
+  const globePositionAt = useCallback(
+    (date: Date): GlobeTrackPoint | null => {
+      if (!parsed.ok) return null
+      const st = propagateEci(parsed.satrec, date)
+      if (!st) return null
+      const g = eciSiToGeodetic(st.r, date)
+      if (!g) return null
+      return { lon: g.lonDeg, lat: g.latDeg, altKm: g.heightM / 1000, date }
+    },
+    [parsed],
+  )
 
-  const mapTracks: WorldMapTrack[] = [
-    ...(groundTrackA.length > 1
-      ? [{ points: groundTrackA, color: 'var(--color-muted)', width: 1.5 }]
-      : []),
-    ...(groundTrackB.length > 1
-      ? [{ points: groundTrackB, color: 'rgba(184,165,90,0.95)', width: 2.25 }]
-      : []),
-  ]
-
-  const mapMarkers = [
-    ...(issGeo
-      ? [
-          {
-            lat: issGeo.latDeg,
-            lon: issGeo.lonDeg,
-            label: t('fields.marker_iss'),
-            color: 'rgba(184,165,90,0.95)',
-          },
-        ]
-      : []),
-    { lat: p.lat, lon: p.lon, label: t('fields.marker_you'), color: '#f5f5f5' },
-  ]
+  const globeSatellites = useMemo<GlobeSatellite[]>(() => {
+    if (globeTrack.length < 2) return []
+    return [
+      {
+        id: 'sat',
+        label: t('fields.marker_iss'),
+        color: 'rgba(184,165,90,0.95)',
+        positions: globeTrack,
+        splitAt: instant,
+        livePosition: issGeo
+          ? {
+              lon: issGeo.lonDeg,
+              lat: issGeo.latDeg,
+              altKm: issGeo.heightM / 1000,
+              date: instant,
+            }
+          : undefined,
+        positionAt: globePositionAt,
+      },
+    ]
+  }, [globeTrack, instant, issGeo, globePositionAt, t])
 
   function onUseMyLocation() {
     if (!('geolocation' in navigator)) {
@@ -644,13 +654,17 @@ export function PassPredictTool() {
             </div>
             <div className="min-h-0 flex-1">
               {p.view === 'map' ? (
-                <WorldMap
-                  tracks={mapTracks}
-                  markers={mapMarkers}
-                  subsolarLat={subsolar.latDeg}
-                  subsolarLon={subsolar.lonDeg}
-                  title={t('fields.title_pass_map')}
-                  subtitle={t('fields.subtitle_pass_map')}
+                <GlobeMap
+                  satellites={globeSatellites}
+                  observer={{
+                    lat: p.lat,
+                    lon: p.lon,
+                    label: t('fields.marker_you'),
+                    color: '#f5f5f5',
+                  }}
+                  subsolar={{ latDeg: subsolar.latDeg, lonDeg: subsolar.lonDeg }}
+                  title={t('fields.title_pass_globe')}
+                  caption={t('fields.subtitle_pass_globe')}
                 />
               ) : (
                 <OrbitScene3D
@@ -676,6 +690,7 @@ export function PassPredictTool() {
                       : []),
                     { r: obsMarker.r, label: obsMarker.label, color: '#f5f5f5' },
                   ]}
+                  height={340}
                 />
               )}
             </div>
@@ -692,12 +707,12 @@ export function PassPredictTool() {
                 {t('fields.live_nasa_yt')}
               </a>
               <a
-                href="https://plus.nasa.gov/scheduled-video/iss-live/"
+                href="https://www.youtube.com/playlist?list=PL2aBZuCeDwlQMf6xMgQAUAY_nbHAgW5jz"
                 target="_blank"
                 rel="noopener"
                 className="font-mono text-[10px] text-signal hover:underline"
               >
-                {t('fields.live_nasa_plus')}
+                {t('fields.live_nasa_iss_playlist')}
               </a>
             </div>
           </div>
