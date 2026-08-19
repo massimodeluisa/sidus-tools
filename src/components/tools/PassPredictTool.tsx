@@ -11,15 +11,19 @@ import { ResultCard } from '@/components/shared/ResultCard'
 import { CodeExport } from '@/components/shared/CodeExport'
 import { TrajectoryPlot } from '@/components/viz/TrajectoryPlot'
 import { OrbitScene3D } from '@/components/viz/OrbitScene3D'
+import { WorldMap, type WorldMapTrack } from '@/components/viz/WorldMap'
 import {
   DEFAULT_LAUNCH_SITE,
   EARTH_RADIUS,
   eciSiToEcefSi,
+  eciSiToGeodetic,
   findNextPass,
+  groundTrack,
   observerEciPosition,
   parseTle,
   propagateEci,
   SAMPLE_ISS_TLE,
+  sunEciSi,
   TOOL_UNIT_SETS,
   topocentricSezSi,
   type Vec3,
@@ -46,7 +50,8 @@ const SCHEMA = {
   at: strParam(''),
   tz: strParam(''),
   mark: strParam('aos', ['now', 'aos', 'peak']),
-  view: strParam('3d', ['3d', '2d']),
+  view: strParam('3d', ['3d', '2d', 'map']),
+  vis: strParam('0', ['0', '1']),
 } as const
 
 const TRAIL_HALF_SPAN_S = 46 * 60
@@ -102,8 +107,9 @@ export function PassPredictTool() {
       stepS: 20,
       refineS: 1,
       minElDeg: p.minEl,
+      visibleOnly: p.vis === '1',
     })
-  }, [p.h_m, p.hours, p.lat, p.lon, p.minEl, parsed, start])
+  }, [p.h_m, p.hours, p.lat, p.lon, p.minEl, p.vis, parsed, start])
 
   const zone = p.tz !== '' && isValidTimeZone(p.tz) ? p.tz : browserTimeZone()
 
@@ -150,6 +156,15 @@ export function PassPredictTool() {
     const countdown = c.h > 0 ? `${c.h} h ${c.m} min` : `${c.m} min`
     return t('fields.pass_headline', { ...vars, countdown })
   }, [pass, localFmt, passStarted, nowMs, t])
+
+  const visibilityLine = useMemo(() => {
+    if (!pass) return ''
+    if (pass.visible && pass.visibleAt) {
+      const vfmt = formatInZone(pass.visibleAt, zone, i18n.language)
+      return t('fields.pass_visible', { time: `${vfmt.time} ${vfmt.zoneAbbr}` })
+    }
+    return t('fields.pass_not_visible')
+  }, [pass, zone, i18n.language, t])
 
   const rawMark = p.mark === 'now' || p.mark === 'peak' ? p.mark : 'aos'
   const effectiveMark: 'now' | 'aos' | 'peak' = pass ? rawMark : 'now'
@@ -224,6 +239,55 @@ export function PassPredictTool() {
 
   const issMarker = issState ? { r: issState.r, label: t('fields.marker_iss') } : null
   const obsMarker = { r: obsR, label: t('fields.marker_you') }
+
+  // World-map data: ground tracks + subsolar point, in lat/lon (deg).
+  const subsolar = useMemo(() => {
+    const g = eciSiToGeodetic(sunEciSi(instant), instant)
+    return g ?? { latDeg: 0, lonDeg: 0, heightM: 0 }
+  }, [instant])
+
+  const issGeo = useMemo(
+    () => (issState ? eciSiToGeodetic(issState.r, instant) : null),
+    [issState, instant],
+  )
+
+  const groundTrackA = useMemo(() => {
+    if (!parsed.ok) return []
+    return groundTrack(
+      parsed.satrec,
+      new Date(trailCenterMs - TRAIL_HALF_SPAN_S * 1000),
+      TRAIL_HALF_SPAN_S * 2,
+      92,
+    )
+  }, [parsed, trailCenterMs])
+
+  const groundTrackB = useMemo(() => {
+    if (!parsed.ok || !pass) return []
+    return groundTrack(parsed.satrec, pass.aos, pass.durationS, 40)
+  }, [parsed, pass])
+
+  const mapTracks: WorldMapTrack[] = [
+    ...(groundTrackA.length > 1
+      ? [{ points: groundTrackA, color: 'var(--color-muted)', width: 1.5 }]
+      : []),
+    ...(groundTrackB.length > 1
+      ? [{ points: groundTrackB, color: 'rgba(184,165,90,0.95)', width: 2.25 }]
+      : []),
+  ]
+
+  const mapMarkers = [
+    ...(issGeo
+      ? [
+          {
+            lat: issGeo.latDeg,
+            lon: issGeo.lonDeg,
+            label: t('fields.marker_iss'),
+            color: 'rgba(184,165,90,0.95)',
+          },
+        ]
+      : []),
+    { lat: p.lat, lon: p.lon, label: t('fields.marker_you'), color: '#f5f5f5' },
+  ]
 
   function onUseMyLocation() {
     if (!('geolocation' in navigator)) {
@@ -427,6 +491,7 @@ export function PassPredictTool() {
                 </span>
               ) : null}
             </div>
+            <p className="font-mono text-sm text-muted">{visibilityLine}</p>
             <div className="sidus-results">
               <ResultCard
                 label={t('fields.aos_local')}
@@ -493,6 +558,12 @@ export function PassPredictTool() {
               <Chip active={p.view === '2d'} onClick={() => setP({ view: '2d' })}>
                 2D
               </Chip>
+              <Chip active={p.view === 'map'} onClick={() => setP({ view: 'map' })}>
+                MAP
+              </Chip>
+              <Chip active={p.vis === '1'} onClick={() => setP({ vis: p.vis === '1' ? '0' : '1' })}>
+                {t('fields.only_visible')}
+              </Chip>
             </div>
             <div className="min-h-0 flex-1">
               {p.view === '2d' ? (
@@ -502,6 +573,15 @@ export function PassPredictTool() {
                   markers={issMarker ? [issMarker, obsMarker] : [obsMarker]}
                   title={t('fields.title_pass_viz')}
                   subtitle={t('fields.subtitle_pass_viz')}
+                />
+              ) : p.view === 'map' ? (
+                <WorldMap
+                  tracks={mapTracks}
+                  markers={mapMarkers}
+                  subsolarLat={subsolar.latDeg}
+                  subsolarLon={subsolar.lonDeg}
+                  title={t('fields.title_pass_map')}
+                  subtitle={t('fields.subtitle_pass_map')}
                 />
               ) : (
                 <OrbitScene3D
@@ -515,6 +595,27 @@ export function PassPredictTool() {
                   ]}
                 />
               )}
+            </div>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted">
+                {t('fields.live_links')}
+              </span>
+              <a
+                href="https://www.youtube.com/@NASA/streams"
+                target="_blank"
+                rel="noopener"
+                className="font-mono text-[10px] text-signal hover:underline"
+              >
+                {t('fields.live_nasa_yt')}
+              </a>
+              <a
+                href="https://plus.nasa.gov/scheduled-video/iss-live/"
+                target="_blank"
+                rel="noopener"
+                className="font-mono text-[10px] text-signal hover:underline"
+              >
+                {t('fields.live_nasa_plus')}
+              </a>
             </div>
           </div>
         ) : null
