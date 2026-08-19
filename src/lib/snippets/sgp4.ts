@@ -4,8 +4,10 @@ const ASSUMPTIONS =
   'SGP4/SDP4 mean elements (NORAD TLE); TEME-like ECI; WGS-72/84 via satellite.js / sgp4 (MIT). Positions km → convert to m for SI apps.'
 
 /**
- * Library-backed for Python / JS / TS. Systems langs get a pure Keplerian
- * mean-motion educational core (not full SGP4 series) with deps declared.
+ * Library-backed for Python / JS / TS (satellite.js, python-sgp4).
+ * Systems languages (C, C++, Rust, Zig, Fortran) are intentionally omitted
+ * for this tool: a Kepler mean-motion proxy is not full SGP4 and must not
+ * ship under an SGP4 label.
  */
 export const sgp4Snippets: FormulaSnippet = {
   formulaId: 'sgp4',
@@ -99,42 +101,6 @@ if err != 0:
     raise RuntimeError(f"sgp4 error {err}")
 r_m = [x * 1000 for x in r_km]
 v_ms = [x * 1000 for x in v_kms]`,
-
-    // Pure educational Kepler core from TLE mean motion (not full SGP4)
-    c: `/* Kepler mean-element proxy from TLE n: not full SGP4 series */
-/* free: n_rev_day [rev/day], mu [m^3/s^2] */
-const double n = n_rev_day * 2.0 * M_PI / 86400.0; /* rad/s */
-const double a = cbrt(mu / (n * n)); /* circular SMA [m] */
-const double v_c = sqrt(mu / a);
-const double T = 2.0 * M_PI / n;`,
-
-    cpp: `// Kepler mean-element proxy from TLE n: not full SGP4 series
-// free: n_rev_day [rev/day], mu [m^3/s^2]
-const double n = n_rev_day * 2.0 * M_PI / 86400.0; // rad/s
-const double a = std::cbrt(mu / (n * n)); // circular SMA [m]
-const double v_c = std::sqrt(mu / a);
-const double T = 2.0 * M_PI / n;`,
-
-    rust: `// Kepler mean-element proxy from TLE n: not full SGP4 series
-// free: n_rev_day [rev/day], mu [m^3/s^2]
-let n = n_rev_day * 2.0 * std::f64::consts::PI / 86400.0; // rad/s
-let a = (mu / (n * n)).cbrt(); // circular SMA [m]
-let v_c = (mu / a).sqrt();
-let t = 2.0 * std::f64::consts::PI / n;`,
-
-    zig: `// Kepler mean-element proxy from TLE n: not full SGP4 series
-// free: n_rev_day [rev/day], mu [m^3/s^2]
-const n = n_rev_day * 2.0 * std.math.pi / 86400.0; // rad/s
-const a = std.math.cbrt(mu / (n * n)); // circular SMA [m]
-const v_c = std.math.sqrt(mu / a);
-const T = 2.0 * std.math.pi / n;`,
-
-    fortran: `! Kepler mean-element proxy from TLE n: not full SGP4 series
-! free: n_rev_day [rev/day], mu [m^3/s^2]
-n = n_rev_day * 2.0d0 * 3.141592653589793d0 / 86400.0d0
-a = (mu / (n * n))**(1.0d0/3.0d0)
-v_c = sqrt(mu / a)
-T = 2.0d0 * 3.141592653589793d0 / n`,
 
     matlab: `% SGP4: use Aerospace Toolbox or validated SGP4 mex
 % [r,v] = sgp4(satrec, tsince);  % km, km/s in TEME
