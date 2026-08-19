@@ -25,6 +25,19 @@ export type TransferArc = {
   ghost?: boolean
 }
 
+export type SceneTrack = {
+  points: [number, number, number][]
+  color?: string
+  width?: number
+  dash?: number[]
+}
+
+export type ScenePointMarker = {
+  r: [number, number, number]
+  label: string
+  color?: string
+}
+
 export type OrbitScene3DProps = {
   bodyR: number
   /** Circular orbit radii [m] (closed rings) */
@@ -51,6 +64,15 @@ export type OrbitScene3DProps = {
    */
   height?: number
   showEscapeCircularRef?: boolean
+  /**
+   * Optional generic point tracks (e.g. ground track, trajectory) [m], drawn as
+   * projected polylines in the same world scale as radii/arcs.
+   */
+  tracks?: SceneTrack[]
+  /**
+   * Optional labeled point markers [m], drawn as a small dot + text label.
+   */
+  pointMarkers?: ScenePointMarker[]
 }
 
 type Cam = { yaw: number; pitch: number; zoom: number }
@@ -264,6 +286,8 @@ export function OrbitScene3D({
   className,
   height,
   showEscapeCircularRef = true,
+  tracks = [],
+  pointMarkers = [],
 }: OrbitScene3DProps) {
   const { t } = useTranslation()
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -286,8 +310,14 @@ export function OrbitScene3D({
     if (escapePeriapsis != null && escapePeriapsis > 0) {
       list.push(escapePeriapsis, escapePeriapsis * 6)
     }
+    for (const track of tracks) {
+      for (const [x, y, z] of track.points) list.push(Math.hypot(x, y, z))
+    }
+    for (const marker of pointMarkers) {
+      list.push(Math.hypot(marker.r[0], marker.r[1], marker.r[2]))
+    }
     return Math.max(...list.filter((x) => Number.isFinite(x) && x > 0), 1)
-  }, [bodyR, radii, resolvedArcs, escapePeriapsis])
+  }, [bodyR, radii, resolvedArcs, escapePeriapsis, tracks, pointMarkers])
 
   const zoomBy = useCallback((factor: number) => {
     setCam((prev) => ({ ...prev, zoom: clampZoom(prev.zoom * factor) }))
@@ -475,6 +505,33 @@ export function OrbitScene3D({
         ctx.fillStyle = '#f5f5f5'
         ctx.fill()
       }
+
+      // Caller-supplied generic tracks (e.g. ground track, trajectory)
+      for (const track of tracks) {
+        drawPath(track.points, track.color ?? '#f5f5f5', track.width ?? 1.5, track.dash)
+      }
+
+      // Caller-supplied labeled point markers
+      for (const marker of pointMarkers) {
+        const color = marker.color ?? '#f5f5f5'
+        const p = project(marker.r[0], marker.r[1], marker.r[2], camNow, w, h, worldScale)
+        ctx.beginPath()
+        ctx.arc(p.X, p.Y, 3, 0, Math.PI * 2)
+        ctx.fillStyle = color
+        ctx.fill()
+        ctx.strokeStyle = '#050506'
+        ctx.lineWidth = 1
+        ctx.stroke()
+
+        ctx.font = '10px ui-monospace, SFMono-Regular, Menlo, monospace'
+        ctx.textAlign = 'left'
+        ctx.textBaseline = 'alphabetic'
+        ctx.strokeStyle = '#050506'
+        ctx.lineWidth = 3
+        ctx.strokeText(marker.label, p.X + 7, p.Y - 6)
+        ctx.fillStyle = color
+        ctx.fillText(marker.label, p.X + 7, p.Y - 6)
+      }
     }
 
     const tick = () => {
@@ -495,6 +552,8 @@ export function OrbitScene3D({
     resolvedArcs,
     escapePeriapsis,
     showEscapeCircularRef,
+    tracks,
+    pointMarkers,
   ])
 
   const zoomPct = Math.round(cam.zoom * 100)

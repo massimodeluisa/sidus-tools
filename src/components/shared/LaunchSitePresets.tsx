@@ -14,12 +14,14 @@ type Props = {
   latDeg?: number
   lonDeg?: number
   className?: string
+  /** Override the presets row label (default: "Launch sites"). */
+  label?: string
 }
 
 /**
  * Preset chips for major orbital launch ranges (shared across ground-site tools).
  */
-export function LaunchSitePresets({ onSelect, latDeg, lonDeg, className }: Props) {
+export function LaunchSitePresets({ onSelect, latDeg, lonDeg, className, label }: Props) {
   const { t } = useTranslation()
   const active =
     latDeg != null && lonDeg != null
@@ -29,7 +31,7 @@ export function LaunchSitePresets({ onSelect, latDeg, lonDeg, className }: Props
         : undefined
 
   return (
-    <FieldPresets label={t('common.launch_sites')} className={className}>
+    <FieldPresets label={label ?? t('common.launch_sites')} className={className}>
       {LAUNCH_SITES.map((site) => (
         <PresetChip
           key={site.id}
