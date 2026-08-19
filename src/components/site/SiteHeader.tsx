@@ -53,7 +53,7 @@ export function SiteHeader() {
               key={item.to}
               to={item.to}
               end={item.end}
-              className={({ isActive }) =>
+              className={({ isActive }: { isActive: boolean }) =>
                 cn(
                   'flex h-9 items-center gap-2 rounded-sm px-3 font-mono text-[11px] uppercase tracking-[0.14em] no-underline transition-colors',
                   isActive
