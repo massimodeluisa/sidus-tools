@@ -104,37 +104,56 @@ function useToolChromeDock(
 ): boolean {
   const [docked, setDocked] = useState(false)
   const dockedRef = useRef(false)
+  /** Last published --tool-sticky-stack px value (not raw offsetHeight). */
   const lastBarH = useRef(0)
+  /** Bar's undocked resting padding-top in px (constant on desktop; mobile
+   *  still collapses it to 0 via its own class when docked). */
+  const padRef = useRef(0)
+  /** Bar's offsetHeight cached from the last frame it was measured undocked;
+   *  feeds the mobile spacer so its height never reflects a docked (padding-
+   *  collapsed) measurement. */
+  const undockedFlowHRef = useRef(0)
   const onBarHeightRef = useRef(onBarHeight)
   onBarHeightRef.current = onBarHeight
 
   useEffect(() => {
     let raf = 0
-    const DOCK_ON = 40
-    const DOCK_OFF = 12
     const HEIGHT_EPS = 2
 
     function publishHeight() {
       const el = barRef.current
       const barH = el?.offsetHeight || 48
-      if (Math.abs(barH - lastBarH.current) < HEIGHT_EPS) return
-      lastBarH.current = barH
-      onBarHeightRef.current?.(barH)
-      document.documentElement.style.setProperty(
-        '--tool-sticky-stack',
-        `${headerPx + barH}px`,
-      )
+      if (!dockedRef.current) undockedFlowHRef.current = barH
+      const published =
+        headerPx + (dockedRef.current ? Math.max(0, barH - padRef.current) : barH)
+      if (Math.abs(published - lastBarH.current) < HEIGHT_EPS) return
+      lastBarH.current = published
+      onBarHeightRef.current?.(undockedFlowHRef.current)
+      document.documentElement.style.setProperty('--tool-sticky-stack', `${published}px`)
+    }
+
+    // Resting padding-top, used for the dock thresholds and the stack math.
+    // Only valid while undocked (docked can collapse it via CSS on mobile).
+    function measurePad() {
+      const el = barRef.current
+      if (!el || dockedRef.current) return
+      padRef.current = parseFloat(getComputedStyle(el).paddingTop) || 0
     }
 
     function measureScrollDock() {
       const y = window.scrollY || 0
+      const pad = padRef.current
+      const dockOn = pad + 2
+      const dockOff = Math.max(2, pad - 8)
       let next = dockedRef.current
-      if (!dockedRef.current && y >= DOCK_ON) next = true
-      else if (dockedRef.current && y <= DOCK_OFF) next = false
-      if (next !== dockedRef.current) {
+      if (!dockedRef.current && y >= dockOn) next = true
+      else if (dockedRef.current && y <= dockOff) next = false
+      const flipped = next !== dockedRef.current
+      if (flipped) {
         dockedRef.current = next
         setDocked(next)
       }
+
       publishHeight()
     }
 
@@ -143,6 +162,15 @@ function useToolChromeDock(
       raf = requestAnimationFrame(measureScrollDock)
     }
 
+    const onResize = () => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(() => {
+        measurePad()
+        measureScrollDock()
+      })
+    }
+
+    measurePad()
     measureScrollDock()
     const ro =
       typeof ResizeObserver !== 'undefined' && barRef.current
@@ -154,12 +182,12 @@ function useToolChromeDock(
     if (ro && barRef.current) ro.observe(barRef.current)
 
     window.addEventListener('scroll', onScroll, { passive: true })
-    window.addEventListener('resize', onScroll)
+    window.addEventListener('resize', onResize)
     return () => {
       cancelAnimationFrame(raf)
       ro?.disconnect()
       window.removeEventListener('scroll', onScroll)
-      window.removeEventListener('resize', onScroll)
+      window.removeEventListener('resize', onResize)
       document.documentElement.style.removeProperty('--tool-sticky-stack')
     }
   }, [barRef, headerPx])
@@ -536,7 +564,7 @@ export function ToolLayoutBar({
         onClick={toggleFocus}
         {...tooltipProps(
           t('layout.focus_hint'),
-          cn(btn, 'size-9 justify-center px-0 sm:size-auto sm:px-2', ui.chrome.focus && btnActive),
+          cn(btn, 'size-9 justify-center px-0 sm:h-7 sm:w-auto sm:px-2', ui.chrome.focus && btnActive),
           'below-end',
         )}
         aria-label={t('layout.focus')}
@@ -549,7 +577,7 @@ export function ToolLayoutBar({
         onClick={() => void copyLink()}
         {...tooltipProps(
           copied ? t('tool.copied') : t('layout.copy_link'),
-          cn(btn, 'size-9 justify-center px-0 sm:size-auto sm:px-2'),
+          cn(btn, 'size-9 justify-center px-0 sm:h-7 sm:w-auto sm:px-2'),
           'below-end',
         )}
         aria-label={copied ? t('tool.copied') : t('layout.copy_link')}
@@ -564,7 +592,7 @@ export function ToolLayoutBar({
         onClick={() => setOpen((o) => !o)}
         {...tooltipProps(
           t('layout.advanced'),
-          cn(btn, 'size-9 justify-center px-0 sm:size-auto sm:px-2', open && btnActive),
+          cn(btn, 'size-9 justify-center px-0 sm:h-7 sm:w-auto sm:px-2', open && btnActive),
           'below-end',
         )}
         aria-expanded={open}
@@ -599,30 +627,38 @@ export function ToolLayoutBar({
         data-docked={docked ? '1' : '0'}
         data-mobile-strip={isMobileStrip ? '1' : '0'}
         className={cn(
-          'z-30 w-full max-w-full min-w-0 transition-[padding] duration-200 ease-out',
+          'z-30 w-full max-w-full min-w-0',
           isMobileStrip
-            ? docked
-              ? // Pinned under fixed SiteHeader (h-14)
-                'fixed inset-x-0 top-14 shrink-0 pt-0 [backface-visibility:hidden] [transform:translateZ(0)]'
-              : // Floating: top gap = same token as page-shell horizontal inset
-                'relative shrink-0 pt-[var(--page-pad-x)]'
-            : cn(
-                'sticky shrink-0',
-                docked ? 'pt-0' : 'pt-[var(--page-pad-x)] sm:pt-[var(--page-pad-x)]',
-              ),
+            ? cn(
+                // Mobile still discretely collapses padding on dock; keep its own tween.
+                'transition-[padding] duration-200 ease-out',
+                docked
+                  ? // Pinned under fixed SiteHeader (h-14)
+                    'fixed inset-x-0 top-14 shrink-0 pt-0 [backface-visibility:hidden] [transform:translateZ(0)]'
+                  : // Floating: top gap = same token as page-shell horizontal inset
+                    'relative shrink-0 pt-[var(--page-pad-x)]',
+              )
+            : // Desktop: padding is constant (flow height never changes); the
+              // dock glide is a transform on the inner chrome div instead.
+              'sticky shrink-0 pt-[var(--page-pad-x)] sm:pt-[var(--page-pad-x)]',
           className,
         )}
         style={isMobileStrip ? undefined : { top: headerPx }}
       >
         <div
           className={cn(
-            'relative w-full max-w-full min-w-0 transition-[background-color,border-color,box-shadow] duration-200 ease-out',
+            'relative w-full max-w-full min-w-0 transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out',
             docked
               ? isMobileStrip
                 ? 'border-b border-border bg-bg'
                 : 'border-b border-border bg-bg/95 shadow-[0_10px_28px_-14px_rgba(0,0,0,0.7)] backdrop-blur-md'
               : 'border-b border-transparent bg-transparent',
           )}
+          style={
+            isMobileStrip
+              ? undefined
+              : { transform: docked ? 'translateY(calc(-1 * var(--page-pad-x)))' : 'translateY(0)' }
+          }
         >
           <div className="page-shell max-w-full min-w-0">
             <div
