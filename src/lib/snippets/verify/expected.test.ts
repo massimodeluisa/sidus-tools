@@ -5,7 +5,7 @@ import type { CodeLang } from '../types'
 import { EXPECTED, UNVERIFIABLE } from './expected'
 import { asInjected, inputBagFor, scenariosFor } from './inputs'
 
-/** Pilot scope for the snippet verification harness. */
+/** Original pilot scope for the snippet verification harness. */
 const PILOT = [
   'circular-orbit',
   'hohmann',
@@ -23,6 +23,74 @@ const PILOT = [
   'look-angles',
   'kepler-propagate',
 ] as const
+
+/**
+ * Orbits/maneuvers coverage wave: every category:'orbital' tool minus the
+ * pilots above, minus sgp4 (hard exclusion) and the satellite-category tools
+ * (j2-drift, quaternion-euler, sgp4 — out of this wave's scope).
+ */
+const ORBITS_WAVE = [
+  'escape',
+  'bielliptic',
+  'lambert',
+  'rv-elements',
+  'apsides',
+  'bodies',
+  'launch-azimuth',
+  'sso',
+  'cw-rendezvous',
+  'phasing',
+  'hyperbolic-c3',
+  'hohmann-plane',
+  'soi',
+  'synodic-period',
+  'circularize',
+  'geo-orbit',
+  'delta-a-burn',
+  'plane-change-apo',
+  'coelliptic',
+  'los-range-rate',
+  'oberth',
+  'deorbit',
+  'mean-motion',
+  'apo-raise',
+  'along-track',
+  'period-match',
+  'hohmann-time',
+  'orbital-energy',
+  'true-anomaly',
+  'flyby-speed',
+  'eccentric-anomaly',
+  'rendezvous-catchup',
+  'sso-period',
+  'critical-inclination',
+  'relative-period',
+  'energy-vinf',
+  'specific-angular-momentum',
+  'escape-margin',
+  'constellation-walker',
+  'coverage-swath',
+  'revisit-time-simple',
+  'geo-stationkeeping-dv',
+  'drag-make-up-dv',
+  'optical-gsd',
+  'cr3bp-jacobi',
+  'orbit-lifetime-rough',
+  'geo-drift-rate',
+  'arg-perigee-drift-j2',
+  'umbra-length',
+  'mean-anomaly-from-e',
+  'flight-path-angle',
+  'repeating-ground-track',
+  'molniya-tundra',
+  'frozen-orbit',
+  'herrick-gibbs',
+  'lunisolar-rates',
+  'schweighart-sedwick',
+] as const
+
+/** All tool ids currently covered by EXPECTED, across every wave. */
+const COVERED = [...PILOT, ...ORBITS_WAVE] as const
 
 /** Languages whose bodies may rename a result through `safeIdent`. */
 const IDENT_LANGS: CodeLang[] = ['c', 'rust', 'zig', 'fortran']
@@ -63,7 +131,7 @@ function bodiesMentioning(id: string, keys: string[]): number {
 }
 
 describe('snippet verification expected values', () => {
-  for (const id of PILOT) {
+  for (const id of COVERED) {
     describe(id, () => {
       it('has an EXPECTED entry', () => {
         expect(EXPECTED[id]).toBeTypeOf('function')
@@ -93,13 +161,13 @@ describe('snippet verification expected values', () => {
     })
   }
 
-  it('covers exactly the pilot tools', () => {
-    expect(Object.keys(EXPECTED).sort()).toEqual([...PILOT].sort())
+  it('covers exactly the pilots plus every landed coverage wave', () => {
+    expect(Object.keys(EXPECTED).sort()).toEqual([...COVERED].sort())
   })
 })
 
 describe('snippet verification scenarios', () => {
-  for (const id of PILOT) {
+  for (const id of COVERED) {
     describe(id, () => {
       it('has at least 3 scenarios', () => {
         expect(scenariosFor(id).length).toBeGreaterThanOrEqual(3)

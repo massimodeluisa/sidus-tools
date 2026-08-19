@@ -449,6 +449,39 @@ export const SAMPLE_OVERRIDES: Record<string, LiveCodeValues> = {
     vz: 0,
     dt_s: 3600,
   },
+  // Bielliptic intermediate apoapsis altitude; the shared bag's rb is an absolute radius.
+  bielliptic: { hb: 200_000_000 },
+  // Lambert terminals/angle/TOF exist in no shared bag: without them the snippet cannot compile.
+  lambert: { r1_m: 6_778_137, r2_m: 6_778_137, ang_rad: Math.PI / 3, tof_s: 1500 },
+  // Vallado Ex 2-4 state vector; the shared bag has no rx/ry/rz and its vx/vy/vz are CW-relative.
+  'rv-elements': {
+    rx: 1_131_340,
+    ry: -2_282_343,
+    rz: 6_672_423,
+    vx: -5643.05,
+    vy: 4303.33,
+    vz: 2428.79,
+  },
+  // Deorbit needs h (starting circular altitude) > hp (target perigee); the shared bag's h/hp
+  // are sized for other tools (tropo-safe altitude / transfer-ellipse perigee) and invert that.
+  deorbit: { h: 400_000, hp: 50_000 },
+  // Molniya/Tundra branch selector; the shared bag has no equivalent key.
+  'molniya-tundra': { kind: 0 },
+  // Frozen-orbit inclination/J3 and body radius exist in no shared bag.
+  'frozen-orbit': { inc: 98 * (Math.PI / 180), j3: -2.5326564853324e-6, Rb: 6_378_137 },
+  // Three position/time samples exist in no shared bag (ISS-class circular kinematics).
+  'herrick-gibbs': {
+    r1x: 6_778_137, r1y: 0, r1z: 0,
+    r2x: 6_762_526.284050148, r2y: 459_760.2073906481, r2z: 0,
+    r3x: 6_715_766.042228007, r3y: 917_402.6688571225, r3z: 0,
+    t1: 0, t2: 60, t3: 120,
+  },
+  // Third-body (Moon-class) perturber constants and satellite inclination exist in no shared bag.
+  'lunisolar-rates': { inc: 51.6 * (Math.PI / 180), mu3: 4.9028e12, d3: 384_400_000, i3: 5.145 * (Math.PI / 180), e3: 0.0549 },
+  // Inclination and body radius exist in no shared bag.
+  'schweighart-sedwick': { inc: 51.6 * (Math.PI / 180), Rb: 6_378_137 },
+  // Shared bag's beta=0 (a phase-angle default elsewhere) fails this tool's ballistic-coefficient>0 check.
+  'orbit-lifetime-rough': { beta: 100 },
 }
 
 /** Live-input bag for a tool: shared SAMPLE merged with its per-tool override. */
