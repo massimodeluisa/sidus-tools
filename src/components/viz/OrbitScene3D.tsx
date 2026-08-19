@@ -652,7 +652,7 @@ export function OrbitScene3D({
 
       <canvas
         ref={canvasRef}
-        className="block h-full w-full cursor-grab touch-none active:cursor-grabbing"
+        className="absolute inset-0 h-full w-full cursor-grab touch-none active:cursor-grabbing"
         onPointerDown={(e) => {
           ;(e.target as HTMLCanvasElement).setPointerCapture(e.pointerId)
           const c = camRef.current
