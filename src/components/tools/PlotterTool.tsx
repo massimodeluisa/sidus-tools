@@ -21,7 +21,7 @@ const PRESETS = [
   { label: 'ln(m0/x)', expr: '330*9.80665*log(5e5/x)', xMin: 5e4, xMax: 5e5 },
 ]
 
-function compile(expr: string): ((x: number) => number) | null {
+export function compile(expr: string): ((x: number) => number) | null {
   try {
     const body = expr
       .replace(/\^/g, '**')
