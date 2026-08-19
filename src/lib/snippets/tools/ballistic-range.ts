@@ -15,7 +15,7 @@ export const ballisticRangeSnippets: FormulaSnippet = {
     zig: "// Flat vacuum ballistic range; SI.\nconst range_m = std.math.pow(f64, v0, @as(f64, 2.0)) * std.math.sin(@as(f64, 2.0) * elev) / g;\nconst tof = @as(f64, 2.0) * v0 * std.math.sin(elev) / g;\nconst hmax = std.math.pow(f64, (v0 * std.math.sin(elev)), @as(f64, 2.0)) / (@as(f64, 2.0) * g);",
     fortran: "! Flat vacuum ballistic range; SI.\n  range_m = v0**2.0d0 * sin(2.0d0 * elev) / g\n  tof = 2.0d0 * v0 * sin(elev) / g\n  hmax = (v0 * sin(elev))**2.0d0 / (2.0d0 * g)",
     matlab: "% Flat vacuum ballistic range; SI.\nrange_m = v0^2 * sin(2 * elev) / g\ntof = 2 * v0 * sin(elev) / g\nhmax = (v0 * sin(elev))^2 / (2 * g)",
-    julia: "# Flat vacuum ballistic range; SI.\nrange_m = v0**2 * sin(2 * elev) / g\ntof = 2 * v0 * sin(elev) / g\nhmax = (v0 * sin(elev))**2 / (2 * g)",
+    julia: "# Flat vacuum ballistic range; SI.\nrange_m = v0^2 * sin(2 * elev) / g\ntof = 2 * v0 * sin(elev) / g\nhmax = (v0 * sin(elev))^2 / (2 * g)",
     latex: "% Flat vacuum ballistic range; SI.\n\\[R=\\frac{v_0^2\\sin 2\\gamma}{g}\\]",
   },
 }

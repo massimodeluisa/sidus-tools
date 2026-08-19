@@ -15,7 +15,7 @@ export const gravityGradientTorqueSnippets: FormulaSnippet = {
     zig: "// Educational GG torque magnitude; SI.\nconst tau = (@as(f64, 3.0) * mu / std.math.pow(f64, r, @as(f64, 3.0))) * (dI / @as(f64, 2.0)) * @abs(std.math.sin(@as(f64, 2.0) * delta));",
     fortran: "! Educational GG torque magnitude; SI.\n  tau = (3.0d0 * mu / r**3.0d0) * (dI / 2.0d0) * abs(sin(2.0d0 * delta))",
     matlab: "% Educational GG torque magnitude; SI.\ntau = (3 * mu / r^3) * (dI / 2) * abs(sin(2 * delta))",
-    julia: "# Educational GG torque magnitude; SI.\ntau = (3 * mu / r**3) * (dI / 2) * abs(sin(2 * delta))",
+    julia: "# Educational GG torque magnitude; SI.\ntau = (3 * mu / r^3) * (dI / 2) * abs(sin(2 * delta))",
     latex: "% Educational GG torque magnitude; SI.\n\\[\\tau\\approx\\frac{3\\mu}{r^3}\\frac{\\Delta I}{2}|\\sin 2\\delta|\\]",
   },
 }

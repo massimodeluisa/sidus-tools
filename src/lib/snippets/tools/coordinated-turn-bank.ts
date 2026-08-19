@@ -15,7 +15,7 @@ export const coordinatedTurnBankSnippets: FormulaSnippet = {
     zig: "// tan phi = v^2/(g R); SI.\nconst phi = std.math.atan(std.math.pow(f64, v, @as(f64, 2.0)) / (g * R));",
     fortran: "! tan phi = v^2/(g R); SI.\n  phi = atan(v**2.0d0 / (g * R))",
     matlab: "% tan phi = v^2/(g R); SI.\nphi = atan(v^2 / (g * R))",
-    julia: "# tan phi = v^2/(g R); SI.\nphi = atan(v**2 / (g * R))",
+    julia: "# tan phi = v^2/(g R); SI.\nphi = atan(v^2 / (g * R))",
     latex: "% tan phi = v^2/(g R); SI.\n\\[\\tan\\phi=\\frac{v^2}{gR}\\]",
   },
 }

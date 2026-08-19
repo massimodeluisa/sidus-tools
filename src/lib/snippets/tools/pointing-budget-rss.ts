@@ -15,7 +15,7 @@ export const pointingBudgetRssSnippets: FormulaSnippet = {
     zig: "// RSS pointing stack; SI rad.\nconst sigma = std.math.sqrt(std.math.pow(f64, s1, @as(f64, 2.0)) + std.math.pow(f64, s2, @as(f64, 2.0)) + std.math.pow(f64, s3, @as(f64, 2.0)));",
     fortran: "! RSS pointing stack; SI rad.\n  sigma = sqrt(s1**2.0d0 + s2**2.0d0 + s3**2.0d0)",
     matlab: "% RSS pointing stack; SI rad.\nsigma = sqrt(s1^2 + s2^2 + s3^2)",
-    julia: "# RSS pointing stack; SI rad.\nsigma = sqrt(s1**2 + s2**2 + s3**2)",
+    julia: "# RSS pointing stack; SI rad.\nsigma = sqrt(s1^2 + s2^2 + s3^2)",
     latex: "% RSS pointing stack; SI rad.\n\\[\\sigma=\\sqrt{\\sum_i\\sigma_i^2}\\]",
   },
 }

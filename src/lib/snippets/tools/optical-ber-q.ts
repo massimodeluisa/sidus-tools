@@ -15,7 +15,7 @@ export const opticalBerQSnippets: FormulaSnippet = {
     zig: "// Q ≈ sqrt(SNR) educational; SI.\nconst Q = std.math.sqrt(std.math.pow(f64, @as(f64, 10.0), (snrDb / @as(f64, 10.0))));",
     fortran: "! Q ≈ sqrt(SNR) educational; SI.\n  Q = sqrt(10.0d0 ** (snrDb / 10.0d0))",
     matlab: "% Q ≈ sqrt(SNR) educational; SI.\nQ = sqrt(10 ^ (snrDb / 10))",
-    julia: "# Q ≈ sqrt(SNR) educational; SI.\nQ = sqrt(10 ** (snrDb / 10))",
+    julia: "# Q ≈ sqrt(SNR) educational; SI.\nQ = sqrt(10 ^ (snrDb / 10))",
     latex: "% Q ≈ sqrt(SNR) educational; SI.\n\\[Q\\approx\\sqrt{\\mathrm{SNR}}\\]",
   },
 }

@@ -15,7 +15,7 @@ export const characteristicVelocityCstarSnippets: FormulaSnippet = {
     zig: "// c* definition and ideal frozen c*; SI.\nconst cstar_m = pc * At / mdot;\nconst cstar_i = std.math.sqrt(Rgas * Tc / gamma) * std.math.pow(f64, ((gamma + @as(f64, 1.0)) / @as(f64, 2.0)), ((gamma + @as(f64, 1.0)) / (@as(f64, 2.0) * (gamma - @as(f64, 1.0)))));\nconst eta = cstar_m / cstar_i;",
     fortran: "! c* definition and ideal frozen c*; SI.\n  cstar_m = pc * At / mdot\n  cstar_i = sqrt(Rgas * Tc / gamma) * ((gamma + 1.0d0) / 2.0d0) ** ((gamma + 1.0d0) / (2.0d0 * (gamma - 1.0d0)))\n  eta = cstar_m / cstar_i",
     matlab: "% c* definition and ideal frozen c*; SI.\ncstar_m = pc * At / mdot\ncstar_i = sqrt(Rgas * Tc / gamma) * ((gamma + 1) / 2) ^ ((gamma + 1) / (2 * (gamma - 1)))\neta = cstar_m / cstar_i",
-    julia: "# c* definition and ideal frozen c*; SI.\ncstar_m = pc * At / mdot\ncstar_i = sqrt(Rgas * Tc / gamma) * ((gamma + 1) / 2) ** ((gamma + 1) / (2 * (gamma - 1)))\neta = cstar_m / cstar_i",
+    julia: "# c* definition and ideal frozen c*; SI.\ncstar_m = pc * At / mdot\ncstar_i = sqrt(Rgas * Tc / gamma) * ((gamma + 1) / 2) ^ ((gamma + 1) / (2 * (gamma - 1)))\neta = cstar_m / cstar_i",
     latex: "% c* definition and ideal frozen c*; SI.\n\\[c^*=\\frac{p_c A_t}{\\dot m},\\quad c^*_{\\mathrm{id}}=\\frac{\\sqrt{\\gamma R T_c}}{\\gamma\\,((\\gamma+1)/2)^{(\\gamma+1)/(2(\\gamma-1))}}\\]",
   },
 }

@@ -15,7 +15,7 @@ export const argPerigeeDriftJ2Snippets: FormulaSnippet = {
     zig: "// J2 argument of perigee rate; SI.\nconst wdot = @as(f64, 0.75) * n * j2 * std.math.pow(f64, (R / sma_p), @as(f64, 2.0)) * (@as(f64, 5.0) * std.math.pow(f64, std.math.cos(i), @as(f64, 2.0)) - @as(f64, 1.0));",
     fortran: "! J2 argument of perigee rate; SI.\n  wdot = 0.75 * n * j2 * (R / sma_p)**2.0d0 * (5.0d0 * cos(i)**2.0d0 - 1.0d0)",
     matlab: "% J2 argument of perigee rate; SI.\nwdot = 0.75 * n * j2 * (R / sma_p)^2 * (5 * cos(i)^2 - 1)",
-    julia: "# J2 argument of perigee rate; SI.\nwdot = 0.75 * n * j2 * (R / sma_p)**2 * (5 * cos(i)**2 - 1)",
+    julia: "# J2 argument of perigee rate; SI.\nwdot = 0.75 * n * j2 * (R / sma_p)^2 * (5 * cos(i)^2 - 1)",
     latex: "% J2 argument of perigee rate; SI.\n\\[\\dot\\omega=\\frac34 n J_2(R/p)^2(5\\cos^2 i-1)\\]",
   },
 }

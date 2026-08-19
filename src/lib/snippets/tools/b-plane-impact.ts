@@ -15,7 +15,7 @@ export const bPlaneImpactSnippets: FormulaSnippet = {
     zig: "// b = (mu/vinf^2)/tan(delta/2); SI.\nconst b = (mu / std.math.pow(f64, vinf, @as(f64, 2.0))) / std.math.tan(delta / @as(f64, 2.0));",
     fortran: "! b = (mu/vinf^2)/tan(delta/2); SI.\n  b = (mu / vinf**2.0d0) / tan(delta / 2.0d0)",
     matlab: "% b = (mu/vinf^2)/tan(delta/2); SI.\nb = (mu / vinf^2) / tan(delta / 2)",
-    julia: "# b = (mu/vinf^2)/tan(delta/2); SI.\nb = (mu / vinf**2) / tan(delta / 2)",
+    julia: "# b = (mu/vinf^2)/tan(delta/2); SI.\nb = (mu / vinf^2) / tan(delta / 2)",
     latex: "% b = (mu/vinf^2)/tan(delta/2); SI.\n\\[b=\\frac{\\mu}{v_\\infty^2\\tan(\\delta/2)}\\]",
   },
 }

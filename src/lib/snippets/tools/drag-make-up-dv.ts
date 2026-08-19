@@ -7,8 +7,8 @@ export const dragMakeUpDvSnippets: FormulaSnippet = {
   assumptions: A,
   code: {
     python: "# Δv/rev ≈ π ρ a v / β; SI.\nimport math\ndv = math.pi * rho * a * v / B",
-    javascript: "// Δv/rev ≈ π ρ a v / β; SI.\nconst dv = Math.pi * rho * a * v / B",
-    typescript: "// Δv/rev ≈ π ρ a v / β; SI.\nconst dv = Math.pi * rho * a * v / B",
+    javascript: "// Δv/rev ≈ π ρ a v / β; SI.\nconst dv = Math.PI * rho * a * v / B",
+    typescript: "// Δv/rev ≈ π ρ a v / β; SI.\nconst dv = Math.PI * rho * a * v / B",
     c: "/* Δv/rev ≈ π ρ a v / β; SI. */\nconst double dv = M_PI * rho * a * v / B;",
     cpp: "// Δv/rev ≈ π ρ a v / β; SI.\nconst double dv = M_PI * rho * a * v / B;",
     rust: "// Δv/rev ≈ π ρ a v / β; SI.\nlet dv = std::f64::consts::PI * rho * a * v / B;",

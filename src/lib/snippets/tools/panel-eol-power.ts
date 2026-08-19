@@ -15,7 +15,7 @@ export const panelEolPowerSnippets: FormulaSnippet = {
     zig: "// P = P0 (1-d)^years; SI.\nconst P = p0 * std.math.pow(f64, (@as(f64, 1.0) - d), years);",
     fortran: "! P = P0 (1-d)^years; SI.\n  P = p0 * (1.0d0 - d) ** years",
     matlab: "% P = P0 (1-d)^years; SI.\nP = p0 * (1 - d) ^ years",
-    julia: "# P = P0 (1-d)^years; SI.\nP = p0 * (1 - d) ** years",
+    julia: "# P = P0 (1-d)^years; SI.\nP = p0 * (1 - d) ^ years",
     latex: "% P = P0 (1-d)^years; SI.\n\\[P=P_0(1-d)^y\\]",
   },
 }

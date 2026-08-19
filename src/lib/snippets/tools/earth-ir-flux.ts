@@ -15,7 +15,7 @@ export const earthIrFluxSnippets: FormulaSnippet = {
     zig: "// Earth IR flux at altitude sketch; SI.\nconst sigma = @as(f64, 5.670374419e-8);\nconst R = @as(f64, 6378137.0);\nconst F = sigma * std.math.pow(f64, Te, @as(f64, 4.0)) * std.math.pow(f64, (R / (R + h)), @as(f64, 2.0));",
     fortran: "! Earth IR flux at altitude sketch; SI.\n  sigma = 5.670374419e-8\n  R = 6378137.0d0\n  F = sigma * Te**4.0d0 * (R / (R + h)) ** 2.0d0",
     matlab: "% Earth IR flux at altitude sketch; SI.\nsigma = 5.670374419e-8\nR = 6378137.0\nF = sigma * Te^4 * (R / (R + h)) ^ 2",
-    julia: "# Earth IR flux at altitude sketch; SI.\nsigma = 5.670374419e-8\nR = 6378137.0\nF = sigma * Te**4 * (R / (R + h)) ** 2",
+    julia: "# Earth IR flux at altitude sketch; SI.\nsigma = 5.670374419e-8\nR = 6378137.0\nF = sigma * Te^4 * (R / (R + h)) ^ 2",
     latex: "% Earth IR flux at altitude sketch; SI.\n\\[F\\approx\\sigma T_e^4\\left(\\frac{R}{R+h}\\right)^2\\]",
   },
 }

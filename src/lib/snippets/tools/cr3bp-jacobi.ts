@@ -16,7 +16,7 @@ export const cr3bpJacobiSnippets: FormulaSnippet = {
     // Integer **2 avoids gfortran "negative REAL ** REAL" when vy < 0
     fortran: "! Planar CR3BP Jacobi constant; dimensionless educational.\n  r1 = hypot(x + mu, y)\n  r2 = hypot(x - (1.0d0 - mu), y)\n  C = x**2 + y**2 + 2.0d0*(1.0d0-mu)/r1 + 2.0d0*mu/r2 - (vx**2 + vy**2)",
     matlab: "% Planar CR3BP Jacobi constant; dimensionless educational.\nr1 = hypot(x + mu, y)\nr2 = hypot(x - (1 - mu), y)\nC = x^2 + y^2 + 2*(1-mu)/r1 + 2*mu/r2 - (vx^2 + vy^2)",
-    julia: "# Planar CR3BP Jacobi constant; dimensionless educational.\nr1 = hypot(x + mu, y)\nr2 = hypot(x - (1 - mu), y)\nC = x**2 + y**2 + 2*(1-mu)/r1 + 2*mu/r2 - (vx**2 + vy**2)",
+    julia: "# Planar CR3BP Jacobi constant; dimensionless educational.\nr1 = hypot(x + mu, y)\nr2 = hypot(x - (1 - mu), y)\nC = x^2 + y^2 + 2*(1-mu)/r1 + 2*mu/r2 - (vx^2 + vy^2)",
     latex: "% Planar CR3BP Jacobi constant; dimensionless educational.\n\\[C=x^2+y^2+2U-\\dot x^2-\\dot y^2\\]",
   },
 }

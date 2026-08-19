@@ -15,7 +15,7 @@ export const ttcEbnoSnippets: FormulaSnippet = {
     zig: "// Eb/N0 = (C/N0)/Rb; SI.\nconst cn0_lin = std.math.pow(f64, @as(f64, 10.0), (cn0 / @as(f64, 10.0)));\nconst ebn0 = cn0_lin / rb;\nconst ebn0_db = @as(f64, 10.0) * std.math.log10(ebn0);",
     fortran: "! Eb/N0 = (C/N0)/Rb; SI.\n  cn0_lin = 10.0d0 ** (cn0 / 10.0d0)\n  ebn0 = cn0_lin / rb\n  ebn0_db = 10.0d0 * log10(ebn0)",
     matlab: "% Eb/N0 = (C/N0)/Rb; SI.\ncn0_lin = 10 ^ (cn0 / 10)\nebn0 = cn0_lin / rb\nebn0_db = 10 * log10(ebn0)",
-    julia: "# Eb/N0 = (C/N0)/Rb; SI.\ncn0_lin = 10 ** (cn0 / 10)\nebn0 = cn0_lin / rb\nebn0_db = 10 * log10(ebn0)",
+    julia: "# Eb/N0 = (C/N0)/Rb; SI.\ncn0_lin = 10 ^ (cn0 / 10)\nebn0 = cn0_lin / rb\nebn0_db = 10 * log10(ebn0)",
     latex: "% Eb/N0 = (C/N0)/Rb; SI.\n\\[E_b/N_0=(C/N_0)/R_b\\]",
   },
 }

@@ -15,7 +15,7 @@ export const captureCircularizeSnippets: FormulaSnippet = {
     zig: "// Δv = vp_hyp - v_circ; SI.\nconst vp = std.math.sqrt(std.math.pow(f64, vinf, @as(f64, 2.0)) + @as(f64, 2.0) * mu / rp);\nconst vc = std.math.sqrt(mu / rp);\nconst dv = vp - vc;",
     fortran: "! Δv = vp_hyp - v_circ; SI.\n  vp = sqrt(vinf**2.0d0 + 2.0d0 * mu / rp)\n  vc = sqrt(mu / rp)\n  dv = vp - vc",
     matlab: "% Δv = vp_hyp - v_circ; SI.\nvp = sqrt(vinf^2 + 2 * mu / rp)\nvc = sqrt(mu / rp)\ndv = vp - vc",
-    julia: "# Δv = vp_hyp - v_circ; SI.\nvp = sqrt(vinf**2 + 2 * mu / rp)\nvc = sqrt(mu / rp)\ndv = vp - vc",
+    julia: "# Δv = vp_hyp - v_circ; SI.\nvp = sqrt(vinf^2 + 2 * mu / rp)\nvc = sqrt(mu / rp)\ndv = vp - vc",
     latex: "% Δv = vp_hyp - v_circ; SI.\n\\[\\Delta v=v_{p,\\mathrm{hyp}}-v_{\\mathrm{circ}}\\]",
   },
 }

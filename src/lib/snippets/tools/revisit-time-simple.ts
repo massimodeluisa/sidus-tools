@@ -7,8 +7,8 @@ export const revisitTimeSimpleSnippets: FormulaSnippet = {
   assumptions: A,
   code: {
     python: "# Rough revisit from period and swath; SI.\nimport math\nstrips = 2 * math.pi * 6378137 / swath\nt_rev = T * max(1.0, strips)",
-    javascript: "// Rough revisit from period and swath; SI.\nconst strips = 2 * Math.pi * 6378137 / swath\nconst t_rev = T * Math.max(1.0, strips)",
-    typescript: "// Rough revisit from period and swath; SI.\nconst strips = 2 * Math.pi * 6378137 / swath\nconst t_rev = T * Math.max(1.0, strips)",
+    javascript: "// Rough revisit from period and swath; SI.\nconst strips = 2 * Math.PI * 6378137 / swath\nconst t_rev = T * Math.max(1.0, strips)",
+    typescript: "// Rough revisit from period and swath; SI.\nconst strips = 2 * Math.PI * 6378137 / swath\nconst t_rev = T * Math.max(1.0, strips)",
     c: "/* Rough revisit from period and swath; SI. */\nconst double strips = 2 * M_PI * 6378137 / swath;\nconst double t_rev = T * fmax(1.0, strips);",
     cpp: "// Rough revisit from period and swath; SI.\nconst double strips = 2 * M_PI * 6378137 / swath;\nconst double t_rev = T * fmax(1.0, strips);",
     rust: "// Rough revisit from period and swath; SI.\nlet strips = 2.0_f64 * std::f64::consts::PI * 6378137.0_f64 / swath;\nlet t_rev = T * (1.0_f64).max(strips);",

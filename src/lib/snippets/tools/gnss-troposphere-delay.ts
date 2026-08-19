@@ -7,8 +7,8 @@ export const gnssTroposphereDelaySnippets: FormulaSnippet = {
   assumptions: A,
   code: {
     python: "# Saastamoinen-class tropo delay sketch; SI.\nimport math\nz = math.pi / 2 - elev\nd = 0.002277 / math.cos(z) * (1013.25 + (1255 / 288.15 + 0.05) * 11)",
-    javascript: "// Saastamoinen-class tropo delay sketch; SI.\nconst z = Math.pi / 2 - elev\nconst d = 0.002277 / Math.cos(z) * (1013.25 + (1255 / 288.15 + 0.05) * 11)",
-    typescript: "// Saastamoinen-class tropo delay sketch; SI.\nconst z = Math.pi / 2 - elev\nconst d = 0.002277 / Math.cos(z) * (1013.25 + (1255 / 288.15 + 0.05) * 11)",
+    javascript: "// Saastamoinen-class tropo delay sketch; SI.\nconst z = Math.PI / 2 - elev\nconst d = 0.002277 / Math.cos(z) * (1013.25 + (1255 / 288.15 + 0.05) * 11)",
+    typescript: "// Saastamoinen-class tropo delay sketch; SI.\nconst z = Math.PI / 2 - elev\nconst d = 0.002277 / Math.cos(z) * (1013.25 + (1255 / 288.15 + 0.05) * 11)",
     c: "/* Saastamoinen-class tropo delay sketch; SI. */\nconst double z = M_PI / 2 - elev;\nconst double d = 0.002277 / cos(z) * (1013.25 + (1255 / 288.15 + 0.05) * 11);",
     cpp: "// Saastamoinen-class tropo delay sketch; SI.\nconst double z = M_PI / 2 - elev;\nconst double d = 0.002277 / cos(z) * (1013.25 + (1255 / 288.15 + 0.05) * 11);",
     rust: "// Saastamoinen-class tropo delay sketch; SI.\nlet z = std::f64::consts::PI / 2.0_f64 - elev;\nlet d = 0.002277_f64 / (z).cos() * (1013.25_f64 + (1255.0_f64 / 288.15_f64 + 0.05_f64) * 11.0_f64);",

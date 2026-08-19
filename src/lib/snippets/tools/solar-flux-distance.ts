@@ -15,7 +15,7 @@ export const solarFluxDistanceSnippets: FormulaSnippet = {
     zig: "// S = S0 (1 AU/r)^2; SI.\nconst AU = @as(f64, 149597870700.0);\nconst S = S0 * std.math.pow(f64, (AU / r), @as(f64, 2.0));",
     fortran: "! S = S0 (1 AU/r)^2; SI.\n  AU = 149597870700.0d0\n  S = S0 * (AU / r) ** 2.0d0",
     matlab: "% S = S0 (1 AU/r)^2; SI.\nAU = 149597870700.0\nS = S0 * (AU / r) ^ 2",
-    julia: "# S = S0 (1 AU/r)^2; SI.\nAU = 149597870700.0\nS = S0 * (AU / r) ** 2",
+    julia: "# S = S0 (1 AU/r)^2; SI.\nAU = 149597870700.0\nS = S0 * (AU / r) ^ 2",
     latex: "% S = S0 (1 AU/r)^2; SI.\n\\[S=S_0(1\\,\\mathrm{AU}/r)^2\\]",
   },
 }

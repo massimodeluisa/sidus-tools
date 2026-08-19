@@ -15,7 +15,7 @@ export const stefanBoltzmannSnippets: FormulaSnippet = {
     zig: "// P = eps sigma A T^4; SI.\nconst sigma = @as(f64, 5.670374419e-8);\nconst P = eps * sigma * A * std.math.pow(f64, T, @as(f64, 4.0));",
     fortran: "! P = eps sigma A T^4; SI.\n  sigma = 5.670374419e-8\n  P = eps * sigma * A * T**4.0d0",
     matlab: "% P = eps sigma A T^4; SI.\nsigma = 5.670374419e-8\nP = eps * sigma * A * T^4",
-    julia: "# P = eps sigma A T^4; SI.\nsigma = 5.670374419e-8\nP = eps * sigma * A * T**4",
+    julia: "# P = eps sigma A T^4; SI.\nsigma = 5.670374419e-8\nP = eps * sigma * A * T^4",
     latex: "% P = eps sigma A T^4; SI.\n\\[P=\\varepsilon\\sigma A T^4\\]",
   },
 }

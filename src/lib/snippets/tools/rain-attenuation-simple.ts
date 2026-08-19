@@ -15,7 +15,7 @@ export const rainAttenuationSimpleSnippets: FormulaSnippet = {
     zig: "// A = k R^alpha L educational; SI-ish.\nconst A = k * std.math.pow(f64, rate, alpha) * path;",
     fortran: "! A = k R^alpha L educational; SI-ish.\n  A = k * rate**alpha * path",
     matlab: "% A = k R^alpha L educational; SI-ish.\nA = k * rate^alpha * path",
-    julia: "# A = k R^alpha L educational; SI-ish.\nA = k * rate**alpha * path",
+    julia: "# A = k R^alpha L educational; SI-ish.\nA = k * rate^alpha * path",
     latex: "% A = k R^alpha L educational; SI-ish.\n\\[A=k R^\\alpha L\\]",
   },
 }

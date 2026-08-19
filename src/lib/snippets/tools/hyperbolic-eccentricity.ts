@@ -15,7 +15,7 @@ export const hyperbolicEccentricitySnippets: FormulaSnippet = {
     zig: "// e = 1 + rp vinf^2 / mu; SI.\nconst e = @as(f64, 1.0) + rp * std.math.pow(f64, vinf, @as(f64, 2.0)) / mu;",
     fortran: "! e = 1 + rp vinf^2 / mu; SI.\n  e = 1.0d0 + rp * vinf**2.0d0 / mu",
     matlab: "% e = 1 + rp vinf^2 / mu; SI.\ne = 1 + rp * vinf^2 / mu",
-    julia: "# e = 1 + rp vinf^2 / mu; SI.\ne = 1 + rp * vinf**2 / mu",
+    julia: "# e = 1 + rp vinf^2 / mu; SI.\ne = 1 + rp * vinf^2 / mu",
     latex: "% e = 1 + rp vinf^2 / mu; SI.\n\\[e=1+\\frac{r_p v_\\infty^2}{\\mu}\\]",
   },
 }

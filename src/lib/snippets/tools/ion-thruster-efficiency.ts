@@ -15,7 +15,7 @@ export const ionThrusterEfficiencySnippets: FormulaSnippet = {
     zig: "// eta = T^2/(2 mdot P); SI.\nconst eta = std.math.pow(f64, T, @as(f64, 2.0)) / (@as(f64, 2.0) * mdot * P);",
     fortran: "! eta = T^2/(2 mdot P); SI.\n  eta = T**2.0d0 / (2.0d0 * mdot * P)",
     matlab: "% eta = T^2/(2 mdot P); SI.\neta = T^2 / (2 * mdot * P)",
-    julia: "# eta = T^2/(2 mdot P); SI.\neta = T**2 / (2 * mdot * P)",
+    julia: "# eta = T^2/(2 mdot P); SI.\neta = T^2 / (2 * mdot * P)",
     latex: "% eta = T^2/(2 mdot P); SI.\n\\[\\eta=\\frac{T^2}{2\\dot m P}\\]",
   },
 }
