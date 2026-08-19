@@ -29,11 +29,15 @@ import {
   type CodeLang,
   type LiveCodeValues,
 } from '../src/lib/snippets/index.ts'
-import { asInjected, inputBagFor } from '../src/lib/snippets/verify/inputs.ts'
-import { EXPECTED, UNVERIFIABLE } from '../src/lib/snippets/verify/expected.ts'
+import { asInjected, inputBagFor, scenariosFor } from '../src/lib/snippets/verify/inputs.ts'
+import { EXPECTED, UNVERIFIABLE } from '../src/lib/snippets/verify/expected/index.ts'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const TMP = path.join(ROOT, '.verify-tmp')
+// PID+timestamp-scoped so a concurrent run of this script (e.g. another
+// agent/CI job in the same checkout) never races this one's
+// rmSync/mkdirSync/writeFileSync; still covered by the `.verify-tmp/` gitignore
+// rule since it's a subdirectory. Cleaned up at the end as before.
+const TMP = path.join(ROOT, '.verify-tmp', `${process.pid}-${Date.now()}`)
 const ALL_LANGS = CODE_LANGS.map((l) => l.id)
 
 /** Relative tolerance per language: printf precision, not physics disagreement. */
@@ -60,13 +64,29 @@ type Status =
 
 type Mismatch = { name: string; expected: number; got: number; relErr: number }
 
-type CaseResult = {
-  toolId: string
-  lang: CodeLang
+/** Outcome of one scenario's compile/run/compare for a given (tool, lang). */
+type ScenarioOutcome = {
+  scenario: string
   status: Status
   matched?: number
   compared?: string[]
   mismatches?: Mismatch[]
+  detail?: string
+}
+
+/**
+ * A (tool, lang) cell. `status` is the worst scenario status (ok only if every
+ * scenario in `scenarios` is ok); `scenarioCount` backs the `ok(n)` matrix badge.
+ * `scenarios` is absent for cells that never reach the per-scenario loop (no
+ * source, no expected fn, latex, or a language-level toolchain skip found before
+ * the first scenario ran).
+ */
+type CaseResult = {
+  toolId: string
+  lang: CodeLang
+  status: Status
+  scenarioCount?: number
+  scenarios?: ScenarioOutcome[]
   detail?: string
 }
 
@@ -159,6 +179,12 @@ function zigUsable(): { usable: boolean; note?: string } {
  * `extractAssignedNames` splits multi-assign lines on commas only; MATLAB and C
  * bodies also pack several assignments onto one `;`-separated line, so extend a
  * line that was already recognised as top level with its remaining targets.
+ *
+ * It also only matches `NAME = value`, not the colon-typed `const/let/var NAME:
+ * TYPE = value` zig/TypeScript/typed-Rust use, so a body's own typed constant
+ * (e.g. zig `const L: f64 = 0.0065;`) was left unpruned and lost to a same-named
+ * SAMPLE value injected ahead of it (SAMPLE's `L`, a different free var, shadowing
+ * the body's own `L` via the wrapper's redeclaration-skip). Catch those here too.
  */
 function bodyAssignedNames(body: string): Set<string> {
   const canon = canonicalizePhysicsIds(body)
@@ -170,6 +196,12 @@ function bodyAssignedNames(body: string): Set<string> {
       .map((p) => p.trim().match(/^(?:(?:const|static|volatile)\s+)*(?:double|float|int|long|auto|bool)?\s*([A-Za-z_][A-Za-z0-9_]*)\s*=(?!=)/)?.[1])
       .filter((t): t is string => Boolean(t))
     if (targets.length && names.has(targets[0]!)) for (const t of targets) names.add(t)
+  }
+  for (const line of canon.split('\n')) {
+    const typed = line
+      .trim()
+      .match(/^(?:const|let|var)\s+(?:mut\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*:\s*[^=]+=(?!=)/)
+    if (typed) names.add(typed[1]!)
   }
   return names
 }
@@ -301,43 +333,34 @@ function runLatex(name: string, body: string): CaseResult['status'] | { status: 
   return { status: 'fail-compile', detail: tail(`${r.stdout ?? ''}\n${r.stderr ?? ''}`) }
 }
 
-function verifyCase(toolId: string, lang: CodeLang): CaseResult {
-  const snip = getSnippets(toolId)
-  const body = snip?.code[lang]
-  if (!body?.trim()) return { toolId, lang, status: 'skip-no-source' }
+/** A tool's resolved verification scenario: SAMPLE + overrides + scenario-specific bag. */
+type ResolvedScenario = ReturnType<typeof scenariosFor>[number]
 
-  const name = `${toolId}.${lang}`.replace(/[^A-Za-z0-9._-]/g, '_')
-
-  if (lang === 'latex') {
-    const r = runLatex(name, body)
-    return typeof r === 'string'
-      ? { toolId, lang, status: r }
-      : { toolId, lang, status: r.status, detail: r.detail }
-  }
-
-  const expectedFn = EXPECTED[toolId]
-  if (!expectedFn) return { toolId, lang, status: 'skip-no-expected' }
-  const bag = inputBagFor(toolId)
+/** Compile/run/compare one scenario's bag for a given (tool, lang, body). */
+function runScenario(
+  cellName: string,
+  lang: CodeLang,
+  body: string,
+  expectedFn: (bag: Record<string, number | string>) => Record<string, number>,
+  runner: Runner,
+  scenario: ResolvedScenario,
+): ScenarioOutcome {
   let expected: Record<string, number>
   try {
-    expected = expectedFn(asInjected(bag) as Record<string, number | string>)
+    expected = expectedFn(asInjected(scenario.bag) as Record<string, number | string>)
   } catch (e) {
     return {
-      toolId,
-      lang,
+      scenario: scenario.name,
       status: 'fail-numeric',
       detail: `expected-map error: ${e instanceof Error ? e.message : String(e)}`,
     }
   }
   if (Object.keys(expected).length === 0) {
-    return { toolId, lang, status: 'skip-no-expected', detail: UNVERIFIABLE[toolId] }
-  }
-
-  const runner = RUNNERS[lang]
-  if (!runner) return { toolId, lang, status: 'skip-toolchain', detail: 'no local runner' }
-  if (lang === 'zig') {
-    const probe = zigUsable()
-    if (!probe.usable) return { toolId, lang, status: 'skip-toolchain', detail: probe.note }
+    return {
+      scenario: scenario.name,
+      status: 'fail-numeric',
+      detail: 'expected map returned no keys for this scenario',
+    }
   }
 
   // TypeScript has no local type-stripping runtime: strip annotations, then render as JS
@@ -349,7 +372,7 @@ function verifyCase(toolId: string, lang: CodeLang): CaseResult {
   // keys so the wrapper cannot inject a same-named value and shadow the formula.
   const assigned = bodyAssignedNames(source)
   const pruned: LiveCodeValues = {}
-  for (const [k, v] of Object.entries(bag)) {
+  for (const [k, v] of Object.entries(scenario.bag)) {
     if (!assigned.has(canonicalizePhysicsIds(k))) pruned[k] = v
   }
   const program = renderLiveCode(source, renderLang, pruned)
@@ -360,6 +383,7 @@ function verifyCase(toolId: string, lang: CodeLang): CaseResult {
     Object.keys(filterLiveValuesForBody(canonicalizePhysicsIds(source), pruned) ?? {}),
   )
 
+  const name = `${cellName}.${scenario.name}`.replace(/[^A-Za-z0-9._-]/g, '_')
   const file = path.join(TMP, `${name}.${runner.ext}`)
   const bin = path.join(TMP, `${name}.bin`)
   writeFileSync(file, program, 'utf8')
@@ -367,22 +391,26 @@ function verifyCase(toolId: string, lang: CodeLang): CaseResult {
   if (runner.compile) {
     const unit = name.replace(/[^A-Za-z0-9_]/g, '_')
     const [cmd, ...args] = runner.compile(file, bin, unit)
-    if (!hasExecutable(cmd!)) return { toolId, lang, status: 'skip-toolchain', detail: cmd }
+    if (!hasExecutable(cmd!)) return { scenario: scenario.name, status: 'skip-toolchain', detail: cmd }
     const c = spawnSync(cmd!, args, { cwd: TMP, encoding: 'utf8', timeout: 120_000 })
     if (c.status !== 0) {
-      return { toolId, lang, status: 'fail-compile', detail: tail(`${c.stderr ?? ''}${c.stdout ?? ''}`) }
+      return {
+        scenario: scenario.name,
+        status: 'fail-compile',
+        detail: tail(`${c.stderr ?? ''}${c.stdout ?? ''}`),
+      }
     }
   }
 
   const [rcmd, ...rargs] = runner.run(file, bin)
-  if (!hasExecutable(rcmd!)) return { toolId, lang, status: 'skip-toolchain', detail: rcmd }
+  if (!hasExecutable(rcmd!)) return { scenario: scenario.name, status: 'skip-toolchain', detail: rcmd }
   const run = spawnSync(rcmd!, rargs, { cwd: ROOT, encoding: 'utf8', timeout: 120_000 })
   const stderr = run.stderr ?? ''
   if (run.status !== 0) {
     if (/ModuleNotFoundError|ImportError|ERR_MODULE_NOT_FOUND|Package .* not found/i.test(stderr)) {
-      return { toolId, lang, status: 'skip-dep-missing', detail: tail(stderr, 200) }
+      return { scenario: scenario.name, status: 'skip-dep-missing', detail: tail(stderr, 200) }
     }
-    return { toolId, lang, status: 'fail-run', detail: tail(`${stderr}${run.stdout ?? ''}`) }
+    return { scenario: scenario.name, status: 'fail-run', detail: tail(`${stderr}${run.stdout ?? ''}`) }
   }
 
   const printed = parsePrinted(run.stdout ?? '')
@@ -402,16 +430,82 @@ function verifyCase(toolId: string, lang: CodeLang): CaseResult {
 
   if (compared.length === 0) {
     return {
-      toolId,
-      lang,
+      scenario: scenario.name,
       status: 'fail-parse',
       detail: `no expected name found in output (printed: ${[...printed.keys()].join(', ') || 'nothing'})`,
     }
   }
   if (mismatches.length) {
-    return { toolId, lang, status: 'fail-numeric', matched: compared.length, compared, mismatches }
+    return { scenario: scenario.name, status: 'fail-numeric', matched: compared.length, compared, mismatches }
   }
-  return { toolId, lang, status: 'ok', matched: compared.length, compared }
+  return { scenario: scenario.name, status: 'ok', matched: compared.length, compared }
+}
+
+function verifyCase(toolId: string, lang: CodeLang): CaseResult {
+  const snip = getSnippets(toolId)
+  const body = snip?.code[lang]
+  if (!body?.trim()) return { toolId, lang, status: 'skip-no-source' }
+
+  const cellName = `${toolId}.${lang}`.replace(/[^A-Za-z0-9._-]/g, '_')
+
+  if (lang === 'latex') {
+    const r = runLatex(cellName, body)
+    return typeof r === 'string'
+      ? { toolId, lang, status: r }
+      : { toolId, lang, status: r.status, detail: r.detail }
+  }
+
+  const expectedFn = EXPECTED[toolId]
+  if (!expectedFn) return { toolId, lang, status: 'skip-no-expected' }
+
+  const scenarios = scenariosFor(toolId)
+  // EXPECTED returns the same key set for a tool regardless of scenario bag
+  // (only values vary); probe once with the first scenario to keep the
+  // no-expected-values skip scenario-independent, matching prior behavior.
+  let probe: Record<string, number>
+  try {
+    probe = expectedFn(asInjected(scenarios[0]!.bag) as Record<string, number | string>)
+  } catch (e) {
+    return {
+      toolId,
+      lang,
+      status: 'fail-numeric',
+      detail: `expected-map error [${scenarios[0]!.name}]: ${e instanceof Error ? e.message : String(e)}`,
+    }
+  }
+  if (Object.keys(probe).length === 0) {
+    return { toolId, lang, status: 'skip-no-expected', detail: UNVERIFIABLE[toolId] }
+  }
+
+  const runner = RUNNERS[lang]
+  if (!runner) return { toolId, lang, status: 'skip-toolchain', detail: 'no local runner' }
+  if (lang === 'zig') {
+    const zigProbe = zigUsable()
+    if (!zigProbe.usable) return { toolId, lang, status: 'skip-toolchain', detail: zigProbe.note }
+  }
+
+  const outcomes: ScenarioOutcome[] = []
+  for (const scenario of scenarios) {
+    const outcome = runScenario(cellName, lang, body, expectedFn, runner, scenario)
+    outcomes.push(outcome)
+    // Toolchain-level skips are a language property, not a scenario one: they
+    // apply to the whole cell, so stop instead of re-discovering them N times.
+    if (outcome.status === 'skip-toolchain' || outcome.status === 'skip-dep-missing') {
+      return { toolId, lang, status: outcome.status, detail: outcome.detail, scenarios: outcomes }
+    }
+  }
+
+  const worst = outcomes.find((o) => o.status !== 'ok')
+  if (!worst) {
+    return { toolId, lang, status: 'ok', scenarioCount: outcomes.length, scenarios: outcomes }
+  }
+  return {
+    toolId,
+    lang,
+    status: worst.status,
+    detail: `[${worst.scenario}] ${worst.detail ?? ''}`,
+    scenarios: outcomes,
+  }
 }
 
 const SYMBOL: Record<Status, string> = {
@@ -476,7 +570,9 @@ function buildMarkdown(
   for (const t of toolIds) {
     const cells = langs.map((l) => {
       const r = at(t, l)
-      return r ? SYMBOL[r.status] : '-'
+      if (!r) return '-'
+      if (r.status === 'ok') return `ok(${r.scenarioCount ?? 1})`
+      return SYMBOL[r.status]
     })
     lines.push(`| \`${t}\` | ${cells.join(' | ')} |`)
   }
@@ -491,16 +587,24 @@ function buildMarkdown(
   if (!fails.length) {
     lines.push('_None._')
   } else {
-    lines.push('| Tool | Lang | Status | Detail |', '|------|------|--------|--------|')
+    lines.push(
+      '| Tool | Lang | Scenario | Status | Detail |',
+      '|------|------|----------|--------|--------|',
+    )
     for (const f of fails) {
-      const detail = f.mismatches?.length
-        ? f.mismatches
-            .map((m) => `${m.name}: expected ${m.expected}, got ${m.got} (rel ${m.relErr.toExponential(2)})`)
-            .join('; ')
-        : (f.detail ?? '')
-      lines.push(
-        `| \`${f.toolId}\` | ${f.lang} | ${f.status} | ${detail.replace(/\|/g, '\\|').replace(/\n/g, ' ⏎ ').slice(0, 300)} |`,
-      )
+      const rows: ScenarioOutcome[] = f.scenarios?.filter((o) => o.status.startsWith('fail')) ?? [
+        { scenario: '-', status: f.status, detail: f.detail },
+      ]
+      for (const o of rows) {
+        const detail = o.mismatches?.length
+          ? o.mismatches
+              .map((m) => `${m.name}: expected ${m.expected}, got ${m.got} (rel ${m.relErr.toExponential(2)})`)
+              .join('; ')
+          : (o.detail ?? '')
+        lines.push(
+          `| \`${f.toolId}\` | ${f.lang} | ${o.scenario} | ${o.status} | ${detail.replace(/\|/g, '\\|').replace(/\n/g, ' ⏎ ').slice(0, 300)} |`,
+        )
+      }
     }
   }
 
@@ -508,8 +612,8 @@ function buildMarkdown(
     '',
     '## Legend',
     '',
-    '`ok` numbers match shipped physics · `ok(c)` LaTeX compiled · `FAIL-c` compile ·',
-    '`FAIL-r` runtime · `FAIL-n` numeric mismatch · `FAIL-p` nothing comparable printed ·',
+    '`ok(n)` all n scenarios match shipped physics · `ok(c)` LaTeX compiled · `FAIL-c` compile ·',
+    '`FAIL-r` runtime · `FAIL-n` numeric mismatch (any scenario) · `FAIL-p` nothing comparable printed ·',
     '`no-exp` no expected values · `no-tc` toolchain absent · `no-dep` language dep absent ·',
     '`-` snippet has no source for that language.',
     '',
@@ -577,10 +681,15 @@ function main() {
   if (failures.length) {
     console.log(`\n${failures.length} failing cases:`)
     for (const f of failures) {
-      const d = f.mismatches?.length
-        ? f.mismatches.map((m) => `${m.name} expected ${m.expected} got ${m.got}`).join('; ')
-        : (f.detail ?? '')
-      console.log(`  - ${f.toolId}:${f.lang} ${f.status} ${d.split('\n')[0]?.slice(0, 160)}`)
+      const rows: ScenarioOutcome[] = f.scenarios?.filter((o) => o.status.startsWith('fail')) ?? [
+        { scenario: '-', status: f.status, detail: f.detail },
+      ]
+      for (const o of rows) {
+        const d = o.mismatches?.length
+          ? o.mismatches.map((m) => `${m.name} expected ${m.expected} got ${m.got}`).join('; ')
+          : (o.detail ?? '')
+        console.log(`  - ${f.toolId}:${f.lang} ${o.status} [${o.scenario}] ${d.split('\n')[0]?.slice(0, 160)}`)
+      }
     }
   }
   if (failures.length || (args.requireAll && blockedSkips.length)) process.exitCode = 1

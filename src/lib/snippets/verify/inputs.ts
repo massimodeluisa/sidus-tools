@@ -5,6 +5,7 @@
  * snippet, so the compile matrix and the numeric verifier exercise identical inputs.
  */
 import { formatCodeNumber, type LiveCodeValues } from '../liveValues'
+import { SCENARIOS } from './scenarios'
 
 /**
  * Educational defaults: enough free-vars for pure-SI orbital / systems tools.
@@ -453,6 +454,42 @@ export const SAMPLE_OVERRIDES: Record<string, LiveCodeValues> = {
 /** Live-input bag for a tool: shared SAMPLE merged with its per-tool override. */
 export function inputBagFor(toolId: string): LiveCodeValues {
   return { ...SAMPLE, ...(SAMPLE_OVERRIDES[toolId] ?? {}) }
+}
+
+/**
+ * A named, sourced input bag for multi-scenario verification. `bag` layers on
+ * top of `inputBagFor(toolId)` (SAMPLE + SAMPLE_OVERRIDES); it only needs to
+ * carry the keys that scenario deliberately varies. `source` documents where
+ * the values come from (published example, well-known constant, or adversarial
+ * synthetic) per the pilot's value-sourcing hierarchy.
+ */
+export type Scenario = {
+  name: string
+  source?: string
+  bag: Record<string, number | string>
+}
+
+/**
+ * Per-tool verification scenarios, split by domain under `./scenarios`. Tools
+ * absent here fall back to a single legacy scenario in `scenariosFor`.
+ */
+export { SCENARIOS }
+
+/**
+ * Live-input bags for a tool, one per scenario. Tools without `SCENARIOS`
+ * entries keep today's single-scenario behavior under the legacy name
+ * `sample`, using exactly `inputBagFor(toolId)`.
+ */
+export function scenariosFor(toolId: string): { name: string; source?: string; bag: LiveCodeValues }[] {
+  const scenarios = SCENARIOS[toolId]
+  if (!scenarios || scenarios.length === 0) {
+    return [{ name: 'sample', bag: inputBagFor(toolId) }]
+  }
+  return scenarios.map((s) => ({
+    name: s.name,
+    source: s.source,
+    bag: { ...inputBagFor(toolId), ...s.bag },
+  }))
 }
 
 /**

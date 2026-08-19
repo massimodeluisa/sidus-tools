@@ -3,7 +3,7 @@ import { getSnippets } from '../index'
 import { safeIdent } from '../liveValues'
 import type { CodeLang } from '../types'
 import { EXPECTED, UNVERIFIABLE } from './expected'
-import { asInjected, inputBagFor } from './inputs'
+import { asInjected, inputBagFor, scenariosFor } from './inputs'
 
 /** Pilot scope for the snippet verification harness. */
 const PILOT = [
@@ -96,4 +96,26 @@ describe('snippet verification expected values', () => {
   it('covers exactly the pilot tools', () => {
     expect(Object.keys(EXPECTED).sort()).toEqual([...PILOT].sort())
   })
+})
+
+describe('snippet verification scenarios', () => {
+  for (const id of PILOT) {
+    describe(id, () => {
+      it('has at least 3 scenarios', () => {
+        expect(scenariosFor(id).length).toBeGreaterThanOrEqual(3)
+      })
+
+      it('every scenario has a name and a finite expected-value map', () => {
+        const fn = EXPECTED[id]
+        if (!fn) throw new Error(`no EXPECTED entry for ${id}`)
+        for (const scenario of scenariosFor(id)) {
+          expect(scenario.name, `${id} scenario name`).toBeTruthy()
+          const out = fn(asInjected(scenario.bag) as Record<string, number | string>)
+          for (const [key, value] of Object.entries(out)) {
+            expect(Number.isFinite(value), `${id}[${scenario.name}].${key} = ${value}`).toBe(true)
+          }
+        }
+      })
+    })
+  }
 })
