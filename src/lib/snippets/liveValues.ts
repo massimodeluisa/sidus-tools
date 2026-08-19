@@ -865,12 +865,60 @@ export function applyValuePlaceholders(
   })
 }
 
+/** Julia/MATLAB keyword-block openers whose matching close is a bare `end`. */
+const FUNCTION_BLOCK_OPENERS: Partial<Record<CodeLang, RegExp>> = {
+  julia: /^(?:function|if|for|while|begin|let|try|struct|macro)\b/,
+  matlab: /^(?:function|if|for|while|switch|try|parfor)\b/,
+}
+
+/** Julia's trailing `do` syntax (`open(file) do f` … `end`) also opens a block. */
+const JULIA_DO_OPENER = /\bdo\b\s*(?:\([^)]*\))?\s*(?:[A-Za-z_]\w*(?:\s*,\s*[A-Za-z_]\w*)*)?$/
+
+/**
+ * Julia and MATLAB blocks are keyword-delimited (`function`/`if`/`for`/…
+ * `end`), not brace- or indentation-based, so the depth tracker in
+ * `extractAssignedNames` never sees a `function` body as nested and leaks its
+ * locals into the top-level scan. Blank out every line whose OUTERMOST
+ * enclosing `end`-closed block is `function`; the function's own header and
+ * closing `end` stay visible (already excluded elsewhere), and top-level
+ * `if`/`for` blocks outside any function are left untouched.
+ */
+function stripFunctionInteriors(code: string, lang: CodeLang): string {
+  const openerRe = FUNCTION_BLOCK_OPENERS[lang]
+  if (!openerRe) return code
+  const stack: string[] = []
+  const out: string[] = []
+  for (const line of code.split('\n')) {
+    const t = line.trim()
+    const insideFunction = stack.length > 0 && stack[0] === 'function'
+    const isEnd = t === 'end' || /^end(?![A-Za-z0-9_])/.test(t)
+    if (isEnd && stack.length > 0) {
+      const closesOutermostFunction = insideFunction && stack.length === 1
+      stack.pop()
+      out.push(closesOutermostFunction || !insideFunction ? line : '')
+      continue
+    }
+    const openerMatch = openerRe.test(t) ? t.match(/^[A-Za-z]+/) : null
+    const opener = openerMatch ? openerMatch[0] : lang === 'julia' && JULIA_DO_OPENER.test(t) ? 'do' : null
+    if (opener) {
+      stack.push(opener)
+      out.push(insideFunction ? '' : line)
+      continue
+    }
+    out.push(insideFunction ? '' : line)
+  }
+  return out.join('\n')
+}
+
 /**
  * Top-level assignment LHS only (brace depth 0, paren depth 0).
  * Skips function default-params, Python `def`/`class` bodies, and
- * multi-assign lines like `const a = 1, b = 2`.
+ * multi-assign lines like `const a = 1, b = 2`. `lang` additionally strips
+ * Julia/MATLAB function interiors (see `stripFunctionInteriors`); omit it to
+ * preserve prior behavior.
  */
-export function extractAssignedNames(code: string): string[] {
+export function extractAssignedNames(code: string, lang?: CodeLang): string[] {
+  const scanCode = lang ? stripFunctionInteriors(code, lang) : code
   const out: string[] = []
   const seen = new Set<string>()
   let brace = 0
@@ -940,7 +988,7 @@ export function extractAssignedNames(code: string): string[] {
     return -1
   }
 
-  for (const line of code.split('\n')) {
+  for (const line of scanCode.split('\n')) {
     const indent = line.match(/^(\s*)/)?.[1].length ?? 0
     const t = line.trim()
 
@@ -1799,7 +1847,7 @@ export function collectIdentifiers(code: string): Set<string> {
  * Peel outer `main` shells so free-var analysis sees formula assigns inside
  * makeSnippet-generated Rust/Zig/C programs (brace-depth was hiding them).
  */
-function bodyForFreeVarAnalysis(body: string): string {
+function bodyForFreeVarAnalysis(body: string, lang?: CodeLang): string {
   let s = body
   // Rust: keep only fn main inner + ignore helper fns for free-var purposes
   const rust = stripOuterMainRust(s)
@@ -1848,6 +1896,10 @@ function bodyForFreeVarAnalysis(body: string): string {
         !/^\s*def\s+/.test(l),
     )
     .join('\n')
+
+  // Julia/MATLAB: no braces/indentation, so peel keyword-delimited function
+  // interiors here too, same as the brace/indent stripping above for other langs.
+  if (lang) s = stripFunctionInteriors(s, lang)
   return s
 }
 
@@ -1856,11 +1908,11 @@ function bodyForFreeVarAnalysis(body: string): string {
  * not builtins/keywords. Physics constants (P0, S0, g0, …) stay free so
  * they can be injected from UI or PHYSICS_DEFAULTS.
  */
-export function freeVarsNeeded(body: string): Set<string> {
-  const core = bodyForFreeVarAnalysis(body)
-  const assigned = new Set(extractAssignedNames(core))
+export function freeVarsNeeded(body: string, lang?: CodeLang): Set<string> {
+  const core = bodyForFreeVarAnalysis(body, lang)
+  const assigned = new Set(extractAssignedNames(core, lang))
   // Also treat top-level assigns in the original body (no-main fragments)
-  for (const n of extractAssignedNames(body)) assigned.add(n)
+  for (const n of extractAssignedNames(body, lang)) assigned.add(n)
   // Function names are defined in the snippet, not free inputs.
   // Do NOT mark parameters as assigned globally: they only shadow inside the
   // function (params are already removed via bodyForFreeVarAnalysis stripping).
@@ -1888,11 +1940,12 @@ export function freeVarsNeeded(body: string): Set<string> {
 export function filterLiveValuesForBody(
   body: string,
   values: LiveCodeValues | undefined,
+  lang?: CodeLang,
 ): LiveCodeValues | undefined {
   const normalized = normalizeValueKeys(
     enrichLiveValues(values) ?? values ?? {},
   )
-  const needed = freeVarsNeeded(body)
+  const needed = freeVarsNeeded(body, lang)
   // Empty free-set → no live inputs (do not dump the whole UI bag into scope)
   if (needed.size === 0) return {}
   const out: LiveCodeValues = {}
@@ -1918,9 +1971,9 @@ export function wrapAsRunnable(
   if (lang === 'latex') return body
 
   const canonBody = canonicalizePhysicsIds(body)
-  const filtered = filterLiveValuesForBody(canonBody, values)
+  const filtered = filterLiveValuesForBody(canonBody, values, lang)
   const inputs = liveInputLines(lang, filtered)
-  const bodyNames = extractAssignedNames(canonBody)
+  const bodyNames = extractAssignedNames(canonBody, lang)
   const inputKeys = new Set([
     ...Object.keys(filtered ?? {}),
     ...Object.keys(filtered ?? {}).map((k) => safeIdent(lang, k)),

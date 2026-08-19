@@ -104,10 +104,10 @@ J2 = 1.08262668d-3
 p = a * (1.0d0 - e * e)
 n = sqrt(mu / (a * a * a))
 k = (R / p) * (R / p)
-dOmega = -1.5d0 * n * J2 * k * cos(i)
-domega = 0.75d0 * n * J2 * k * (5.0d0 * cos(i) * cos(i) - 1.0d0)
-dOmega_deg_day = (dOmega * 180.0d0 / 3.141592653589793d0) * 86400.0d0
-domega_deg_day = (domega * 180.0d0 / 3.141592653589793d0) * 86400.0d0`,
+draan = -1.5d0 * n * J2 * k * cos(i)
+dargp = 0.75d0 * n * J2 * k * (5.0d0 * cos(i) * cos(i) - 1.0d0)
+draan_deg_day = (draan * 180.0d0 / 3.141592653589793d0) * 86400.0d0
+dargp_deg_day = (dargp * 180.0d0 / 3.141592653589793d0) * 86400.0d0`,
 
     matlab: `% J2 secular rates: ${ASSUMPTIONS}
 J2 = 1.08262668e-3;

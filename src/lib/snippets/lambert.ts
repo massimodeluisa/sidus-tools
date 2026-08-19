@@ -315,6 +315,8 @@ function [v1,v2] = lambert(mu,r1,r2,tof,short)
 end`,
 
     julia: `# Lambert universal-z: ${ASSUMPTIONS}
+using LinearAlgebra
+
 function stumpff_C(z)
     if z > 1e-8
         s = sqrt(z); return (1 - cos(s)) / z
@@ -367,7 +369,18 @@ function lambert(mu, r1, r2, tof; short_way=true)
     v1 = (r2 .- f .* r1) ./ g
     v2 = (gdot .* r2 .- r1) ./ g
     return v1, v2, dnu
-end`,
+end
+
+r1 = [r1_m, 0.0, 0.0]
+r2 = [r2_m * cos(ang_rad), r2_m * sin(ang_rad), 0.0]
+result = lambert(mu, r1, r2, tof_s)
+v1_x = result[1][1]
+v1_y = result[1][2]
+v1_z = result[1][3]
+v2_x = result[2][1]
+v2_y = result[2][2]
+v2_z = result[2][3]
+dnu = result[3]`,
 
     latex: `% Lambert (universal z)
 \\[

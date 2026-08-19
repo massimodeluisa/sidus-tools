@@ -51,9 +51,9 @@ const lam = std.math.asin((r / R) * std.math.sin(alpha)) - alpha;
 const swath = 2.0 * R * lam;`,
     fortran: `! ${A}
   R = 6378137.0d0
-  r = R + h
+  r_orbit = R + h
   alpha = fov / 2.0d0
-  lam = asin((r / R) * sin(alpha)) - alpha
+  lam = asin((r_orbit / R) * sin(alpha)) - alpha
   swath = 2.0d0 * R * lam`,
     matlab: `% ${A}
 R = 6378137.0;

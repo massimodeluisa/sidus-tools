@@ -252,6 +252,8 @@ else
 end`,
 
     julia: `# RV → classical elements: ${ASSUMPTIONS}
+using LinearAlgebra
+
 function rv_to_elements(r, v, mu)
     rmag, vmag = hypot(r...), hypot(v...)
     hvec = cross(r, v); h = hypot(hvec...)
@@ -264,20 +266,36 @@ function rv_to_elements(r, v, mu)
     raan = 0.0
     if n > 1e-12
         raan = acos(clamp(nvec[1]/n, -1, 1))
-        if nvec[2] < 0; raan = 2π - raan; end
+        if nvec[2] < 0
+            raan = 2π - raan
+        end
     end
     argp = 0.0
     if n > 1e-12 && e > 1e-12
         argp = acos(clamp(dot(nvec, evec)/(n*e), -1, 1))
-        if evec[3] < 0; argp = 2π - argp; end
+        if evec[3] < 0
+            argp = 2π - argp
+        end
     end
     nu = 0.0
     if e > 1e-12
         nu = acos(clamp(dot(evec, r)/(e*rmag), -1, 1))
-        if dot(r, v) < 0; nu = 2π - nu; end
+        if dot(r, v) < 0
+            nu = 2π - nu
+        end
     end
     return (; a, e, i, raan, argp, nu, h, energy)
-end`,
+end
+
+r = [rx, ry, rz]
+v = [vx, vy, vz]
+elements = rv_to_elements(r, v, mu)
+a = elements.a
+e = elements.e
+i = elements.i
+raan = elements.raan
+argp = elements.argp
+nu = elements.nu`,
 
     latex: `% Classical elements from state
 \\[

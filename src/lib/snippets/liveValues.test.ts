@@ -386,6 +386,77 @@ pub fn main() void {
     expect(free.has('std')).toBe(false)
   })
 
+  it('extractAssignedNames(lang=julia) drops locals defined inside function...end', () => {
+    const body = `function kepler_propagate(mu, r0, v0, dt)
+    r0n = hypot(r0...)
+    alpha = 2/r0n
+    chi = sqrt(mu) * alpha * dt
+    return chi
+end
+r0 = [rx, ry, rz]
+result = kepler_propagate(mu, r0, v0, dt_s)
+r_x = result`
+    expect(extractAssignedNames(body, 'julia')).toEqual(['r0', 'result', 'r_x'])
+  })
+
+  it('extractAssignedNames(lang=matlab) drops locals defined inside function...end', () => {
+    const body = `function [r,v] = kepler_propagate(mu,r0,v0,dt)
+  r0n = norm(r0);
+  alpha = 2/r0n;
+  chi = sqrt(mu)*alpha*dt;
+end
+r0 = [rx, ry, rz];
+[rvec, vvec] = kepler_propagate(mu, r0, v0, dt);
+r_x = rvec(1);`
+    expect(extractAssignedNames(body, 'matlab')).toEqual(['r0', 'r_x'])
+  })
+
+  it('extractAssignedNames(lang=julia) tracks nested if/for inside a function without leaking locals', () => {
+    const body = `function solve(mu, dt)
+    chi = 1.0
+    for i in 1:10
+        z = chi * chi
+        if z > 1e-8
+            s = sqrt(z)
+        else
+            s = 0.0
+        end
+        chi += s
+    end
+    return chi
+end
+result = solve(mu, dt)
+r_x = result`
+    expect(extractAssignedNames(body, 'julia')).toEqual(['result', 'r_x'])
+  })
+
+  it('extractAssignedNames(lang=…) leaves python/js/rust analysis unchanged', () => {
+    const pyBody = 'def foo(x):\n    y = x + 1\n    return y\nz = 1'
+    expect(extractAssignedNames(pyBody, 'python')).toEqual(extractAssignedNames(pyBody))
+    expect(extractAssignedNames(pyBody, 'python')).toEqual(['z'])
+
+    const jsBody = `function convert(
+  fromOffset = 0,
+  toOffset = 0,
+): number {
+  const si = 1
+  return si
+}
+const si = 1`
+    expect(extractAssignedNames(jsBody, 'javascript')).toEqual(extractAssignedNames(jsBody))
+    expect(extractAssignedNames(jsBody, 'javascript')).toEqual(['si'])
+
+    const rustBody = `use std::f64::consts::PI;
+fn sqrt(x: f64) -> f64 { x.sqrt() }
+fn main() {
+    let v = sqrt(mu / r);
+    let a = v * v / mu;
+}`
+    expect(freeVarsNeeded(rustBody, 'rust')).toEqual(freeVarsNeeded(rustBody))
+    expect(freeVarsNeeded(rustBody, 'rust').has('mu')).toBe(true)
+    expect(freeVarsNeeded(rustBody, 'rust').has('v')).toBe(false)
+  })
+
   it('renderLiveCode injects free vars into rust makeSnippet body without redecl', () => {
     const sn = getSnippets('circular-orbit')!
     const rust = sn.code.rust

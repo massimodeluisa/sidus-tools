@@ -79,7 +79,7 @@ const r_soi = a * std.math.pow(f64, m / M_primary, 0.4);`,
     fortran: `! Custom body: ${A}
 G = 6.6743d-11
 mu = G * M
-g = mu / (R * R)
+g_surf = mu / (R * R)
 r = R + h
 v_esc = sqrt(2.0d0 * mu / r)
 v_circ = sqrt(mu / r)

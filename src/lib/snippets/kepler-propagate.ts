@@ -68,8 +68,15 @@ def kepler_propagate(mu, r0, v0, dt, tol=1e-10, max_iter=50):
     return r, v
 
 # Example LEO (Earth μ, m, m/s, s):
-# mu = 3.986004418e14
-# r, v = kepler_propagate(mu, [6778137,0,0], [0,7668.6,0], 3600)`,
+r0 = [rx, ry, rz]
+v0 = [vx, vy, vz]
+result = kepler_propagate(mu, r0, v0, dt_s)
+r_x = result[0][0]
+r_y = result[0][1]
+r_z = result[0][2]
+v_x = result[1][0]
+v_y = result[1][1]
+v_z = result[1][2]`,
 
     javascript: `// Universal Kepler propagate: ${ASSUMPTIONS}
 function stumpffC(z) {
@@ -106,7 +113,17 @@ function keplerPropagate(mu, r0, v0, dt, tol = 1e-10, maxIter = 50) {
   const gd = 1 - (chi*chi/rn)*C
   const v = [fd*r0[0]+gd*v0[0], fd*r0[1]+gd*v0[1], fd*r0[2]+gd*v0[2]]
   return { r, v }
-}`,
+}
+
+const r0 = [rx, ry, rz]
+const v0 = [vx, vy, vz]
+const state = keplerPropagate(mu, r0, v0, dt_s)
+const r_x = state.r[0]
+const r_y = state.r[1]
+const r_z = state.r[2]
+const v_x = state.v[0]
+const v_y = state.v[1]
+const v_z = state.v[2]`,
 
     typescript: `// Universal Kepler propagate: ${ASSUMPTIONS}
 type Vec3 = [number, number, number]
@@ -141,7 +158,17 @@ function keplerPropagate(mu: number, r0: Vec3, v0: Vec3, dt: number) {
   const fd = Math.sqrt(mu)/(rn*r0n)*(z*S-1)*chi, gd = 1 - (chi*chi/rn)*C
   const v: Vec3 = [fd*r0[0]+gd*v0[0], fd*r0[1]+gd*v0[1], fd*r0[2]+gd*v0[2]]
   return { r, v }
-}`,
+}
+
+const r0 = [rx, ry, rz]
+const v0 = [vx, vy, vz]
+const state = keplerPropagate(mu, r0, v0, dt_s)
+const r_x = state.r[0]
+const r_y = state.r[1]
+const r_z = state.r[2]
+const v_x = state.v[0]
+const v_y = state.v[1]
+const v_z = state.v[2]`,
 
     c: `/* Universal Kepler: educational core: ${ASSUMPTIONS}
  * Free vars: mu, rx,ry,rz, vx,vy,vz, dt_s. Newton on χ then Lagrange f,g.
@@ -256,25 +283,15 @@ vy1 = fd*ry + gd*vy
 vz1 = fd*rz + gd*vz`,
 
     matlab: `% Universal Kepler: ${ASSUMPTIONS}
-% Full Newton on chi with Stumpff C,S; free vars mu,r0,v0,dt
-function [r,v] = kepler_propagate(mu,r0,v0,dt)
-  r0n = norm(r0); v0n = norm(v0);
-  alpha = 2/r0n - dot(v0,v0)/mu;
-  chi = sqrt(mu)*abs(alpha)*dt;
-  for k = 1:50
-    z = alpha*chi^2;
-    if z > 1e-8
-      s = sqrt(z); C = (1-cos(s))/z; S = (s-sin(s))/s^3;
-    elseif z < -1e-8
-      s = sqrt(-z); C = (1-cosh(s))/z; S = (sinh(s)-s)/s^3;
-    else
-      C = 0.5 - z/24 + z^2/720; S = 1/6 - z/120 + z^2/5040;
-    end
-    rmag = chi^2*C + dot(r0,v0)/sqrt(mu)*chi*(1-z*S) + r0n*(1-z*C);
-    dchi = (sqrt(mu)*dt - chi^3*S - dot(r0,v0)/sqrt(mu)*chi^2*C ...
-            - r0n*chi*(1-z*S)) / rmag;
-    chi = chi + dchi; if abs(dchi) < 1e-10, break; end
-  end
+% Full Newton on chi with Stumpff C,S; free vars mu,rx,ry,rz,vx,vy,vz,dt_s
+% Pure top-level script (no local function): for/if are legal at top level in
+% both MATLAB and Octave, and this avoids the local-function ordering rule.
+r0 = [rx, ry, rz];
+v0 = [vx, vy, vz];
+r0n = norm(r0); v0n = norm(v0);
+alpha = 2/r0n - dot(v0,v0)/mu;
+chi = sqrt(mu)*abs(alpha)*dt_s;
+for k = 1:50
   z = alpha*chi^2;
   if z > 1e-8
     s = sqrt(z); C = (1-cos(s))/z; S = (s-sin(s))/s^3;
@@ -283,13 +300,39 @@ function [r,v] = kepler_propagate(mu,r0,v0,dt)
   else
     C = 0.5 - z/24 + z^2/720; S = 1/6 - z/120 + z^2/5040;
   end
-  f = 1 - chi^2/r0n*C; g = dt - chi^3/sqrt(mu)*S;
-  r = f*r0 + g*v0; rn = norm(r);
-  fd = sqrt(mu)/(rn*r0n)*(z*S-1)*chi; gd = 1 - chi^2/rn*C;
-  v = fd*r0 + gd*v0;
-end`,
+  rmag = chi^2*C + dot(r0,v0)/sqrt(mu)*chi*(1-z*S) + r0n*(1-z*C);
+  dchi = (sqrt(mu)*dt_s - chi^3*S - dot(r0,v0)/sqrt(mu)*chi^2*C ...
+          - r0n*chi*(1-z*S)) / rmag;
+  chi = chi + dchi; if abs(dchi) < 1e-10, break; end
+end
+z = alpha*chi^2;
+if z > 1e-8
+  s = sqrt(z); C = (1-cos(s))/z; S = (s-sin(s))/s^3;
+elseif z < -1e-8
+  s = sqrt(-z); C = (1-cosh(s))/z; S = (sinh(s)-s)/s^3;
+else
+  C = 0.5 - z/24 + z^2/720; S = 1/6 - z/120 + z^2/5040;
+end
+f = 1 - chi^2/r0n*C; g = dt_s - chi^3/sqrt(mu)*S;
+r = f*r0 + g*v0; rn = norm(r);
+fd = sqrt(mu)/(rn*r0n)*(z*S-1)*chi; gd = 1 - chi^2/rn*C;
+v = fd*r0 + gd*v0;
+r_x = r(1);
+r_y = r(2);
+r_z = r(3);
+v_x = v(1);
+v_y = v(2);
+v_z = v(3);
+fprintf('r_x = %g\\n', r_x);
+fprintf('r_y = %g\\n', r_y);
+fprintf('r_z = %g\\n', r_z);
+fprintf('v_x = %g\\n', v_x);
+fprintf('v_y = %g\\n', v_y);
+fprintf('v_z = %g\\n', v_z);`,
 
     julia: `# Universal Kepler propagate: ${ASSUMPTIONS}
+using LinearAlgebra
+
 function stumpff_C(z)
     if z > 1e-8
         s = sqrt(z); return (1 - cos(s)) / z
@@ -331,7 +374,17 @@ function kepler_propagate(mu, r0, v0, dt; tol=1e-10, max_iter=50)
     gd = 1 - (chi^2/rn)*C
     v = fd .* r0 .+ gd .* v0
     return r, v
-end`,
+end
+
+r0 = [rx, ry, rz]
+v0 = [vx, vy, vz]
+result = kepler_propagate(mu, r0, v0, dt_s)
+r_x = result[1][1]
+r_y = result[1][2]
+r_z = result[1][3]
+v_x = result[2][1]
+v_y = result[2][2]
+v_z = result[2][3]`,
 
     latex: `% Universal variable (Stumpff)
 \\[
