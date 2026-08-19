@@ -129,7 +129,7 @@ export function ThermalRadTool() {
           ) : null}
         </div>
       }
-      code={<CodeExport formulaId="thermal-rad" values={{ A, T_K, T: p.T, eps: p.eps, alpha: p.alpha, ang: p.ang, r: p.r }} />}
+      code={<CodeExport formulaId="thermal-rad" values={{ A, T_K, T: T_K, eps: p.eps, alpha: p.alpha, ang: p.ang, r: p.r }} />}
     />
   )
 }

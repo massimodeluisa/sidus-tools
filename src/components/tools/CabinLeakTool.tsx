@@ -195,7 +195,7 @@ export function CabinLeakTool() {
           </div>
         )
       }
-      code={<CodeExport formulaId="cabin-leak" values={{ V_m3, d_m, A, P0, P1, T_K, V: p.V, d: p.d, T: p.T, Cd: p.Cd, du: p.du, Pu: p.Pu }} />}
+      code={<CodeExport formulaId="cabin-leak" values={{ V_m3, d_m, A, P0, P1, T_K, V: V_m3, d: p.d, T: T_K, Cd: p.Cd, du: p.du, Pu: p.Pu }} />}
     />
   )
 }

@@ -28,14 +28,21 @@ export function MultiStageTool() {
   const [p, setP] = useToolSearchParams(SCHEMA)
   const n = Math.min(3, Math.max(1, Math.floor(p.stages)))
 
+  const m01_kg = toSi(p.m01, p.mu)
+  const mf1_kg = toSi(p.mf1, p.mu)
+  const m02_kg = toSi(p.m02, p.mu)
+  const mf2_kg = toSi(p.mf2, p.mu)
+  const m03_kg = toSi(p.m03, p.mu)
+  const mf3_kg = toSi(p.mf3, p.mu)
+
   const results = useMemo(() => {
     const stages = [
-      { ve: p.isp1 * G0, m0: toSi(p.m01, p.mu), mf: toSi(p.mf1, p.mu) },
-      { ve: p.isp2 * G0, m0: toSi(p.m02, p.mu), mf: toSi(p.mf2, p.mu) },
-      { ve: p.isp3 * G0, m0: toSi(p.m03, p.mu), mf: toSi(p.mf3, p.mu) },
+      { ve: p.isp1 * G0, m0: m01_kg, mf: mf1_kg },
+      { ve: p.isp2 * G0, m0: m02_kg, mf: mf2_kg },
+      { ve: p.isp3 * G0, m0: m03_kg, mf: mf3_kg },
     ].slice(0, n)
     return multiStageDeltaV(stages)
-  }, [n, p.isp1, p.isp2, p.isp3, p.m01, p.m02, p.m03, p.mf1, p.mf2, p.mf3, p.mu])
+  }, [n, p.isp1, p.isp2, p.isp3, m01_kg, m02_kg, m03_kg, mf1_kg, mf2_kg, mf3_kg])
 
   function changeMassUnit(mu: string) {
     setP({
@@ -152,7 +159,7 @@ export function MultiStageTool() {
           </div>
         )
       }
-      code={<CodeExport formulaId="multi-stage" values={{ isp1: p.isp1, m01: p.m01, mf1: p.mf1, isp2: p.isp2, m02: p.m02, mf2: p.mf2, isp3: p.isp3, m03: p.m03, mf3: p.mf3, stages: p.stages }} />}
+      code={<CodeExport formulaId="multi-stage" values={{ isp1: p.isp1, m01: m01_kg, mf1: mf1_kg, isp2: p.isp2, m02: m02_kg, mf2: mf2_kg, isp3: p.isp3, m03: m03_kg, mf3: mf3_kg, stages: p.stages }} />}
     />
   )
 }

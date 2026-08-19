@@ -36,6 +36,8 @@ export function PlaneChangeTool() {
   const [p, setP] = useToolSearchParams(SCHEMA)
 
   const body = getBody(p.body)
+  // Snippet free var di_deg is always degrees, regardless of the angle selector.
+  const diDeg = (toSi(p.di, p.diu) * 180) / Math.PI
   const results = useMemo(() => {
     const diRad = toSi(p.di, p.diu)
     if (!Number.isFinite(diRad)) return null
@@ -132,7 +134,7 @@ export function PlaneChangeTool() {
           <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
         )
       }
-      code={<CodeExport formulaId="plane-change" values={{ v: results?.v, di_deg: p.di }} />}
+      code={<CodeExport formulaId="plane-change" values={{ v: results?.v, di_deg: diDeg }} />}
     />
   )
 }

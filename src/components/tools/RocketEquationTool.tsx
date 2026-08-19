@@ -220,7 +220,7 @@ export function RocketEquationTool() {
         )
       }
       preview={<FunctionPlot points={curve} xLabel="m₀/m_f" yLabel="Δv (km/s)" />}
-      code={<CodeExport formulaId="rocket-equation" values={{ m0_kg, mf_kg, dv_si, isp: p.isp, m0: p.m0, mf: p.mf, dv: p.dv, mode: p.mode }} />}
+      code={<CodeExport formulaId="rocket-equation" values={{ m0_kg, mf_kg, dv_si, isp: p.isp, m0: m0_kg, mf: mf_kg, dv: p.dv, mode: p.mode }} />}
     />
   )
 }

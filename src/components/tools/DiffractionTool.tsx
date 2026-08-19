@@ -90,7 +90,7 @@ export function DiffractionTool() {
           <p className="font-mono text-sm text-muted">{t('fields.invalid_aperture')}</p>
         )
       }
-      code={<CodeExport formulaId="diffraction" values={{ fHz, D, range, f: p.f }} />}
+      code={<CodeExport formulaId="diffraction" values={{ fHz, D, range, f: fHz }} />}
     />
   )
 }

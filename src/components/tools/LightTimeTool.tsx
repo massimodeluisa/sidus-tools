@@ -72,7 +72,7 @@ export function LightTimeTool() {
           <p className="font-mono text-sm text-muted">{t('fields.invalid_range')}</p>
         )
       }
-      code={<CodeExport formulaId="light-time" values={{ r, range: p.range }} />}
+      code={<CodeExport formulaId="light-time" values={{ r, range: r }} />}
     />
   )
 }
