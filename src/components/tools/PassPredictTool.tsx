@@ -9,7 +9,6 @@ import { UiSelect } from '@/components/shared/UiSelect'
 import { Chip } from '@/components/shared/Chip'
 import { ResultCard } from '@/components/shared/ResultCard'
 import { CodeExport } from '@/components/shared/CodeExport'
-import { TrajectoryPlot } from '@/components/viz/TrajectoryPlot'
 import { OrbitScene3D } from '@/components/viz/OrbitScene3D'
 import { WorldMap, type WorldMapTrack } from '@/components/viz/WorldMap'
 import {
@@ -50,18 +49,36 @@ const SCHEMA = {
   at: strParam(''),
   tz: strParam(''),
   mark: strParam('aos', ['now', 'aos', 'peak']),
-  view: strParam('3d', ['3d', '2d', 'map']),
+  view: strParam('3d', ['3d', 'map']),
   vis: strParam('0', ['0', '1']),
 } as const
 
 const TRAIL_HALF_SPAN_S = 46 * 60
-const TRAIL_STEP_S = 2 * 60
+const TRAIL_STEP_S = 30
 const TRAIL_BUCKET_MS = 30_000
+const SEARCH_STEP_S = 20
 const LIVE_MARKER_INTERVAL_MS = 100
 const CELESTRAK_GP_URL = 'https://celestrak.org/NORAD/elements/gp.php'
 const CELESTRAK_CATALOG_URL = 'https://celestrak.org/NORAD/elements/'
 const CELESTRAK_FETCH_TIMEOUT_MS = 10_000
 const TLE_STALE_DAYS = 14
+
+/** Live countdown as "H h M min S s", omitting leading zero units. */
+function formatHms(ms: number): string {
+  const c = formatCountdown(Math.max(0, ms))
+  if (c.h > 0) return `${c.h} h ${c.m} min ${c.s} s`
+  if (c.m > 0) return `${c.m} min ${c.s} s`
+  return `${c.s} s`
+}
+
+/** Full-width font-mono kicker for a PARAMETERS section. */
+function SectionKicker({ children }: { children: string }) {
+  return (
+    <p className="col-span-full font-mono text-[10px] uppercase tracking-[0.14em] text-subtle">
+      {children}
+    </p>
+  )
+}
 
 /** First complete (name, line 1, line 2) TLE triple in a CelesTrak TLE-format response. */
 function firstTleTriple(text: string): string | null {
@@ -88,6 +105,7 @@ export function PassPredictTool() {
   const [nowMs, setNowMs] = useState(() => Date.now())
   const [liveClockMs, setLiveClockMs] = useState(() => Date.now())
   const [liveMarkerMs, setLiveMarkerMs] = useState(() => Date.now())
+  const [rollForwardMs, setRollForwardMs] = useState<number | null>(null)
 
   useEffect(() => {
     const id = setInterval(() => setNowMs(Date.now()), 1000)
@@ -97,19 +115,38 @@ export function PassPredictTool() {
   const parsed = useMemo(() => parseTle(tle), [tle])
   const start = useMemo(() => resolveUtcParam(p.at), [p.at])
 
+  // Once a found pass's LOS has elapsed, the search re-anchors to LOS + one
+  // search step so the next window rolls in automatically (see the effect
+  // below). Reset whenever the user re-anchors the search explicitly.
+  useEffect(() => {
+    setRollForwardMs(null)
+  }, [start])
+
+  const effectiveStart = useMemo(() => {
+    if (rollForwardMs != null && rollForwardMs > start.getTime()) return new Date(rollForwardMs)
+    return start
+  }, [start, rollForwardMs])
+
   const pass = useMemo(() => {
     if (!parsed.ok) return null
     return findNextPass({
       satrec: parsed.satrec,
       observer: { latDeg: p.lat, lonDeg: p.lon, heightM: p.h_m },
-      start,
+      start: effectiveStart,
       horizonH: p.hours,
-      stepS: 20,
+      stepS: SEARCH_STEP_S,
       refineS: 1,
       minElDeg: p.minEl,
       visibleOnly: p.vis === '1',
     })
-  }, [p.h_m, p.hours, p.lat, p.lon, p.minEl, p.vis, parsed, start])
+  }, [p.h_m, p.hours, p.lat, p.lon, p.minEl, p.vis, parsed, effectiveStart])
+
+  useEffect(() => {
+    if (!pass) return
+    if (nowMs >= pass.los.getTime()) {
+      setRollForwardMs(pass.los.getTime() + SEARCH_STEP_S * 1000)
+    }
+  }, [nowMs, pass])
 
   const zone = p.tz !== '' && isValidTimeZone(p.tz) ? p.tz : browserTimeZone()
 
@@ -156,6 +193,21 @@ export function PassPredictTool() {
     const countdown = c.h > 0 ? `${c.h} h ${c.m} min` : `${c.m} min`
     return t('fields.pass_headline', { ...vars, countdown })
   }, [pass, localFmt, passStarted, nowMs, t])
+
+  // Live AOS/LOS countdown, ticking every 1 s. `pass` rolls forward on its
+  // own (see the roll-forward effect above) once its LOS elapses, so this
+  // only ever needs to distinguish BEFORE (now < aos) from DURING (aos <= now
+  // < los); the post-LOS instant is a single tick that resolves itself.
+  const countdownLine = useMemo(() => {
+    if (!pass) return ''
+    if (nowMs < pass.aos.getTime()) {
+      return t('fields.count_to_pass', {
+        aos: formatHms(pass.aos.getTime() - nowMs),
+        los: formatHms(pass.los.getTime() - nowMs),
+      })
+    }
+    return t('fields.count_in_pass', { los: formatHms(pass.los.getTime() - nowMs) })
+  }, [pass, nowMs, t])
 
   const visibilityLine = useMemo(() => {
     if (!pass) return ''
@@ -211,15 +263,33 @@ export function PassPredictTool() {
         ? pass.maxElAt.getTime()
         : Math.floor(nowMs / TRAIL_BUCKET_MS) * TRAIL_BUCKET_MS
 
-  const trail = useMemo(() => {
+  const trailPoints = useMemo(() => {
     if (!parsed.ok) return []
-    const pts: Vec3[] = []
+    const pts: { r: Vec3; tMs: number }[] = []
     for (let dt = -TRAIL_HALF_SPAN_S; dt <= TRAIL_HALF_SPAN_S; dt += TRAIL_STEP_S) {
-      const st = propagateEci(parsed.satrec, new Date(trailCenterMs + dt * 1000))
-      if (st) pts.push(st.r)
+      const tMs = trailCenterMs + dt * 1000
+      const st = propagateEci(parsed.satrec, new Date(tMs))
+      if (st) pts.push({ r: st.r, tMs })
     }
     return pts
   }, [parsed, trailCenterMs])
+
+  const trail = useMemo(() => trailPoints.map((pt) => pt.r), [trailPoints])
+
+  // Direction encoding: already-flown (solid) vs not-yet-flown (dashed) about
+  // the marked instant. The two segments share their boundary point so the
+  // solid/dashed pieces connect with no visible gap.
+  const flownTrack = useMemo(() => {
+    const idx = trailPoints.findIndex((pt) => pt.tMs > instant.getTime())
+    const cut = idx === -1 ? trailPoints.length : idx
+    return trailPoints.slice(0, cut).map((pt) => pt.r)
+  }, [trailPoints, instant])
+
+  const upcomingTrack = useMemo(() => {
+    const idx = trailPoints.findIndex((pt) => pt.tMs > instant.getTime())
+    if (idx === -1) return []
+    return trailPoints.slice(Math.max(0, idx - 1)).map((pt) => pt.r)
+  }, [trailPoints, instant])
 
   const issState = useMemo(() => {
     if (!parsed.ok) return null
@@ -344,6 +414,7 @@ export function PassPredictTool() {
     <ToolShell
       parameters={
         <ParamsGrid>
+          <SectionKicker>{t('fields.sec_satellite')}</SectionKicker>
           <label className="col-span-full block min-w-0 space-y-2">
             <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
               {t('fields.tle')}
@@ -390,6 +461,8 @@ export function PassPredictTool() {
               {t('fields.tle_stale_warning', { days: staleTleDays })}
             </p>
           ) : null}
+
+          <SectionKicker>{t('fields.sec_observer')}</SectionKicker>
           <UiField
             label={t('fields.site_lat')}
             unit="°"
@@ -427,6 +500,16 @@ export function PassPredictTool() {
             value={p.h_m}
             onChange={(e) => setP({ h_m: Number(e.target.value) })}
           />
+          <LaunchSitePresets
+            latDeg={p.lat}
+            lonDeg={p.lon}
+            label={t('fields.observer_presets')}
+            onSelect={(site) =>
+              setP({ lat: site.latDeg, lon: site.lonDeg, h_m: site.heightM })
+            }
+          />
+
+          <SectionKicker>{t('fields.sec_pass')}</SectionKicker>
           <UiField
             label={t('fields.min_elevation')}
             unit="°"
@@ -446,14 +529,13 @@ export function PassPredictTool() {
             value={p.hours}
             onChange={(e) => setP({ hours: Number(e.target.value) })}
           />
-          <LaunchSitePresets
-            latDeg={p.lat}
-            lonDeg={p.lon}
-            label={t('fields.observer_presets')}
-            onSelect={(site) =>
-              setP({ lat: site.latDeg, lon: site.lonDeg, h_m: site.heightM })
-            }
-          />
+          <div className="col-span-full flex flex-wrap items-center gap-2">
+            <Chip active={p.vis === '1'} onClick={() => setP({ vis: p.vis === '1' ? '0' : '1' })}>
+              {t('fields.only_visible')}
+            </Chip>
+          </div>
+
+          <SectionKicker>{t('fields.sec_time')}</SectionKicker>
           <UiUtcField
             label={t('fields.start_utc_iso')}
             value={p.at}
@@ -491,6 +573,7 @@ export function PassPredictTool() {
                 </span>
               ) : null}
             </div>
+            <p className="font-mono text-sm text-fg">{countdownLine}</p>
             <p className="font-mono text-sm text-muted">{visibilityLine}</p>
             <div className="sidus-results">
               <ResultCard
@@ -555,26 +638,12 @@ export function PassPredictTool() {
               <Chip active={p.view === '3d'} onClick={() => setP({ view: '3d' })}>
                 3D
               </Chip>
-              <Chip active={p.view === '2d'} onClick={() => setP({ view: '2d' })}>
-                2D
-              </Chip>
               <Chip active={p.view === 'map'} onClick={() => setP({ view: 'map' })}>
                 MAP
               </Chip>
-              <Chip active={p.vis === '1'} onClick={() => setP({ vis: p.vis === '1' ? '0' : '1' })}>
-                {t('fields.only_visible')}
-              </Chip>
             </div>
             <div className="min-h-0 flex-1">
-              {p.view === '2d' ? (
-                <TrajectoryPlot
-                  points={trail}
-                  bodyR={EARTH_RADIUS}
-                  markers={issMarker ? [issMarker, obsMarker] : [obsMarker]}
-                  title={t('fields.title_pass_viz')}
-                  subtitle={t('fields.subtitle_pass_viz')}
-                />
-              ) : p.view === 'map' ? (
+              {p.view === 'map' ? (
                 <WorldMap
                   tracks={mapTracks}
                   markers={mapMarkers}
@@ -586,7 +655,21 @@ export function PassPredictTool() {
               ) : (
                 <OrbitScene3D
                   bodyR={EARTH_RADIUS}
-                  tracks={[{ points: trail, color: 'rgba(184,165,90,0.95)', width: 1.5 }]}
+                  tracks={[
+                    ...(flownTrack.length > 1
+                      ? [{ points: flownTrack, color: 'rgba(184,165,90,0.95)', width: 1.5 }]
+                      : []),
+                    ...(upcomingTrack.length > 1
+                      ? [
+                          {
+                            points: upcomingTrack,
+                            color: 'rgba(184,165,90,0.95)',
+                            width: 1.5,
+                            dash: [6, 4],
+                          },
+                        ]
+                      : []),
+                  ]}
                   pointMarkers={[
                     ...(issMarker
                       ? [{ r: issMarker.r, label: issMarker.label, color: 'rgba(184,165,90,0.95)' }]

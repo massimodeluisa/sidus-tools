@@ -506,14 +506,52 @@ export function OrbitScene3D({
         ctx.fill()
       }
 
-      // Caller-supplied generic tracks (e.g. ground track, trajectory)
+      // Occlusion for caller-supplied tracks/pointMarkers: a point is on the far
+      // side of the body when its view-space depth (the rotation's third axis,
+      // dropped by `project`) is negative, i.e. behind the origin along the
+      // camera direction. Derived by extending `project`'s own yaw/pitch
+      // rotation with its implicit (unreturned) depth component:
+      //   viewZ = y·sin(pitch) + (x·sin(yaw) + z·cos(yaw))·cos(pitch)
+      // A far-side point is occluded only if it also falls inside the body's
+      // on-screen disk (near-side points are never occluded).
+      const viewZOf = (x: number, y: number, z: number): number => {
+        const z1 = x * Math.sin(camNow.yaw) + z * Math.cos(camNow.yaw)
+        return y * Math.sin(camNow.pitch) + z1 * Math.cos(camNow.pitch)
+      }
+      const isOccluded = (x: number, y: number, z: number): boolean => {
+        if (viewZOf(x, y, z) >= 0) return false
+        const p = project(x, y, z, camNow, w, h, worldScale)
+        return Math.hypot(p.X - body.X, p.Y - body.Y) < rPx
+      }
+
+      // Caller-supplied generic tracks (e.g. ground track, trajectory):
+      // drawn segment-by-segment so occluded stretches dim independently.
       for (const track of tracks) {
-        drawPath(track.points, track.color ?? '#f5f5f5', track.width ?? 1.5, track.dash)
+        const pts = track.points
+        if (pts.length < 2) continue
+        const color = track.color ?? '#f5f5f5'
+        ctx.strokeStyle = color
+        ctx.lineWidth = track.width ?? 1.5
+        ctx.setLineDash(track.dash ?? [])
+        for (let i = 0; i < pts.length - 1; i++) {
+          const a = pts[i]!
+          const b = pts[i + 1]!
+          ctx.globalAlpha = isOccluded(...a) || isOccluded(...b) ? 0.25 : 1
+          const pa = project(a[0], a[1], a[2], camNow, w, h, worldScale)
+          const pb = project(b[0], b[1], b[2], camNow, w, h, worldScale)
+          ctx.beginPath()
+          ctx.moveTo(pa.X, pa.Y)
+          ctx.lineTo(pb.X, pb.Y)
+          ctx.stroke()
+        }
+        ctx.globalAlpha = 1
+        ctx.setLineDash([])
       }
 
       // Caller-supplied labeled point markers
       for (const marker of pointMarkers) {
         const color = marker.color ?? '#f5f5f5'
+        ctx.globalAlpha = isOccluded(marker.r[0], marker.r[1], marker.r[2]) ? 0.25 : 1
         const p = project(marker.r[0], marker.r[1], marker.r[2], camNow, w, h, worldScale)
         ctx.beginPath()
         ctx.arc(p.X, p.Y, 3, 0, Math.PI * 2)
@@ -531,6 +569,7 @@ export function OrbitScene3D({
         ctx.strokeText(marker.label, p.X + 7, p.Y - 6)
         ctx.fillStyle = color
         ctx.fillText(marker.label, p.X + 7, p.Y - 6)
+        ctx.globalAlpha = 1
       }
     }
 
