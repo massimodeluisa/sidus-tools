@@ -1372,7 +1372,7 @@ function wrapRust(body: string, inputs: string[], prints: string[]): string {
   if (hadMain && prelude.trim()) {
     parts.push(prelude.trimEnd(), '')
   } else if (!hadMain) {
-    parts.push('// pure SI: educational (runnable)', '')
+    parts.push('// educational snippet (runnable)', '')
   }
 
   parts.push('fn main() {')
@@ -1600,7 +1600,7 @@ function wrapFortran(body: string, inputs: string[], prints: string[]): string {
     printL.length > 0 && !bodyAlreadyPrints(inner) ? printL : []
 
   return [
-    '! pure SI: educational (runnable)',
+    '! educational snippet (runnable)',
     'program sidus_snippet',
     '  implicit none',
     '  ! --- live inputs (from SIDUS UI) ---',

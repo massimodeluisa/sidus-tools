@@ -3,9 +3,26 @@
 Project-wide rules: [CONVENTIONS.md](../../../CONVENTIONS.md) ·
 [CONTRIBUTING.md](../../../CONTRIBUTING.md) · [INDEX.md](../../../INDEX.md).
 
-Every tool ships **hand-written, idiomatic** pure-SI snippets for **all**
-`CodeLang` keys: `c`, `cpp`, `rust`, `zig`, `python`, `javascript`,
-`typescript`, `matlab`, `julia`, `fortran`, `latex`.
+Every tool ships **hand-written, idiomatic** snippets, authored in pure SI,
+for **all** `CodeLang` keys: `c`, `cpp`, `rust`, `zig`, `python`,
+`javascript`, `typescript`, `matlab`, `julia`, `fortran`, `latex`.
+
+Authorship and numeric verification are separate claims. The authorship
+claim above (hand-written, idiomatic, pure SI) holds for every tool and
+every `CodeLang` key. The numeric verification claim, that a snippet's
+printed output matches shipped `src/lib/physics`, holds only for the
+tools listed in
+[docs/verify-matrix/report.md](../../../docs/verify-matrix/report.md).
+A tool without expected values there is never described as passing.
+
+LaTeX snippets are display-math fragments, not standalone documents. CI
+verifies they compile when wrapped in the standard preamble against a
+cached Tectonic bundle, not that they are correct or complete documents
+on their own.
+
+`--require-all` means every tool with expected values passes in every
+available language and LaTeX compiles; skips are reported explicitly and
+never counted as passing.
 
 ## Forbidden
 

@@ -102,7 +102,7 @@ if err != 0:
 r_m = [x * 1000 for x in r_km]
 v_ms = [x * 1000 for x in v_kms]`,
 
-    matlab: `% SGP4: use Aerospace Toolbox or validated SGP4 mex
+    matlab: `% SGP4: use Aerospace Toolbox or a published SGP4 mex
 % [r,v] = sgp4(satrec, tsince);  % km, km/s in TEME
 % Convert: r_m = r*1e3;
 % Educational Kepler proxy from TLE mean motion n_rev_day:

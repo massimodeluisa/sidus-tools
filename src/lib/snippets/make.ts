@@ -450,7 +450,7 @@ function pyToC(body: string, cpp: boolean): string {
 
   const lines = s.split('\n')
   const out: string[] = [
-    cpp ? '// pure SI: educational' : '/* pure SI: educational */',
+    cpp ? '// educational snippet' : '/* educational snippet */',
     cpp ? '#include <cmath>' : '#include <math.h>',
     '',
   ]
@@ -531,7 +531,7 @@ function pyToRust(body: string): string {
 
   // Formula fragment style (wrapAsRunnable adds fn main + live inputs)
   const lines = s.split('\n')
-  const out: string[] = ['// pure SI: educational']
+  const out: string[] = ['// educational snippet']
   for (const line of lines) {
     const t = line.trim()
     if (!t || t.startsWith('//')) {
@@ -589,7 +589,7 @@ function pyToZig(body: string): string {
 
   const lines = s.split('\n')
   const out: string[] = [
-    '// pure SI: educational',
+    '// educational snippet',
     'const std = @import("std");',
     'pub fn main() void {',
   ]
@@ -638,7 +638,7 @@ function pyToFortran(body: string): string {
   // Disambiguate case-colliding free identifiers (m/M, r/R, h/H) in body
   // by leaving them as-is here; wrapFortran renames injects + body.
   const lines = s.split('\n')
-  const out: string[] = ['! pure SI: educational', 'program sidus_snippet', '  implicit none']
+  const out: string[] = ['! educational snippet', 'program sidus_snippet', '  implicit none']
   for (const line of lines) {
     const t = line.trim()
     if (!t || t.startsWith('!')) {
