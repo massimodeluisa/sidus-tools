@@ -3,6 +3,7 @@ import {
   greatCircleDistance,
   greatCircleAngle,
   topocentricElAz,
+  enuFromGeodetic,
   angleBetween,
   elevationFromRangeHeight,
   geodeticToEcef,
@@ -58,6 +59,56 @@ describe('geometry: spherical + topocentric', () => {
     const c = greatCircleAngle(Math.PI / 2, 0, 0, 0)
     expect(c).toBeCloseTo(Math.PI / 2, 10)
   })
+})
+
+describe('enuFromGeodetic: shares topocentricElAz code path', () => {
+  const DEG = Math.PI / 180
+  const cases = [
+    {
+      site: { lat: 45 * DEG, lon: 0, hM: 0 },
+      target: { lat: 46 * DEG, lon: 2 * DEG, hM: 400_000 },
+    },
+    {
+      site: { lat: 34 * DEG, lon: -118 * DEG, hM: 100 },
+      target: { lat: 35 * DEG, lon: -117 * DEG, hM: 500_000 },
+    },
+    {
+      site: { lat: 0, lon: 0, hM: 0 },
+      target: { lat: 5 * DEG, lon: 10 * DEG, hM: 1_000_000 },
+    },
+  ]
+
+  for (const [i, c] of cases.entries()) {
+    it(`case ${i}: el/az reconstructed from ENU equal topocentricElAz`, () => {
+      const full = topocentricElAz(
+        c.site.lat,
+        c.site.lon,
+        c.site.hM,
+        c.target.lat,
+        c.target.lon,
+        c.target.hM,
+        EARTH_RADIUS,
+      )
+      const enu = enuFromGeodetic(c.site, c.target, EARTH_RADIUS)
+      expect(full, `case ${i}: topocentricElAz`).not.toBeNull()
+      expect(enu, `case ${i}: enuFromGeodetic`).not.toBeNull()
+      if (!full || !enu) throw new Error('unreachable: narrowed by expect above')
+
+      expect(enu.eastM).toBeCloseTo(full.east, 12)
+      expect(enu.northM).toBeCloseTo(full.north, 12)
+      expect(enu.upM).toBeCloseTo(full.up, 12)
+
+      const range = Math.hypot(enu.eastM, enu.northM, enu.upM)
+      const el = Math.asin(enu.upM / range)
+      let az = Math.atan2(enu.eastM, enu.northM)
+      if (az < 0) az += 2 * Math.PI
+
+      const elRel = Math.abs(el - full.el) / Math.abs(full.el)
+      const azRel = Math.abs(az - full.az) / Math.abs(full.az)
+      expect(elRel, `case ${i}: el rel`).toBeLessThanOrEqual(1e-12)
+      expect(azRel, `case ${i}: az rel`).toBeLessThanOrEqual(1e-12)
+    })
+  }
 })
 
 describe('planetary: heliocentric / patched conic', () => {

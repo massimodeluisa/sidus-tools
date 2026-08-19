@@ -15,6 +15,8 @@ import {
   degreesLat,
   degreesLong,
   degreesToRadians,
+  geodeticToEcf,
+  ecfToEci,
 } from '../vendor/satellite-js-pure'
 import type { SatRec } from 'satellite.js'
 import type { Vec3 } from './vector'
@@ -105,6 +107,14 @@ export function propagateEci(satrec: SatRec, date: Date): EciStateSi | null {
   }
 }
 
+/** ECI (m) → ECEF/ECF position (m) at `date`. */
+export function eciSiToEcefSi(rM: Vec3, date: Date): Vec3 {
+  const gmst = gstime(date)
+  const eciKm = { x: rM[0] / 1000, y: rM[1] / 1000, z: rM[2] / 1000 }
+  const ecf = eciToEcf(eciKm, gmst)
+  return [ecf.x * 1000, ecf.y * 1000, ecf.z * 1000]
+}
+
 /** ECI (m) → geodetic lat/lon (deg) and height (m). */
 export function eciSiToGeodetic(rM: Vec3, date: Date): GeodeticDeg | null {
   const gmst = gstime(date)
@@ -144,6 +154,55 @@ export function lookAnglesFromEci(
   }
 }
 
+/**
+ * Topocentric SEZ (south, east, zenith) components of the range vector from
+ * an observer (geodetic deg, height m) to a satellite ECEF/ECF position (m).
+ *
+ * Standard ECEF → SEZ topocentric-horizon rotation: rotate the observer to
+ * satellite ECEF delta by the observer's geodetic latitude and longitude
+ * (Vallado, "Fundamentals of Astrodynamics and Applications", 4th ed.,
+ * Sec. 4.4, Algorithm 27 RAZEL). Matches the rotation the vendor
+ * `ecfToLookAngles` uses internally.
+ */
+export function topocentricSezSi(
+  observer: GeodeticDeg,
+  satEcefM: Vec3,
+): { southM: number; eastM: number; zenithM: number } {
+  const obsEcf = geodeticToEcf({
+    longitude: degreesToRadians(observer.lonDeg),
+    latitude: degreesToRadians(observer.latDeg),
+    height: observer.heightM / 1000,
+  })
+  const rx = satEcefM[0] - obsEcf.x * 1000
+  const ry = satEcefM[1] - obsEcf.y * 1000
+  const rz = satEcefM[2] - obsEcf.z * 1000
+
+  const lat = degreesToRadians(observer.latDeg)
+  const lon = degreesToRadians(observer.lonDeg)
+  const sinLat = Math.sin(lat)
+  const cosLat = Math.cos(lat)
+  const sinLon = Math.sin(lon)
+  const cosLon = Math.cos(lon)
+
+  return {
+    southM: sinLat * cosLon * rx + sinLat * sinLon * ry - cosLat * rz,
+    eastM: -sinLon * rx + cosLon * ry,
+    zenithM: cosLat * cosLon * rx + cosLat * sinLon * ry + sinLat * rz,
+  }
+}
+
+/** Observer geodetic (deg, height m) → ECI position (m) at `date`. */
+export function observerEciPosition(observer: GeodeticDeg, date: Date): Vec3 {
+  const gmst = gstime(date)
+  const obsEcf = geodeticToEcf({
+    longitude: degreesToRadians(observer.lonDeg),
+    latitude: degreesToRadians(observer.latDeg),
+    height: observer.heightM / 1000,
+  })
+  const eci = ecfToEci(obsEcf, gmst)
+  return [eci.x * 1000, eci.y * 1000, eci.z * 1000]
+}
+
 export type PassWindow = {
   aos: Date
   los: Date
@@ -152,9 +211,114 @@ export type PassWindow = {
   durationS: number
 }
 
+/** Elevation (rad) at `ms` (epoch millis), or null if propagation/look-angle fails. */
+function elevationRadAtMs(satrec: SatRec, observer: GeodeticDeg, ms: number): number | null {
+  const date = new Date(ms)
+  const st = propagateEci(satrec, date)
+  if (!st) return null
+  const look = lookAnglesFromEci(observer, st.r, date)
+  return look ? look.elevationRad : null
+}
+
+/**
+ * Bisect an elevation-vs-mask crossing down to `refineMs` bracket width.
+ * `belowMs` must have elevation < minEl, `aboveMs` elevation >= minEl; their
+ * chronological order does not matter (AOS is a rising edge, LOS a falling
+ * one), only which side of the mask each currently sits on. A failed
+ * elevation sample is treated as "below" so bisection still converges.
+ */
+function bisectMaskCrossing(
+  elevationAt: (ms: number) => number | null,
+  minElRad: number,
+  belowMs: number,
+  aboveMs: number,
+  refineMs: number,
+): { belowMs: number; aboveMs: number } {
+  let lo = belowMs
+  let hi = aboveMs
+  while (Math.abs(hi - lo) > refineMs) {
+    const mid = (lo + hi) / 2
+    const el = elevationAt(mid)
+    if (el !== null && el >= minElRad) {
+      hi = mid
+    } else {
+      lo = mid
+    }
+  }
+  return { belowMs: lo, aboveMs: hi }
+}
+
+/**
+ * Refine a coarse elevation peak by sampling its two neighboring `stepMs`
+ * intervals at `refineMs` resolution and taking the max. No golden-section
+ * search: the coarse peak already brackets the true maximum within one
+ * step on either side, so a fine linear scan of that window is sufficient.
+ */
+function refineElevationPeak(
+  elevationAt: (ms: number) => number | null,
+  peakMs: number,
+  stepMs: number,
+  refineMs: number,
+): { maxEl: number; maxElAtMs: number } {
+  let bestEl = -Infinity
+  let bestMs = peakMs
+  for (let t = peakMs - stepMs; t <= peakMs + stepMs; t += refineMs) {
+    const el = elevationAt(t)
+    if (el !== null && el > bestEl) {
+      bestEl = el
+      bestMs = t
+    }
+  }
+  return { maxEl: bestEl, maxElAtMs: bestMs }
+}
+
+/** Refine a coarsely-detected pass window's AOS/LOS/peak to `refineS` resolution. */
+function refinePassWindow(
+  satrec: SatRec,
+  observer: GeodeticDeg,
+  minElRad: number,
+  stepS: number,
+  refineS: number,
+  coarse: {
+    aosMs: number
+    aosBelowMs: number
+    losMs: number
+    losAboveMs: number | null // null: pass still open at horizon end, LOS not refined
+    maxEl: number
+    maxElAtMs: number
+  },
+): PassWindow {
+  const refineMs = refineS * 1000
+  const elevationAt = (ms: number) => elevationRadAtMs(satrec, observer, ms)
+
+  const aosMs = bisectMaskCrossing(elevationAt, minElRad, coarse.aosBelowMs, coarse.aosMs, refineMs).aboveMs
+
+  const losMs =
+    coarse.losAboveMs !== null
+      ? bisectMaskCrossing(elevationAt, minElRad, coarse.losMs, coarse.losAboveMs, refineMs).belowMs
+      : coarse.losMs
+
+  const peak = refineElevationPeak(elevationAt, coarse.maxElAtMs, stepS * 1000, refineMs)
+  const maxEl = peak.maxEl > coarse.maxEl ? peak.maxEl : coarse.maxEl
+  const maxElAtMs = peak.maxEl > coarse.maxEl ? peak.maxElAtMs : coarse.maxElAtMs
+
+  return {
+    aos: new Date(aosMs),
+    los: new Date(losMs),
+    maxElDeg: (maxEl * 180) / Math.PI,
+    maxElAt: new Date(maxElAtMs),
+    durationS: (losMs - aosMs) / 1000,
+  }
+}
+
 /**
  * Coarse next-pass search: sample elevation every `stepS` for `horizonH` hours.
  * Returns first AOS→LOS window above `minElDeg` (default 10°).
+ *
+ * With `refineS` set, AOS/LOS are bisected down to `refineS` resolution on
+ * the coarse-scan bracket, and the peak is refined by sampling its two
+ * neighboring `stepS` intervals at `refineS` resolution. Omit `refineS` for
+ * the original quantized-to-`stepS` behavior.
  */
 export function findNextPass(opts: {
   satrec: SatRec
@@ -163,6 +327,7 @@ export function findNextPass(opts: {
   horizonH?: number
   stepS?: number
   minElDeg?: number
+  refineS?: number
 }): PassWindow | null {
   const horizonH = opts.horizonH ?? 24
   const stepS = opts.stepS ?? 30
@@ -171,14 +336,16 @@ export function findNextPass(opts: {
   const tEnd = t0 + horizonH * 3600 * 1000
 
   let inPass = false
-  let aos: Date | null = null
+  let aosMs: number | null = null
+  let aosBelowMs: number | null = null
   let maxEl = -Infinity
-  let maxElAt: Date | null = null
-  let lastDate = opts.start
+  let maxElAtMs: number | null = null
+  let prevMs = t0
+  let lastMs = t0
 
   for (let t = t0; t <= tEnd; t += stepS * 1000) {
     const date = new Date(t)
-    lastDate = date
+    lastMs = t
     const st = propagateEci(opts.satrec, date)
     if (!st) continue
     const look = lookAnglesFromEci(opts.observer, st.r, date)
@@ -187,39 +354,63 @@ export function findNextPass(opts: {
 
     if (!inPass && el >= minElRad) {
       inPass = true
-      aos = date
+      aosMs = t
+      aosBelowMs = prevMs
       maxEl = el
-      maxElAt = date
+      maxElAtMs = t
     } else if (inPass) {
       if (el > maxEl) {
         maxEl = el
-        maxElAt = date
+        maxElAtMs = t
       }
       if (el < minElRad) {
-        const los = date
-        if (aos && maxElAt) {
+        const losAboveMs = prevMs
+        const losMs = t
+        if (aosMs !== null && aosBelowMs !== null && maxElAtMs !== null) {
+          if (opts.refineS !== undefined) {
+            return refinePassWindow(opts.satrec, opts.observer, minElRad, stepS, opts.refineS, {
+              aosMs,
+              aosBelowMs,
+              losMs,
+              losAboveMs,
+              maxEl,
+              maxElAtMs,
+            })
+          }
           return {
-            aos,
-            los,
+            aos: new Date(aosMs),
+            los: new Date(losMs),
             maxElDeg: (maxEl * 180) / Math.PI,
-            maxElAt,
-            durationS: (los.getTime() - aos.getTime()) / 1000,
+            maxElAt: new Date(maxElAtMs),
+            durationS: (losMs - aosMs) / 1000,
           }
         }
         inPass = false
-        aos = null
+        aosMs = null
+        aosBelowMs = null
       }
     }
+    prevMs = t
   }
 
   // Pass still open at horizon end
-  if (inPass && aos && maxElAt) {
+  if (inPass && aosMs !== null && aosBelowMs !== null && maxElAtMs !== null) {
+    if (opts.refineS !== undefined) {
+      return refinePassWindow(opts.satrec, opts.observer, minElRad, stepS, opts.refineS, {
+        aosMs,
+        aosBelowMs,
+        losMs: lastMs,
+        losAboveMs: null,
+        maxEl,
+        maxElAtMs,
+      })
+    }
     return {
-      aos,
-      los: lastDate,
+      aos: new Date(aosMs),
+      los: new Date(lastMs),
       maxElDeg: (maxEl * 180) / Math.PI,
-      maxElAt,
-      durationS: (lastDate.getTime() - aos.getTime()) / 1000,
+      maxElAt: new Date(maxElAtMs),
+      durationS: (lastMs - aosMs) / 1000,
     }
   }
   return null

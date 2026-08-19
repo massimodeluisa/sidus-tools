@@ -83,6 +83,38 @@ export function geodeticToEcef(
 }
 
 /**
+ * ENU (east, north, up) components of the range vector from a site to a
+ * target, on a spherical body. Shared by `topocentricElAz` and
+ * `enuFromGeodetic` so both stay on one code path.
+ */
+function enuComponents(
+  siteLat: number,
+  siteLon: number,
+  siteHM: number,
+  tgtLat: number,
+  tgtLon: number,
+  tgtHM: number,
+  bodyRadiusM: number,
+): { east: number; north: number; up: number; range: number } | null {
+  const rSite = geodeticToEcef(siteLat, siteLon, siteHM, bodyRadiusM)
+  const rTgt = geodeticToEcef(tgtLat, tgtLon, tgtHM, bodyRadiusM)
+  if (!rSite || !rTgt) return null
+  const d = vsub(rTgt, rSite)
+  const range = vnorm(d)
+  if (!(range > 0)) return null
+
+  const sinLat = Math.sin(siteLat)
+  const cosLat = Math.cos(siteLat)
+  const sinLon = Math.sin(siteLon)
+  const cosLon = Math.cos(siteLon)
+  const east: Vec3 = [-sinLon, cosLon, 0]
+  const north: Vec3 = [-sinLat * cosLon, -sinLat * sinLon, cosLat]
+  const up: Vec3 = [cosLat * cosLon, cosLat * sinLon, sinLat]
+
+  return { east: vdot(d, east), north: vdot(d, north), up: vdot(d, up), range }
+}
+
+/**
  * Topocentric elevation / azimuth (ENU, spherical Earth):
  * - azimuth: 0 = North, clockwise toward East [rad]
  * - elevation: 0 = horizon, + up [rad]
@@ -97,29 +129,28 @@ export function topocentricElAz(
   tgtHM: number,
   bodyRadiusM: number,
 ): { el: number; az: number; range: number; east: number; north: number; up: number } | null {
-  const rSite = geodeticToEcef(siteLat, siteLon, siteHM, bodyRadiusM)
-  const rTgt = geodeticToEcef(tgtLat, tgtLon, tgtHM, bodyRadiusM)
-  if (!rSite || !rTgt) return null
-  const d = vsub(rTgt, rSite)
-  const range = vnorm(d)
-  if (!(range > 0)) return null
-
-  // ENU basis at site
-  const sinLat = Math.sin(siteLat)
-  const cosLat = Math.cos(siteLat)
-  const sinLon = Math.sin(siteLon)
-  const cosLon = Math.cos(siteLon)
-  const east: Vec3 = [-sinLon, cosLon, 0]
-  const north: Vec3 = [-sinLat * cosLon, -sinLat * sinLon, cosLat]
-  const up: Vec3 = [cosLat * cosLon, cosLat * sinLon, sinLat]
-
-  const e = vdot(d, east)
-  const n = vdot(d, north)
-  const u = vdot(d, up)
-  const el = Math.asin(Math.min(1, Math.max(-1, u / range)))
-  let az = Math.atan2(e, n)
+  const c = enuComponents(siteLat, siteLon, siteHM, tgtLat, tgtLon, tgtHM, bodyRadiusM)
+  if (!c) return null
+  const el = Math.asin(Math.min(1, Math.max(-1, c.up / c.range)))
+  let az = Math.atan2(c.east, c.north)
   if (az < 0) az += 2 * Math.PI
-  return { el, az, range, east: e, north: n, up: u }
+  return { el, az, range: c.range, east: c.east, north: c.north, up: c.up }
+}
+
+/**
+ * ENU (east, north, up) components of the range vector site → target, on a
+ * spherical body of radius `bodyRadiusM`. Same rotation `topocentricElAz`
+ * uses (lat/lon in radians, height in m), exposed standalone for callers
+ * that need the raw components instead of elevation/azimuth.
+ */
+export function enuFromGeodetic(
+  site: { lat: number; lon: number; hM: number },
+  target: { lat: number; lon: number; hM: number },
+  bodyRadiusM: number,
+): { eastM: number; northM: number; upM: number } | null {
+  const c = enuComponents(site.lat, site.lon, site.hM, target.lat, target.lon, target.hM, bodyRadiusM)
+  if (!c) return null
+  return { eastM: c.east, northM: c.north, upM: c.up }
 }
 
 /**
