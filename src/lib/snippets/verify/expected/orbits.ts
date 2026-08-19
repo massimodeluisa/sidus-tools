@@ -77,7 +77,7 @@ import {
   walkerSpacing,
 } from '../../../physics'
 import type { CwState, Vec3 } from '../../../physics'
-import { num, put, type ExpectedFn } from './shared'
+import { num, put, type ExpectedFn, type ToleranceOverrides } from './shared'
 
 export const ORBITS_EXPECTED: Record<string, ExpectedFn> = {
   'circular-orbit': (bag) => {
@@ -800,7 +800,7 @@ export const ORBITS_EXPECTED: Record<string, ExpectedFn> = {
       mu: num(bag, 'mu'),
       mu3: num(bag, 'mu3'),
       d3: num(bag, 'd3'),
-      i3: num(bag, 'i3'),
+      i3: num(bag, 'i3_rad'),
       e3: num(bag, 'e3'),
     })
     if (!r) throw new Error('lunisolar-rates: lunisolarRates returned null for the verification input bag')
@@ -836,5 +836,26 @@ export const ORBITS_EXPECTED: Record<string, ExpectedFn> = {
     put(out, ['nBar'], r.nBar)
     put(out, ['nZ'], r.nZ)
     return out
+  },
+}
+
+/**
+ * rv-elements `nu` on vallado-ex-2-4: acos ill-conditioning at |x|->1, not a formula
+ * bug (see the python/js/ts/c/cpp/rust/fortran/julia/matlab bodies, all of which agree
+ * with shipped physics here to well within this override). For this scenario the acos
+ * argument is 2.6e-9 from 1; d(acos)/dx ~ 1.4e4 there, so a single last-bit difference
+ * between independent libm implementations amplifies to ~1.5e-12 rad, comfortably
+ * clearing the default 1e-9 relative gate's implied ~7e-14 rad absolute budget. A real
+ * branch/sign/formula bug in this tool would miss by O(1) rad, eleven orders louder, so
+ * the default relative gate still catches those on every other key and scenario.
+ */
+export const TOLERANCE_OVERRIDES_ORBITS: ToleranceOverrides = {
+  'rv-elements': {
+    'vallado-ex-2-4': {
+      nu: {
+        absTol: 1e-11,
+        why: 'acos ill-conditioning at |x|->1: argument is 2.6e-9 from 1, d(acos)/dx~1.4e4 amplifies 1-ulp libm differences to ~1.5e-12 rad; absolute criterion justified, relative 1e-9 unattainable cross-libm',
+      },
+    },
   },
 }

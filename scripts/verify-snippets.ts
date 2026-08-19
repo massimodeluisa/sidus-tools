@@ -30,7 +30,7 @@ import {
   type LiveCodeValues,
 } from '../src/lib/snippets/index.ts'
 import { asInjected, inputBagFor, scenariosFor } from '../src/lib/snippets/verify/inputs.ts'
-import { EXPECTED, UNVERIFIABLE } from '../src/lib/snippets/verify/expected/index.ts'
+import { EXPECTED, TOLERANCE_OVERRIDES, UNVERIFIABLE } from '../src/lib/snippets/verify/expected/index.ts'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 // PID+timestamp-scoped so a concurrent run of this script (e.g. another
@@ -331,10 +331,22 @@ function parsePrinted(stdout: string): Map<string, number> {
   return out
 }
 
-function withinTolerance(expected: number, got: number, tol: number): boolean {
+/**
+ * `absOverride`, when set, is an additional justified pass path (see ToleranceOverride):
+ * checked only if the language's own normal tolerance already failed. It can never make
+ * an otherwise-passing language fail — e.g. MATLAB's default `%g` print truncates to ~6
+ * significant digits, comfortably inside its own looser relative tolerance but well
+ * outside a sub-1e-9-rad absolute budget meant for a full-precision language; the
+ * override must never punish that unrelated print-precision gap.
+ */
+function withinTolerance(expected: number, got: number, tol: number, absOverride?: number): boolean {
   if (!Number.isFinite(got)) return false
-  if (Math.abs(expected) < NEAR_ZERO) return Math.abs(got - expected) <= NEAR_ZERO
-  return Math.abs(got - expected) / Math.abs(expected) <= tol
+  const passesRelative =
+    Math.abs(expected) < NEAR_ZERO
+      ? Math.abs(got - expected) <= NEAR_ZERO
+      : Math.abs(got - expected) / Math.abs(expected) <= tol
+  if (passesRelative) return true
+  return absOverride !== undefined && Math.abs(got - expected) <= absOverride
 }
 
 function relErr(expected: number, got: number): number {
@@ -389,6 +401,7 @@ type ResolvedScenario = ReturnType<typeof scenariosFor>[number]
 
 /** Compile/run/compare one scenario's bag for a given (tool, lang, body). */
 function runScenario(
+  toolId: string,
   cellName: string,
   lang: CodeLang,
   body: string,
@@ -474,7 +487,18 @@ function runScenario(
     const got = printed.get(key) ?? printed.get(alias)
     if (got === undefined) continue
     compared.push(key)
-    if (!withinTolerance(want, got, tol)) {
+    // A justified absolute-tolerance override (see ToleranceOverride) replaces the
+    // relative gate for this one (tool, scenario, key); an override missing its
+    // mandatory `why` never applies silently — it fails the cell loudly instead.
+    const override = TOLERANCE_OVERRIDES[toolId]?.[scenario.name]?.[key]
+    if (override && !override.why?.trim()) {
+      return {
+        scenario: scenario.name,
+        status: 'fail-numeric',
+        detail: `tolerance override for ${toolId}/${scenario.name}/${key} has no justification ("why"); refusing to apply it`,
+      }
+    }
+    if (!withinTolerance(want, got, tol, override?.absTol)) {
       mismatches.push({ name: key, expected: want, got, relErr: relErr(want, got) })
     }
   }
@@ -537,7 +561,7 @@ function verifyCase(toolId: string, lang: CodeLang): CaseResult {
 
   const outcomes: ScenarioOutcome[] = []
   for (const scenario of scenarios) {
-    const outcome = runScenario(cellName, lang, body, expectedFn, runner, scenario)
+    const outcome = runScenario(toolId, cellName, lang, body, expectedFn, runner, scenario)
     outcomes.push(outcome)
     // Toolchain-level skips are a language property, not a scenario one: they
     // apply to the whole cell, so stop instead of re-discovering them N times.

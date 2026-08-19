@@ -1145,7 +1145,7 @@ export const ORBITS_SCENARIOS: Record<string, Scenario[]> = {
       source: 'well-known Moon perturber constants (MOON_MU, MOON_SMA_M, MOON_I3_RAD, MOON_E3) acting on an ISS-class LEO orbit',
       bag: {
         a: 6_778_137, e: 0.01, inc: 51.6 * (Math.PI / 180),
-        mu3: 4.9028e12, d3: 384_400_000, i3: 5.145 * (Math.PI / 180), e3: 0.0549,
+        mu3: 4.9028e12, d3: 384_400_000, i3_rad: 5.145 * (Math.PI / 180), e3: 0.0549,
       },
     },
     {
@@ -1153,7 +1153,7 @@ export const ORBITS_SCENARIOS: Record<string, Scenario[]> = {
       source: 'well-known Sun perturber constants (SUN_MU, 1 AU, Earth obliquity SUN_I3_RAD, Earth orbital eccentricity SUN_E3) acting on an equatorial GEO orbit',
       bag: {
         a: 42_164_000, e: 0.001, inc: 0,
-        mu3: 1.32712440018e20, d3: 149_597_870_700, i3: 23.439281 * (Math.PI / 180), e3: 0.0167086,
+        mu3: 1.32712440018e20, d3: 149_597_870_700, i3_rad: 23.439281 * (Math.PI / 180), e3: 0.0167086,
       },
     },
     {
@@ -1161,7 +1161,7 @@ export const ORBITS_SCENARIOS: Record<string, Scenario[]> = {
       source: 'adversarial synthetic: retrograde satellite inclination (>90 deg), non-round semi-major axis/perturber distance',
       bag: {
         a: 12_345_678, e: 0.15, inc: 120 * (Math.PI / 180),
-        mu3: 8.1e12, d3: 401_234_567, i3: 10 * (Math.PI / 180), e3: 0.08,
+        mu3: 8.1e12, d3: 401_234_567, i3_rad: 10 * (Math.PI / 180), e3: 0.08,
       },
     },
   ],

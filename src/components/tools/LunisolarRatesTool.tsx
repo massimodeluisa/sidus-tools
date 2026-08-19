@@ -117,7 +117,7 @@ export function LunisolarRatesTool() {
             a: EARTH_RADIUS + toSi(p.h, p.hu),
             e: p.e,
             inc: toSi(p.i, p.iu),
-            i3: toSi(p.i3, p.i3u),
+            i3_rad: toSi(p.i3, p.i3u),
             e3: p.e3,
             mu: EARTH_MU,
             mu3: p.body === 'sun' ? SUN_MU : MOON_MU,

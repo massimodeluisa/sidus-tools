@@ -16,12 +16,12 @@
  * Domain modules (one per snippet category) hold the per-tool expected-value
  * functions; this barrel merges them into the flat maps the runner and tests use.
  */
-import { ORBITS_EXPECTED } from './orbits'
+import { ORBITS_EXPECTED, TOLERANCE_OVERRIDES_ORBITS } from './orbits'
 import { RF_EXPECTED } from './rf'
 import { SYSTEMS_EXPECTED } from './systems'
 import { OPS_EXPECTED, UNVERIFIABLE_OPS } from './ops'
 
-export type { ExpectedFn } from './shared'
+export type { ExpectedFn, ToleranceOverride, ToleranceOverrides } from './shared'
 
 export const EXPECTED = {
   ...ORBITS_EXPECTED,
@@ -32,4 +32,9 @@ export const EXPECTED = {
 
 export const UNVERIFIABLE: Readonly<Record<string, string>> = {
   ...UNVERIFIABLE_OPS,
+}
+
+/** Justified per-(tool, scenario, key) absolute-tolerance overrides; see `ToleranceOverride`. */
+export const TOLERANCE_OVERRIDES = {
+  ...TOLERANCE_OVERRIDES_ORBITS,
 }

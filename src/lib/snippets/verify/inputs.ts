@@ -477,7 +477,7 @@ export const SAMPLE_OVERRIDES: Record<string, LiveCodeValues> = {
     t1: 0, t2: 60, t3: 120,
   },
   // Third-body (Moon-class) perturber constants and satellite inclination exist in no shared bag.
-  'lunisolar-rates': { inc: 51.6 * (Math.PI / 180), mu3: 4.9028e12, d3: 384_400_000, i3: 5.145 * (Math.PI / 180), e3: 0.0549 },
+  'lunisolar-rates': { inc: 51.6 * (Math.PI / 180), mu3: 4.9028e12, d3: 384_400_000, i3_rad: 5.145 * (Math.PI / 180), e3: 0.0549 },
   // Inclination and body radius exist in no shared bag.
   'schweighart-sedwick': { inc: 51.6 * (Math.PI / 180), Rb: 6_378_137 },
   // Shared bag's beta=0 (a phase-angle default elsewhere) fails this tool's ballistic-coefficient>0 check.

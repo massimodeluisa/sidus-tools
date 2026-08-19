@@ -190,15 +190,68 @@ const dnu: number = result.dnu`,
 
     c: `/* Lambert: educational core: ${ASSUMPTIONS}
  * Free vars: mu, r1_m, r2_m, ang_rad, tof_s (coplanar XY terminals).
- * Full z-iteration in Python/JS; here closed-form f,g after z,y known.
+ * Newton on z (Stumpff C(z)/S(z)); finite-difference dt/dz (same reference
+ * as the Python/JS/TS/Julia/MATLAB bodies in this file).
  */
 const double r1n = r1_m;
 const double r2n = r2_m;
 const double dnu = ang_rad;
 const double A = sin(dnu) * sqrt(r1n * r2n / (1.0 - cos(dnu)));
-const double z = 0.0; /* solve z so TOF(z)=tof_s (Newton on universal variable) */
-const double C = 0.5 - z/24.0 + z*z/720.0;
-const double S = 1.0/6.0 - z/120.0 + z*z/5040.0;
+double z = 0.0;
+double C = 0.5, S = 1.0/6.0;
+for (int iter = 0; iter < 60; iter++) {
+  /* tofz/tofzp/Czp/Szp (not dt/Sp/Cp) so these loop-local scratch names never
+   * collide with unrelated UI free vars injected by other tools (e.g. dt, Sp). */
+  double s, y, chi, tofz, dz, zp, sp, Czp, Szp, yp, chip, tofzp, dtdz;
+  if (z > 1e-8) {
+    s = sqrt(z);
+    C = (1.0 - cos(s)) / z;
+    S = (s - sin(s)) / (s*s*s);
+  } else if (z < -1e-8) {
+    s = sqrt(-z);
+    C = (1.0 - cosh(s)) / z;
+    S = (sinh(s) - s) / (s*s*s);
+  } else {
+    C = 0.5 - z/24.0 + z*z/720.0;
+    S = 1.0/6.0 - z/120.0 + z*z/5040.0;
+  }
+  y = r1n + r2n + A*(z*S - 1.0)/sqrt(C);
+  if (A > 0.0 && y < 0.0) { z += 0.1; continue; }
+  chi = sqrt(y / C);
+  tofz = (chi*chi*chi*S + A*sqrt(y)) / sqrt(mu);
+  dz = 1e-4;
+  zp = z + dz;
+  if (zp > 1e-8) {
+    sp = sqrt(zp);
+    Czp = (1.0 - cos(sp)) / zp;
+    Szp = (sp - sin(sp)) / (sp*sp*sp);
+  } else if (zp < -1e-8) {
+    sp = sqrt(-zp);
+    Czp = (1.0 - cosh(sp)) / zp;
+    Szp = (sinh(sp) - sp) / (sp*sp*sp);
+  } else {
+    Czp = 0.5 - zp/24.0 + zp*zp/720.0;
+    Szp = 1.0/6.0 - zp/120.0 + zp*zp/5040.0;
+  }
+  yp = r1n + r2n + A*(zp*Szp - 1.0)/sqrt(Czp);
+  chip = sqrt(yp / Czp);
+  tofzp = (chip*chip*chip*Szp + A*sqrt(yp)) / sqrt(mu);
+  dtdz = (tofzp - tofz) / dz;
+  z += (tof_s - tofz) / dtdz;
+  if (fabs(tof_s - tofz) < 1e-8) break;
+}
+if (z > 1e-8) {
+  double s = sqrt(z);
+  C = (1.0 - cos(s)) / z;
+  S = (s - sin(s)) / (s*s*s);
+} else if (z < -1e-8) {
+  double s = sqrt(-z);
+  C = (1.0 - cosh(s)) / z;
+  S = (sinh(s) - s) / (s*s*s);
+} else {
+  C = 0.5 - z/24.0 + z*z/720.0;
+  S = 1.0/6.0 - z/120.0 + z*z/5040.0;
+}
 const double y = r1n + r2n + A*(z*S - 1.0)/sqrt(C);
 const double f = 1.0 - y/r1n;
 const double g = A * sqrt(y / mu);
@@ -214,14 +267,67 @@ const double v2y = (gdot*r2y - r1y) / g;
 const double v2z = (gdot*r2z - r1z) / g;`,
 
     cpp: `// Lambert: educational core: ${ASSUMPTIONS}
-// Free vars: mu, r1_m, r2_m, ang_rad, tof_s. f,g after universal z (see Python for Newton).
+// Free vars: mu, r1_m, r2_m, ang_rad, tof_s. Newton on z (Stumpff C(z)/S(z));
+// finite-difference dt/dz (same reference as the Python/JS/TS/Julia/MATLAB bodies).
 const double r1n = r1_m;
 const double r2n = r2_m;
 const double dnu = ang_rad;
 const double A = std::sin(dnu) * std::sqrt(r1n * r2n / (1.0 - std::cos(dnu)));
-const double z = 0.0; // iterate z so TOF(z) = tof_s
-const double C = 0.5 - z/24.0 + z*z/720.0;
-const double S = 1.0/6.0 - z/120.0 + z*z/5040.0;
+double z = 0.0;
+double C = 0.5, S = 1.0/6.0;
+for (int iter = 0; iter < 60; iter++) {
+  // tofz/tofzp/Czp/Szp (not dt/Sp/Cp) so these loop-local scratch names never
+  // collide with unrelated UI free vars injected by other tools (e.g. dt, Sp).
+  double s, y, chi, tofz, dz, zp, sp, Czp, Szp, yp, chip, tofzp, dtdz;
+  if (z > 1e-8) {
+    s = std::sqrt(z);
+    C = (1.0 - std::cos(s)) / z;
+    S = (s - std::sin(s)) / (s*s*s);
+  } else if (z < -1e-8) {
+    s = std::sqrt(-z);
+    C = (1.0 - std::cosh(s)) / z;
+    S = (std::sinh(s) - s) / (s*s*s);
+  } else {
+    C = 0.5 - z/24.0 + z*z/720.0;
+    S = 1.0/6.0 - z/120.0 + z*z/5040.0;
+  }
+  y = r1n + r2n + A*(z*S - 1.0)/std::sqrt(C);
+  if (A > 0.0 && y < 0.0) { z += 0.1; continue; }
+  chi = std::sqrt(y / C);
+  tofz = (chi*chi*chi*S + A*std::sqrt(y)) / std::sqrt(mu);
+  dz = 1e-4;
+  zp = z + dz;
+  if (zp > 1e-8) {
+    sp = std::sqrt(zp);
+    Czp = (1.0 - std::cos(sp)) / zp;
+    Szp = (sp - std::sin(sp)) / (sp*sp*sp);
+  } else if (zp < -1e-8) {
+    sp = std::sqrt(-zp);
+    Czp = (1.0 - std::cosh(sp)) / zp;
+    Szp = (std::sinh(sp) - sp) / (sp*sp*sp);
+  } else {
+    Czp = 0.5 - zp/24.0 + zp*zp/720.0;
+    Szp = 1.0/6.0 - zp/120.0 + zp*zp/5040.0;
+  }
+  yp = r1n + r2n + A*(zp*Szp - 1.0)/std::sqrt(Czp);
+  chip = std::sqrt(yp / Czp);
+  tofzp = (chip*chip*chip*Szp + A*std::sqrt(yp)) / std::sqrt(mu);
+  dtdz = (tofzp - tofz) / dz;
+  z += (tof_s - tofz) / dtdz;
+  if (std::fabs(tof_s - tofz) < 1e-8) break;
+}
+if (z > 1e-8) {
+  double s = std::sqrt(z);
+  C = (1.0 - std::cos(s)) / z;
+  S = (s - std::sin(s)) / (s*s*s);
+} else if (z < -1e-8) {
+  double s = std::sqrt(-z);
+  C = (1.0 - std::cosh(s)) / z;
+  S = (std::sinh(s) - s) / (s*s*s);
+} else {
+  C = 0.5 - z/24.0 + z*z/720.0;
+  S = 1.0/6.0 - z/120.0 + z*z/5040.0;
+}
 const double y = r1n + r2n + A*(z*S - 1.0)/std::sqrt(C);
 const double f = 1.0 - y/r1n;
 const double g = A * std::sqrt(y / mu);
@@ -236,15 +342,75 @@ const double v2y = (gdot*r2y - r1y) / g;
 const double v2z = (gdot*r2z - r1z) / g;`,
 
     rust: `// Lambert: educational core: ${ASSUMPTIONS}
-// Free vars: mu, r1_m, r2_m, ang_rad, tof_s. f,g after universal z (Python has full Newton).
+// Free vars: mu, r1_m, r2_m, ang_rad, tof_s. Newton on z (Stumpff c(z)/s(z));
+// finite-difference dt/dz (same reference as the Python/JS/TS/Julia/MATLAB bodies).
 let r1n = r1_m;
 let r2n = r2_m;
 let dnu = ang_rad;
 let a_lam = dnu.sin() * (r1n * r2n / (1.0 - dnu.cos())).sqrt();
-let z = 0.0_f64; // iterate z so TOF(z) = tof_s
-let c = 0.5 - z/24.0 + z*z/720.0;
-let s = 1.0/6.0 - z/120.0 + z*z/5040.0;
-let y = r1n + r2n + a_lam*(z*s - 1.0)/c.sqrt();
+let mut z = 0.0_f64;
+let mut c = 0.5_f64;
+let mut s = 1.0_f64 / 6.0;
+for _ in 0..60 {
+    if z > 1e-8 {
+        let sq = z.sqrt();
+        c = (1.0 - sq.cos()) / z;
+        s = (sq - sq.sin()) / (sq * sq * sq);
+    } else if z < -1e-8 {
+        let sq = (-z).sqrt();
+        c = (1.0 - sq.cosh()) / z;
+        s = (sq.sinh() - sq) / (sq * sq * sq);
+    } else {
+        c = 0.5 - z / 24.0 + z * z / 720.0;
+        s = 1.0 / 6.0 - z / 120.0 + z * z / 5040.0;
+    }
+    let y = r1n + r2n + a_lam * (z * s - 1.0) / c.sqrt();
+    if a_lam > 0.0 && y < 0.0 {
+        z += 0.1;
+        continue;
+    }
+    let chi = (y / c).sqrt();
+    // tofz/tofzp/czp/szp (not dt/cp/sp) so these loop-local scratch names never
+    // collide with unrelated UI free vars injected by other tools (e.g. dt, cp).
+    let tofz = (chi.powi(3) * s + a_lam * y.sqrt()) / mu.sqrt();
+    let dz = 1e-4_f64;
+    let zp = z + dz;
+    let mut czp = 0.5_f64;
+    let mut szp = 1.0_f64 / 6.0;
+    if zp > 1e-8 {
+        let sqp = zp.sqrt();
+        czp = (1.0 - sqp.cos()) / zp;
+        szp = (sqp - sqp.sin()) / (sqp * sqp * sqp);
+    } else if zp < -1e-8 {
+        let sqp = (-zp).sqrt();
+        czp = (1.0 - sqp.cosh()) / zp;
+        szp = (sqp.sinh() - sqp) / (sqp * sqp * sqp);
+    } else {
+        czp = 0.5 - zp / 24.0 + zp * zp / 720.0;
+        szp = 1.0 / 6.0 - zp / 120.0 + zp * zp / 5040.0;
+    }
+    let yp = r1n + r2n + a_lam * (zp * szp - 1.0) / czp.sqrt();
+    let chip = (yp / czp).sqrt();
+    let tofzp = (chip.powi(3) * szp + a_lam * yp.sqrt()) / mu.sqrt();
+    let dtdz = (tofzp - tofz) / dz;
+    z += (tof_s - tofz) / dtdz;
+    if (tof_s - tofz).abs() < 1e-8 {
+        break;
+    }
+}
+if z > 1e-8 {
+    let sq = z.sqrt();
+    c = (1.0 - sq.cos()) / z;
+    s = (sq - sq.sin()) / (sq * sq * sq);
+} else if z < -1e-8 {
+    let sq = (-z).sqrt();
+    c = (1.0 - sq.cosh()) / z;
+    s = (sq.sinh() - sq) / (sq * sq * sq);
+} else {
+    c = 0.5 - z / 24.0 + z * z / 720.0;
+    s = 1.0 / 6.0 - z / 120.0 + z * z / 5040.0;
+}
+let y = r1n + r2n + a_lam * (z * s - 1.0) / c.sqrt();
 let f = 1.0 - y/r1n;
 let g = a_lam * (y / mu).sqrt();
 let gdot = 1.0 - y/r2n;
@@ -258,15 +424,74 @@ let v2x = (gdot*r2x - r1x) / g;
 let v2y = (gdot*r2y - r1y) / g;`,
 
     zig: `// Lambert: educational core: ${ASSUMPTIONS}
-// Free vars: mu, r1_m, r2_m, ang_rad, tof_s. f,g after universal z (Python has full Newton).
+// Free vars: mu, r1_m, r2_m, ang_rad, tof_s. Newton on z (Stumpff C(z)/S(z));
+// finite-difference dt/dz (same reference as the Python/JS/TS/Julia/MATLAB bodies).
 const r1n = r1_m;
 const r2n = r2_m;
 const dnu = ang_rad;
 const A = std.math.sin(dnu) * std.math.sqrt(r1n * r2n / (1.0 - std.math.cos(dnu)));
-const z: f64 = 0.0; // iterate z so TOF(z) = tof_s
-const C = 0.5 - z/24.0 + z*z/720.0;
-const S = 1.0/6.0 - z/120.0 + z*z/5040.0;
-const y = r1n + r2n + A*(z*S - 1.0)/std.math.sqrt(C);
+var z: f64 = 0.0;
+var C: f64 = 0.5;
+var S: f64 = 1.0 / 6.0;
+var iter: usize = 0;
+while (iter < 60) : (iter += 1) {
+    if (z > 1e-8) {
+        const s = std.math.sqrt(z);
+        C = (1.0 - std.math.cos(s)) / z;
+        S = (s - std.math.sin(s)) / (s * s * s);
+    } else if (z < -1e-8) {
+        const s = std.math.sqrt(-z);
+        C = (1.0 - std.math.cosh(s)) / z;
+        S = (std.math.sinh(s) - s) / (s * s * s);
+    } else {
+        C = 0.5 - z / 24.0 + z * z / 720.0;
+        S = 1.0 / 6.0 - z / 120.0 + z * z / 5040.0;
+    }
+    const y = r1n + r2n + A * (z * S - 1.0) / std.math.sqrt(C);
+    if (A > 0.0 and y < 0.0) {
+        z += 0.1;
+        continue;
+    }
+    const chi = std.math.sqrt(y / C);
+    // tofz/tofzp/Czp/Szp (not dt/Sp/Cp) so these loop-local scratch names never
+    // collide with unrelated UI free vars injected by other tools (e.g. dt, Sp).
+    const tofz = (chi * chi * chi * S + A * std.math.sqrt(y)) / std.math.sqrt(mu);
+    const dz = 1e-4;
+    const zp = z + dz;
+    var Czp: f64 = 0.5;
+    var Szp: f64 = 1.0 / 6.0;
+    if (zp > 1e-8) {
+        const sp = std.math.sqrt(zp);
+        Czp = (1.0 - std.math.cos(sp)) / zp;
+        Szp = (sp - std.math.sin(sp)) / (sp * sp * sp);
+    } else if (zp < -1e-8) {
+        const sp = std.math.sqrt(-zp);
+        Czp = (1.0 - std.math.cosh(sp)) / zp;
+        Szp = (std.math.sinh(sp) - sp) / (sp * sp * sp);
+    } else {
+        Czp = 0.5 - zp / 24.0 + zp * zp / 720.0;
+        Szp = 1.0 / 6.0 - zp / 120.0 + zp * zp / 5040.0;
+    }
+    const yp = r1n + r2n + A * (zp * Szp - 1.0) / std.math.sqrt(Czp);
+    const chip = std.math.sqrt(yp / Czp);
+    const tofzp = (chip * chip * chip * Szp + A * std.math.sqrt(yp)) / std.math.sqrt(mu);
+    const dtdz = (tofzp - tofz) / dz;
+    z += (tof_s - tofz) / dtdz;
+    if (@abs(tof_s - tofz) < 1e-8) break;
+}
+if (z > 1e-8) {
+    const s = std.math.sqrt(z);
+    C = (1.0 - std.math.cos(s)) / z;
+    S = (s - std.math.sin(s)) / (s * s * s);
+} else if (z < -1e-8) {
+    const s = std.math.sqrt(-z);
+    C = (1.0 - std.math.cosh(s)) / z;
+    S = (std.math.sinh(s) - s) / (s * s * s);
+} else {
+    C = 0.5 - z / 24.0 + z * z / 720.0;
+    S = 1.0 / 6.0 - z / 120.0 + z * z / 5040.0;
+}
+const y = r1n + r2n + A * (z * S - 1.0) / std.math.sqrt(C);
 const f = 1.0 - y/r1n;
 const g = A * std.math.sqrt(y / mu);
 const gdot = 1.0 - y/r2n;
@@ -280,14 +505,83 @@ const v2x = (gdot*r2x - r1x) / g;
 const v2y = (gdot*r2y - r1y) / g;`,
 
     fortran: `! Lambert: educational core: ${ASSUMPTIONS}
-! Free vars: mu, r1_m, r2_m, ang_rad, tof_s. f,g after universal z.
+! Free vars: mu, r1_m, r2_m, ang_rad, tof_s. Newton on z (Stumpff C(z)/S(z));
+! finite-difference dt/dz (same reference as the Python/JS/TS/Julia/MATLAB bodies).
 r1n = r1_m
 r2n = r2_m
 dnu = ang_rad
 A = sin(dnu) * sqrt(r1n * r2n / (1.0d0 - cos(dnu)))
 z = 0.0d0
-C = 0.5d0 - z/24.0d0 + z*z/720.0d0
-S = 1.0d0/6.0d0 - z/120.0d0 + z*z/5040.0d0
+C = 0.5d0
+S = 1.0d0/6.0d0
+sq = 0.0d0
+y = 0.0d0
+chi = 0.0d0
+dt = 0.0d0
+dz = 1.0d-4
+zp = 0.0d0
+Cp = 0.5d0
+Sp = 1.0d0/6.0d0
+sqp = 0.0d0
+yp = 0.0d0
+chip = 0.0d0
+dtp = 0.0d0
+dtdz = 0.0d0
+iter = 0.0d0
+do while (iter < 60.0d0)
+  if (z > 1.0d-8) then
+    sq = sqrt(z)
+    C = (1.0d0 - cos(sq)) / z
+    S = (sq - sin(sq)) / (sq*sq*sq)
+  else if (z < -1.0d-8) then
+    sq = sqrt(-z)
+    C = (1.0d0 - cosh(sq)) / z
+    S = (sinh(sq) - sq) / (sq*sq*sq)
+  else
+    C = 0.5d0 - z/24.0d0 + z*z/720.0d0
+    S = 1.0d0/6.0d0 - z/120.0d0 + z*z/5040.0d0
+  end if
+  y = r1n + r2n + A*(z*S - 1.0d0)/sqrt(C)
+  if (A > 0.0d0 .and. y < 0.0d0) then
+    z = z + 0.1d0
+    iter = iter + 1.0d0
+    cycle
+  end if
+  chi = sqrt(y / C)
+  dt = (chi*chi*chi*S + A*sqrt(y)) / sqrt(mu)
+  zp = z + dz
+  if (zp > 1.0d-8) then
+    sqp = sqrt(zp)
+    Cp = (1.0d0 - cos(sqp)) / zp
+    Sp = (sqp - sin(sqp)) / (sqp*sqp*sqp)
+  else if (zp < -1.0d-8) then
+    sqp = sqrt(-zp)
+    Cp = (1.0d0 - cosh(sqp)) / zp
+    Sp = (sinh(sqp) - sqp) / (sqp*sqp*sqp)
+  else
+    Cp = 0.5d0 - zp/24.0d0 + zp*zp/720.0d0
+    Sp = 1.0d0/6.0d0 - zp/120.0d0 + zp*zp/5040.0d0
+  end if
+  yp = r1n + r2n + A*(zp*Sp - 1.0d0)/sqrt(Cp)
+  chip = sqrt(yp / Cp)
+  dtp = (chip*chip*chip*Sp + A*sqrt(yp)) / sqrt(mu)
+  dtdz = (dtp - dt) / dz
+  z = z + (tof_s - dt) / dtdz
+  iter = iter + 1.0d0
+  if (abs(tof_s - dt) < 1.0d-8) exit
+end do
+if (z > 1.0d-8) then
+  sq = sqrt(z)
+  C = (1.0d0 - cos(sq)) / z
+  S = (sq - sin(sq)) / (sq*sq*sq)
+else if (z < -1.0d-8) then
+  sq = sqrt(-z)
+  C = (1.0d0 - cosh(sq)) / z
+  S = (sinh(sq) - sq) / (sq*sq*sq)
+else
+  C = 0.5d0 - z/24.0d0 + z*z/720.0d0
+  S = 1.0d0/6.0d0 - z/120.0d0 + z*z/5040.0d0
+end if
 y = r1n + r2n + A*(z*S - 1.0d0)/sqrt(C)
 f = 1.0d0 - y/r1n
 g = A * sqrt(y / mu)

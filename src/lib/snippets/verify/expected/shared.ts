@@ -24,3 +24,18 @@ export function put(
   if (typeof value !== 'number' || !Number.isFinite(value)) return
   for (const n of names) out[n] = value
 }
+
+/**
+ * A justified, per-(tool, scenario, result-key) absolute-tolerance override. Exists
+ * only for documented numerical ill-conditioning that makes the default relative
+ * tolerance unattainable across independent libm implementations (e.g. acos near
+ * |x|=1), never as a general escape hatch for a real branch/sign/formula bug — those
+ * still produce errors many orders of magnitude larger than any override here and the
+ * default relative gate still catches them. `why` is mandatory and must be non-empty;
+ * the runner refuses (fails the cell loudly) rather than silently apply an override
+ * missing one.
+ */
+export type ToleranceOverride = { absTol: number; why: string }
+
+/** toolId -> scenario name -> printed result key -> override. */
+export type ToleranceOverrides = Record<string, Record<string, Record<string, ToleranceOverride>>>

@@ -18,6 +18,7 @@ export const rvElementsSnippets: FormulaSnippet = {
   ],
   code: {
     python: `# State ↔ classical elements: ${ASSUMPTIONS}
+import math
 import numpy as np
 
 def rv_to_elements(r, v, mu):
@@ -25,9 +26,14 @@ def rv_to_elements(r, v, mu):
     rmag, vmag = np.linalg.norm(r), np.linalg.norm(v)
     hvec = np.cross(r, v); h = np.linalg.norm(hvec)
     nvec = np.cross([0, 0, 1], hvec); n = np.linalg.norm(nvec)
-    evec = ((vmag**2 - mu/rmag)*r - np.dot(r, v)*v) / mu
-    e = np.linalg.norm(evec)
-    energy = vmag**2/2 - mu/rmag
+    v2 = vmag**2
+    rdotv = r[0]*v[0] + r[1]*v[1] + r[2]*v[2]
+    ex = ((v2 - mu/rmag)*r[0] - rdotv*v[0]) / mu
+    ey = ((v2 - mu/rmag)*r[1] - rdotv*v[1]) / mu
+    ez = ((v2 - mu/rmag)*r[2] - rdotv*v[2]) / mu
+    evec = [ex, ey, ez]
+    e = math.sqrt(ex*ex + ey*ey + ez*ez)
+    energy = v2/2 - mu/rmag
     a = np.inf if abs(e - 1) < 1e-10 else -mu/(2*energy)
     i = np.arccos(np.clip(hvec[2]/h, -1, 1))
     raan = 0.0
@@ -38,10 +44,15 @@ def rv_to_elements(r, v, mu):
     if n > 1e-12 and e > 1e-12:
         argp = np.arccos(np.clip(np.dot(nvec, evec)/(n*e), -1, 1))
         if evec[2] < 0: argp = 2*np.pi - argp
+    elif e > 1e-12:
+        # equatorial: longitude of periapsis from e_x, e_y
+        argp = math.atan2(evec[1], evec[0])
+        if argp < 0: argp += 2*np.pi
     nu = 0.0
     if e > 1e-12:
-        nu = np.arccos(np.clip(np.dot(evec, r)/(e*rmag), -1, 1))
-        if np.dot(r, v) < 0: nu = 2*np.pi - nu
+        dot_evec_r = evec[0]*r[0] + evec[1]*r[1] + evec[2]*r[2]
+        nu = math.acos(max(-1.0, min(1.0, dot_evec_r/(e*rmag))))
+        if rdotv < 0: nu = 2*math.pi - nu
     return dict(a=a, e=e, i=i, raan=raan, argp=argp, nu=nu, h=h, energy=energy)
 
 def elements_to_rv(a, e, i, raan, argp, nu, mu):
@@ -60,7 +71,15 @@ def elements_to_rv(a, e, i, raan, argp, nu, mu):
         [sO*cw + cO*sw*ci, -sO*sw + cO*cw*ci, -cO*si],
         [sw*si,             cw*si,              ci   ],
     ])
-    return R @ r_w, R @ v_w`,
+    return R @ r_w, R @ v_w
+
+elements = rv_to_elements([rx, ry, rz], [vx, vy, vz], mu)
+a = elements['a']
+e = elements['e']
+i = elements['i']
+raan = elements['raan']
+argp = elements['argp']
+nu = elements['nu']`,
 
     javascript: `// RV → classical elements: ${ASSUMPTIONS}
 function rvToElements(r, v, mu) {
@@ -88,6 +107,10 @@ function rvToElements(r, v, mu) {
   if (n > 1e-12 && e > 1e-12) {
     argp = Math.acos(Math.min(1, Math.max(-1, dot(nvec, evec)/(n*e))))
     if (evec[2] < 0) argp = 2*Math.PI - argp
+  } else if (e > 1e-12) {
+    // equatorial: longitude of periapsis from e_x, e_y
+    argp = Math.atan2(evec[1], evec[0])
+    if (argp < 0) argp += 2*Math.PI
   }
   let nu = 0
   if (e > 1e-12) {
@@ -96,6 +119,16 @@ function rvToElements(r, v, mu) {
   }
   return { a, e, i, raan, argp, nu, h, energy }
 }
+
+const r = [rx, ry, rz]
+const v = [vx, vy, vz]
+const elements = rvToElements(r, v, mu)
+const a = elements.a
+const e = elements.e
+const i = elements.i
+const raan = elements.raan
+const argp = elements.argp
+const nu = elements.nu
 
 // Elements → RV (ellipse): p=a(1-e²); r_w = p/(1+e cosν) [cosν, sinν, 0]
 // v_w = √(μ/p) [-sinν, e+cosν, 0]; r = R3(Ω)R1(i)R3(ω) r_w`,
@@ -129,6 +162,10 @@ function rvToElements(r: Vec3, v: Vec3, mu: number) {
   if (n > 1e-12 && e > 1e-12) {
     argp = Math.acos(Math.min(1, Math.max(-1, dot(nvec, evec)/(n*e))))
     if (evec[2] < 0) argp = 2*Math.PI - argp
+  } else if (e > 1e-12) {
+    // equatorial: longitude of periapsis from e_x, e_y
+    argp = Math.atan2(evec[1], evec[0])
+    if (argp < 0) argp += 2*Math.PI
   }
   let nu = 0
   if (e > 1e-12) {
@@ -136,7 +173,17 @@ function rvToElements(r: Vec3, v: Vec3, mu: number) {
     if (dot(r, v) < 0) nu = 2*Math.PI - nu
   }
   return { a, e, i, raan, argp, nu, h, energy }
-}`,
+}
+
+const r: Vec3 = [rx, ry, rz]
+const v: Vec3 = [vx, vy, vz]
+const elements = rvToElements(r, v, mu)
+const a: number = elements.a
+const e: number = elements.e
+const i: number = elements.i
+const raan: number = elements.raan
+const argp: number = elements.argp
+const nu: number = elements.nu`,
 
     c: `/* RV → OE: educational core: ${ASSUMPTIONS}
  * Free vars: mu, rx,ry,rz, vx,vy,vz.
@@ -226,6 +273,8 @@ a = -mu / (2.0d0 * energy)
 i = acos(max(-1.0d0, min(1.0d0, hz / h)))`,
 
     matlab: `% RV → elements: ${ASSUMPTIONS}
+r = [rx ry rz];
+v = [vx vy vz];
 hvec = cross(r,v); h = norm(hvec);
 nvec = cross([0 0 1], hvec); n = norm(nvec);
 evec = ((dot(v,v)-mu/norm(r))*r - dot(r,v)*v)/mu;
@@ -241,6 +290,10 @@ end
 if n > 1e-12 && e > 1e-12
   argp = acos(max(-1, min(1, dot(nvec,evec)/(n*e))));
   if evec(3) < 0, argp = 2*pi - argp; end
+elseif e > 1e-12
+  % equatorial: longitude of periapsis from e_x, e_y
+  argp = atan2(evec(2), evec(1));
+  if argp < 0, argp = argp + 2*pi; end
 else
   argp = 0;
 end
@@ -275,6 +328,12 @@ function rv_to_elements(r, v, mu)
         argp = acos(clamp(dot(nvec, evec)/(n*e), -1, 1))
         if evec[3] < 0
             argp = 2π - argp
+        end
+    elseif e > 1e-12
+        # equatorial: longitude of periapsis from e_x, e_y
+        argp = atan(evec[2], evec[1])
+        if argp < 0
+            argp += 2π
         end
     end
     nu = 0.0
