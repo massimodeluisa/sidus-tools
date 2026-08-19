@@ -196,6 +196,10 @@ import {
   schweighartSedwick,
   elevationFromRangeHeight,
   slantRange,
+  lambertSolve,
+  coplanarRadii,
+  rvToElements,
+  vnorm,
 } from '../src/lib/physics/index'
 
 export const SIDUS_MCP_DISCLAIMER =
@@ -2792,31 +2796,70 @@ return w == null ? null : { swath_m: w }
   },
   {
     name: "lambert",
-    description: "Chord geometry for Lambert (r1,r2,tof → chord; not full Lambert solve).",
+    description: "Universal-variable Lambert solve from r1, r2 magnitudes and a coplanar transfer angle (via coplanarRadii). Real solver, golden-anchored to Vallado Example 5-5. ang_rad optional, default pi/2 (90 deg). way optional: short or long, default short.",
     inputSchema: {
     r1_m: z.number(),
     r2_m: z.number(),
     tof_s: z.number(),
     mu: z.number().optional(),
+    ang_rad: z.number().optional(),
+    way: z.enum(['short', 'long']).optional(),
   },
     sample: {"r1_m":6778137,"r2_m":42164000,"tof_s":18000},
     run: (args) => {
-      const c = Math.abs(args.r2_m - args.r1_m); const s = (args.r1_m + args.r2_m + c) / 2;
-return { chord_m: c, semi_perimeter_m: s, tof_s: args.tof_s, mu: args.mu ?? EARTH_MU, note: 'Educational chord sketch; full Lambert in UI tool' }
+      const mu = args.mu ?? EARTH_MU
+      const ang_rad = args.ang_rad ?? Math.PI / 2
+      const way = args.way ?? 'short'
+      if (!(args.r1_m > 0) || !(args.r2_m > 0) || !(args.tof_s > 0)) return null
+      const { r1, r2 } = coplanarRadii(args.r1_m, args.r2_m, ang_rad)
+      const sol = lambertSolve(mu, r1, r2, args.tof_s, way === 'short')
+      if (!sol) return null
+      return {
+        v1x: sol.v1[0], v1y: sol.v1[1], v1z: sol.v1[2], v1_m_s: vnorm(sol.v1),
+        v2x: sol.v2[0], v2y: sol.v2[1], v2z: sol.v2[2], v2_m_s: vnorm(sol.v2),
+      }
     },
   },
   {
     name: "rv_elements",
-    description: "Energy and h magnitude from r,v norms (not full COE).",
+    description: "Classical orbital elements from position/velocity vectors (rx,ry,rz,vx,vy,vz): full a,e,i,raan,argp,nu via real rvToElements, golden-anchored to Vallado Example 2-4. Magnitude-only mode (r_m,v_m_s) returns energy and semi-major axis only. Inclination, RAAN, argument of periapsis, and true anomaly require the vector form.",
     inputSchema: {
-    r_m: z.number(),
-    v_m_s: z.number(),
+    r_m: z.number().optional(),
+    v_m_s: z.number().optional(),
+    rx: z.number().optional(),
+    ry: z.number().optional(),
+    rz: z.number().optional(),
+    vx: z.number().optional(),
+    vy: z.number().optional(),
+    vz: z.number().optional(),
     mu: z.number().optional(),
   },
-    sample: {"r_m":6778137,"v_m_s":7660},
+    sample: {"rx":1131340,"ry":-2282343,"rz":6672423,"vx":-5643.05,"vy":4303.33,"vz":2428.79},
     run: (args) => {
-      const mu = args.mu ?? EARTH_MU; const energy = args.v_m_s ** 2 / 2 - mu / args.r_m; const a = -mu / (2 * energy);
-return { energy_j_kg: energy, a_m: a, note: 'Norm-based energy/a; full r,v↔COE in UI' }
+      const mu = args.mu ?? EARTH_MU
+      const hasVector =
+        args.rx != null && args.ry != null && args.rz != null &&
+        args.vx != null && args.vy != null && args.vz != null
+      if (hasVector) {
+        const el = rvToElements([args.rx, args.ry, args.rz], [args.vx, args.vy, args.vz], mu)
+        if (!el) return null
+        return {
+          a_m: el.a, e: el.e, i_rad: el.i, raan_rad: el.raan, argp_rad: el.argp, nu_rad: el.nu,
+          h_m2_s: el.h, energy_j_kg: el.energy,
+        }
+      }
+      if (args.r_m != null && args.v_m_s != null) {
+        if (!(args.r_m > 0)) return null
+        const energy = args.v_m_s ** 2 / 2 - mu / args.r_m
+        const a = -mu / (2 * energy)
+        return {
+          energy_j_kg: energy, a_m: a,
+          note: 'Magnitude-only mode: inclination, RAAN, argument of periapsis, and true anomaly require rx,ry,rz,vx,vy,vz.',
+        }
+      }
+      throw new Error(
+        'rv_elements needs either rx,ry,rz,vx,vy,vz (vector mode, full COE) or r_m,v_m_s (magnitude mode, energy and a only)',
+      )
     },
   },
   {

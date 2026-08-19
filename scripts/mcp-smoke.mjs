@@ -7,6 +7,7 @@ import { StdioClientTransport } from '@modelcontextprotocol/client/stdio'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { MCP_SAMPLES, MCP_TOOL_DEFS } from '../mcp/full-catalog.ts'
+import { EARTH_MU, rvToElements, vnorm } from '../src/lib/physics/index'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const SAMPLES = MCP_SAMPLES
@@ -117,6 +118,85 @@ try {
     const nums = Object.values(hohRes ?? {}).filter((v) => typeof v === 'number' && v > 0)
     if (nums.length < 2) throw new Error('hohmann: expected positive numeric fields')
   }
+
+  // Golden anchor: lambert real solver, Vallado Example 5-5 (short way, prograde)
+  const lamR1 = [15945340, 0, 0]
+  const lamR2 = [12214833.99, 10249467.31, 0]
+  const lamR1n = vnorm(lamR1)
+  const lamR2n = vnorm(lamR2)
+  const lamDot = lamR1[0] * lamR2[0] + lamR1[1] * lamR2[1] + lamR1[2] * lamR2[2]
+  const lamAngle = Math.acos(lamDot / (lamR1n * lamR2n))
+  const lamExpectedV1 = [2058.925, 2915.956, 0]
+  const lamExpectedV2 = [-3451.569, 910.301, 0]
+
+  const lam = await client.callTool({
+    name: 'lambert',
+    arguments: { r1_m: lamR1n, r2_m: lamR2n, tof_s: 4560, ang_rad: lamAngle, way: 'short' },
+  })
+  const lamRes = parseResult(lam.content).json?.result
+  const lamV1 = [lamRes?.v1x, lamRes?.v1y, lamRes?.v1z]
+  const lamV2 = [lamRes?.v2x, lamRes?.v2y, lamRes?.v2z]
+  for (let i = 0; i < 3; i++) {
+    if (!(Math.abs(lamV1[i] - lamExpectedV1[i]) <= 0.05)) {
+      throw new Error(`lambert golden v1[${i}] fail: got ${lamV1[i]} expected ${lamExpectedV1[i]}`)
+    }
+    if (!(Math.abs(lamV2[i] - lamExpectedV2[i]) <= 0.05)) {
+      throw new Error(`lambert golden v2[${i}] fail: got ${lamV2[i]} expected ${lamExpectedV2[i]}`)
+    }
+  }
+  console.log('GOLDEN lambert v1/v2 within 0.05 m/s of Vallado Ex 5-5')
+
+  // Golden anchor: rv_elements real solver, Vallado Example 2-4 state, vector mode
+  const rvR = [1131340, -2282343, 6672423]
+  const rvV = [-5643.05, 4303.33, 2428.79]
+  const rvExpected = rvToElements(rvR, rvV, EARTH_MU)
+  if (!rvExpected) throw new Error('rv_elements golden: shipped rvToElements returned null')
+
+  const rvVec = await client.callTool({
+    name: 'rv_elements',
+    arguments: { rx: rvR[0], ry: rvR[1], rz: rvR[2], vx: rvV[0], vy: rvV[1], vz: rvV[2] },
+  })
+  const rvVecRes = parseResult(rvVec.content).json?.result
+  const rvChecks = [
+    ['a_m', rvExpected.a],
+    ['e', rvExpected.e],
+    ['i_rad', rvExpected.i],
+    ['raan_rad', rvExpected.raan],
+    ['argp_rad', rvExpected.argp],
+    ['nu_rad', rvExpected.nu],
+    ['h_m2_s', rvExpected.h],
+    ['energy_j_kg', rvExpected.energy],
+  ]
+  for (const [key, expected] of rvChecks) {
+    const got = rvVecRes?.[key]
+    const relErr = Math.abs((got - expected) / (expected || 1))
+    if (!(relErr <= 1e-9)) {
+      throw new Error(`rv_elements golden ${key} fail: got ${got} expected ${expected} (relErr ${relErr})`)
+    }
+  }
+  console.log('GOLDEN rv_elements vector mode matches shipped rvToElements at 1e-9 relative')
+
+  // rv_elements magnitude mode: consistent with the vis-viva energy equation on the same state's norms
+  const rvRn = vnorm(rvR)
+  const rvVn = vnorm(rvV)
+  const rvMagExpectedEnergy = (rvVn * rvVn) / 2 - EARTH_MU / rvRn
+  const rvMagExpectedA = -EARTH_MU / (2 * rvMagExpectedEnergy)
+  const rvMag = await client.callTool({
+    name: 'rv_elements',
+    arguments: { r_m: rvRn, v_m_s: rvVn },
+  })
+  const rvMagRes = parseResult(rvMag.content).json?.result
+  const rvMagAErr = Math.abs((rvMagRes?.a_m - rvMagExpectedA) / rvMagExpectedA)
+  const rvMagEErr = Math.abs((rvMagRes?.energy_j_kg - rvMagExpectedEnergy) / rvMagExpectedEnergy)
+  if (!(rvMagAErr <= 1e-9)) {
+    throw new Error(`rv_elements magnitude-mode a_m fail: got ${rvMagRes?.a_m} expected ${rvMagExpectedA}`)
+  }
+  if (!(rvMagEErr <= 1e-9)) {
+    throw new Error(
+      `rv_elements magnitude-mode energy_j_kg fail: got ${rvMagRes?.energy_j_kg} expected ${rvMagExpectedEnergy}`,
+    )
+  }
+  console.log('GOLDEN rv_elements magnitude mode consistent with vis-viva energy equation')
 
   const elapsed = Date.now() - started
   console.log('INVOKED', okCount)

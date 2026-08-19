@@ -6,7 +6,7 @@ var __export = (target, all) => {
     __defProp(target, name, { get: all[name], enumerable: true });
 };
 
-// node_modules/@modelcontextprotocol/server/dist/chunk-Br0eD_fh.mjs
+// ../../../.bun/install/cache/links/@modelcontextprotocol+server@2.0.0-6be0bd062ce33598/node_modules/@modelcontextprotocol/server/dist/chunk-Br0eD_fh.mjs
 var __create = Object.create;
 var __defProp2 = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
@@ -46,7 +46,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   enumerable: true
 }) : target, mod));
 
-// node_modules/@modelcontextprotocol/server/dist/dialects-DoSzNhcb.mjs
+// ../../../.bun/install/cache/links/@modelcontextprotocol+server@2.0.0-6be0bd062ce33598/node_modules/@modelcontextprotocol/server/dist/dialects-DoSzNhcb.mjs
 var DRAFT_2020_12_URIS = /* @__PURE__ */ new Set(["https://json-schema.org/draft/2020-12/schema", "http://json-schema.org/draft/2020-12/schema"]);
 var DRAFT_2019_09_URIS = /* @__PURE__ */ new Set(["https://json-schema.org/draft/2019-09/schema", "http://json-schema.org/draft/2019-09/schema"]);
 var DRAFT_07_URIS = /* @__PURE__ */ new Set(["https://json-schema.org/draft-07/schema", "http://json-schema.org/draft-07/schema"]);
@@ -63,7 +63,7 @@ function declaredDialect(schema, remedy) {
   throw new Error(`JSON Schema declares an unsupported dialect ("$schema": "${schema.$schema.slice(0, 200)}"). The default validator supports JSON Schema 2020-12, 2019-09, draft-07, and draft-06; ${remedy}`);
 }
 
-// node_modules/zod/v4/core/core.js
+// ../../../.bun/install/cache/links/zod@4.4.3-b55a890749a74fa5/node_modules/zod/v4/core/core.js
 var _a;
 var NEVER = /* @__PURE__ */ Object.freeze({
   status: "aborted"
@@ -139,7 +139,7 @@ function config(newConfig) {
   return globalConfig;
 }
 
-// node_modules/zod/v4/core/util.js
+// ../../../.bun/install/cache/links/zod@4.4.3-b55a890749a74fa5/node_modules/zod/v4/core/util.js
 var util_exports = {};
 __export(util_exports, {
   BIGINT_FORMAT_RANGES: () => BIGINT_FORMAT_RANGES,
@@ -835,7 +835,7 @@ var Class = class {
   }
 };
 
-// node_modules/zod/v4/core/errors.js
+// ../../../.bun/install/cache/links/zod@4.4.3-b55a890749a74fa5/node_modules/zod/v4/core/errors.js
 var initializer = (inst, def) => {
   inst.name = "$ZodError";
   Object.defineProperty(inst, "_zod", {
@@ -904,7 +904,7 @@ function formatError(error2, mapper = (issue2) => issue2.message) {
   return fieldErrors;
 }
 
-// node_modules/zod/v4/core/parse.js
+// ../../../.bun/install/cache/links/zod@4.4.3-b55a890749a74fa5/node_modules/zod/v4/core/parse.js
 var _parse = (_Err) => (schema, value, _ctx, _params) => {
   const ctx = _ctx ? { ..._ctx, async: false } : { async: false };
   const result = schema._zod.run({ value, issues: [] }, ctx);
@@ -982,7 +982,7 @@ var _safeDecodeAsync = (_Err) => async (schema, value, _ctx) => {
   return _safeParseAsync(_Err)(schema, value, _ctx);
 };
 
-// node_modules/zod/v4/core/regexes.js
+// ../../../.bun/install/cache/links/zod@4.4.3-b55a890749a74fa5/node_modules/zod/v4/core/regexes.js
 var cuid = /^[cC][0-9a-z]{6,}$/;
 var cuid2 = /^[0-9a-z]+$/;
 var ulid = /^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$/;
@@ -1041,7 +1041,7 @@ var _null = /^null$/i;
 var lowercase = /^[^A-Z]*$/;
 var uppercase = /^[^a-z]*$/;
 
-// node_modules/zod/v4/core/checks.js
+// ../../../.bun/install/cache/links/zod@4.4.3-b55a890749a74fa5/node_modules/zod/v4/core/checks.js
 var $ZodCheck = /* @__PURE__ */ $constructor("$ZodCheck", (inst, def) => {
   var _a3;
   inst._zod ?? (inst._zod = {});
@@ -1431,7 +1431,7 @@ var $ZodCheckOverwrite = /* @__PURE__ */ $constructor("$ZodCheckOverwrite", (ins
   };
 });
 
-// node_modules/zod/v4/core/doc.js
+// ../../../.bun/install/cache/links/zod@4.4.3-b55a890749a74fa5/node_modules/zod/v4/core/doc.js
 var Doc = class {
   constructor(args = []) {
     this.content = [];
@@ -1467,14 +1467,14 @@ var Doc = class {
   }
 };
 
-// node_modules/zod/v4/core/versions.js
+// ../../../.bun/install/cache/links/zod@4.4.3-b55a890749a74fa5/node_modules/zod/v4/core/versions.js
 var version = {
   major: 4,
   minor: 4,
   patch: 3
 };
 
-// node_modules/zod/v4/core/schemas.js
+// ../../../.bun/install/cache/links/zod@4.4.3-b55a890749a74fa5/node_modules/zod/v4/core/schemas.js
 var $ZodType = /* @__PURE__ */ $constructor("$ZodType", (inst, def) => {
   var _a3;
   inst ?? (inst = {});
@@ -3019,7 +3019,7 @@ function handleRefineResult(result, payload, input, inst) {
   }
 }
 
-// node_modules/zod/v4/locales/en.js
+// ../../../.bun/install/cache/links/zod@4.4.3-b55a890749a74fa5/node_modules/zod/v4/locales/en.js
 var error = () => {
   const Sizable = {
     string: { unit: "characters", verb: "to have" },
@@ -3132,7 +3132,7 @@ function en_default() {
   };
 }
 
-// node_modules/zod/v4/core/registries.js
+// ../../../.bun/install/cache/links/zod@4.4.3-b55a890749a74fa5/node_modules/zod/v4/core/registries.js
 var _a2;
 var $ZodRegistry = class {
   constructor() {
@@ -3180,7 +3180,7 @@ function registry() {
 (_a2 = globalThis).__zod_globalRegistry ?? (_a2.__zod_globalRegistry = registry());
 var globalRegistry = globalThis.__zod_globalRegistry;
 
-// node_modules/zod/v4/core/api.js
+// ../../../.bun/install/cache/links/zod@4.4.3-b55a890749a74fa5/node_modules/zod/v4/core/api.js
 // @__NO_SIDE_EFFECTS__
 function _string(Class2, params) {
   return new Class2({
@@ -3743,7 +3743,7 @@ function _check(fn, params) {
   return ch;
 }
 
-// node_modules/zod/v4/core/to-json-schema.js
+// ../../../.bun/install/cache/links/zod@4.4.3-b55a890749a74fa5/node_modules/zod/v4/core/to-json-schema.js
 function initializeContext(params) {
   let target = params?.target ?? "draft-2020-12";
   if (target === "draft-4")
@@ -4102,7 +4102,7 @@ var createStandardJSONSchemaMethod = (schema, io, processors = {}) => (params) =
   return finalize(ctx, schema);
 };
 
-// node_modules/zod/v4/core/json-schema-processors.js
+// ../../../.bun/install/cache/links/zod@4.4.3-b55a890749a74fa5/node_modules/zod/v4/core/json-schema-processors.js
 var formatMap = {
   guid: "uuid",
   url: "uri",
@@ -4646,7 +4646,7 @@ function toJSONSchema(input, params) {
   return finalize(ctx, input);
 }
 
-// node_modules/zod/v4/classic/iso.js
+// ../../../.bun/install/cache/links/zod@4.4.3-b55a890749a74fa5/node_modules/zod/v4/classic/iso.js
 var iso_exports = {};
 __export(iso_exports, {
   ZodISODate: () => ZodISODate,
@@ -4687,7 +4687,7 @@ function duration2(params) {
   return _isoDuration(ZodISODuration, params);
 }
 
-// node_modules/zod/v4/classic/errors.js
+// ../../../.bun/install/cache/links/zod@4.4.3-b55a890749a74fa5/node_modules/zod/v4/classic/errors.js
 var initializer2 = (inst, issues) => {
   $ZodError.init(inst, issues);
   inst.name = "ZodError";
@@ -4726,7 +4726,7 @@ var ZodRealError = /* @__PURE__ */ $constructor("ZodError", initializer2, {
   Parent: Error
 });
 
-// node_modules/zod/v4/classic/parse.js
+// ../../../.bun/install/cache/links/zod@4.4.3-b55a890749a74fa5/node_modules/zod/v4/classic/parse.js
 var parse2 = /* @__PURE__ */ _parse(ZodRealError);
 var parseAsync2 = /* @__PURE__ */ _parseAsync(ZodRealError);
 var safeParse2 = /* @__PURE__ */ _safeParse(ZodRealError);
@@ -4740,7 +4740,7 @@ var safeDecode = /* @__PURE__ */ _safeDecode(ZodRealError);
 var safeEncodeAsync = /* @__PURE__ */ _safeEncodeAsync(ZodRealError);
 var safeDecodeAsync = /* @__PURE__ */ _safeDecodeAsync(ZodRealError);
 
-// node_modules/zod/v4/classic/schemas.js
+// ../../../.bun/install/cache/links/zod@4.4.3-b55a890749a74fa5/node_modules/zod/v4/classic/schemas.js
 var _installedGroups = /* @__PURE__ */ new WeakMap();
 function _installLazyMethods(inst, group, methods) {
   const proto = Object.getPrototypeOf(inst);
@@ -5637,7 +5637,7 @@ function preprocess(fn, schema) {
   });
 }
 
-// node_modules/zod/v4/classic/compat.js
+// ../../../.bun/install/cache/links/zod@4.4.3-b55a890749a74fa5/node_modules/zod/v4/classic/compat.js
 var ZodIssueCode = {
   invalid_type: "invalid_type",
   too_big: "too_big",
@@ -5655,7 +5655,7 @@ var ZodFirstPartyTypeKind;
 /* @__PURE__ */ (function(ZodFirstPartyTypeKind2) {
 })(ZodFirstPartyTypeKind || (ZodFirstPartyTypeKind = {}));
 
-// node_modules/zod/v4/classic/coerce.js
+// ../../../.bun/install/cache/links/zod@4.4.3-b55a890749a74fa5/node_modules/zod/v4/classic/coerce.js
 var coerce_exports = {};
 __export(coerce_exports, {
   bigint: () => bigint2,
@@ -5680,10 +5680,10 @@ function date3(params) {
   return _coercedDate(ZodDate, params);
 }
 
-// node_modules/zod/v4/classic/external.js
+// ../../../.bun/install/cache/links/zod@4.4.3-b55a890749a74fa5/node_modules/zod/v4/classic/external.js
 config(en_default());
 
-// node_modules/@modelcontextprotocol/core/dist/auth-CUe6YdwF.mjs
+// ../../../.bun/install/cache/links/@modelcontextprotocol+core@2.0.0-409a08f13433fdee/node_modules/@modelcontextprotocol/core/dist/auth-CUe6YdwF.mjs
 var LATEST_PROTOCOL_VERSION = "2025-11-25";
 var DEFAULT_NEGOTIATED_PROTOCOL_VERSION = "2025-03-26";
 var SUPPORTED_PROTOCOL_VERSIONS = [
@@ -6622,7 +6622,7 @@ var OAuthTokenRevocationRequestSchema = object({
   token_type_hint: string2().optional()
 }).strip();
 
-// node_modules/@modelcontextprotocol/server/dist/src-CX2iR2pK.mjs
+// ../../../.bun/install/cache/links/@modelcontextprotocol+server@2.0.0-6be0bd062ce33598/node_modules/@modelcontextprotocol/server/dist/src-CX2iR2pK.mjs
 var BRANDS = /* @__PURE__ */ Symbol.for("mcp.sdk.errorBrands");
 function stampErrorBrands(instance, ctor) {
   const brands = /* @__PURE__ */ new Set();
@@ -11471,7 +11471,7 @@ function normalizeRawShapeSchema(schema) {
   return schema;
 }
 
-// node_modules/@modelcontextprotocol/server/dist/ajvProvider-CEoC__sr.mjs
+// ../../../.bun/install/cache/links/@modelcontextprotocol+server@2.0.0-6be0bd062ce33598/node_modules/@modelcontextprotocol/server/dist/ajvProvider-CEoC__sr.mjs
 var require_code$1 = /* @__PURE__ */ __commonJSMin(((exports) => {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.regexpCode = exports.getEsmExportName = exports.getProperty = exports.safeStringify = exports.stringify = exports.strConcat = exports.addCodeArg = exports.str = exports._ = exports.nil = exports._Code = exports.Name = exports.IDENTIFIER = exports._CodeOrName = void 0;
@@ -18481,7 +18481,7 @@ var AjvJsonSchemaValidator = class {
 };
 var Ajv = import_ajv.Ajv;
 
-// node_modules/@modelcontextprotocol/server/dist/mcp-DXXb3Vv3.mjs
+// ../../../.bun/install/cache/links/@modelcontextprotocol+server@2.0.0-6be0bd062ce33598/node_modules/@modelcontextprotocol/server/dist/mcp-DXXb3Vv3.mjs
 var COMPLETABLE_SYMBOL = /* @__PURE__ */ Symbol.for("mcp.completable");
 function isCompletable(schema) {
   return !!schema && typeof schema === "object" && COMPLETABLE_SYMBOL in schema;
@@ -20046,7 +20046,7 @@ function unwrapOptionalSchema(schema) {
   return schema.def?.innerType ?? schema;
 }
 
-// node_modules/@modelcontextprotocol/server/dist/index.mjs
+// ../../../.bun/install/cache/links/@modelcontextprotocol+server@2.0.0-6be0bd062ce33598/node_modules/@modelcontextprotocol/server/dist/index.mjs
 var PerRequestHTTPServerTransport = class {
   onclose;
   onerror;
@@ -21217,7 +21217,7 @@ function createMcpHandler(factory, options = {}) {
   };
 }
 
-// node_modules/@hono/node-server/dist/index.mjs
+// ../../../.bun/install/cache/links/@hono+node-server@1.19.17+470351d3cbe921c0-011482f99d3a3568/node_modules/@hono/node-server/dist/index.mjs
 import { Readable } from "stream";
 import crypto2 from "crypto";
 var GlobalRequest = global.Request;
@@ -21448,7 +21448,7 @@ if (typeof global.crypto === "undefined") {
 }
 var MAX_DRAIN_BYTES = 64 * 1024 * 1024;
 
-// node_modules/@modelcontextprotocol/node/dist/index.mjs
+// ../../../.bun/install/cache/links/@modelcontextprotocol+node@2.0.0+3f81897ae11c87fa-9a8aa1a339691110/node_modules/@modelcontextprotocol/node/dist/index.mjs
 function toNodeHandler(handler, opts) {
   return async (req, res, parsedBody) => {
     if (typeof parsedBody === "function") parsedBody = void 0;
@@ -21783,6 +21783,77 @@ function vunit(a) {
 
 // src/lib/physics/elements.ts
 var TWO_PI = 2 * Math.PI;
+var EPS = 1e-12;
+function wrap0_2pi(x) {
+  let a = x % TWO_PI;
+  if (a < 0) a += TWO_PI;
+  return a;
+}
+function clampAcos(x) {
+  return Math.acos(Math.min(1, Math.max(-1, x)));
+}
+function rvToElements(r, v, mu2) {
+  const rmag = vnorm(r);
+  const vmag = vnorm(v);
+  if (!(rmag > 0) || !(vmag > 0) || !(mu2 > 0)) return null;
+  const hvec = vcross(r, v);
+  const h = vnorm(hvec);
+  if (!(h > EPS)) return null;
+  const nvec = vcross([0, 0, 1], hvec);
+  const n = vnorm(nvec);
+  const v2 = vmag * vmag;
+  const rdotv = vdot(r, v);
+  const evec = [
+    ((v2 - mu2 / rmag) * r[0] - rdotv * v[0]) / mu2,
+    ((v2 - mu2 / rmag) * r[1] - rdotv * v[1]) / mu2,
+    ((v2 - mu2 / rmag) * r[2] - rdotv * v[2]) / mu2
+  ];
+  const e = vnorm(evec);
+  const energy = v2 / 2 - mu2 / rmag;
+  let a;
+  if (Math.abs(e - 1) < 1e-10) {
+    a = Infinity;
+  } else {
+    a = -mu2 / (2 * energy);
+  }
+  const i = clampAcos(hvec[2] / h);
+  let raan = 0;
+  if (n > EPS) {
+    raan = clampAcos(nvec[0] / n);
+    if (nvec[1] < 0) raan = TWO_PI - raan;
+  }
+  let argp = 0;
+  if (n > EPS && e > EPS) {
+    argp = clampAcos(vdot(nvec, evec) / (n * e));
+    if (evec[2] < 0) argp = TWO_PI - argp;
+  } else if (e > EPS) {
+    argp = Math.atan2(evec[1], evec[0]);
+    if (argp < 0) argp += TWO_PI;
+  }
+  let nu = 0;
+  if (e > EPS) {
+    nu = clampAcos(vdot(evec, r) / (e * rmag));
+    if (rdotv < 0) nu = TWO_PI - nu;
+  } else {
+    if (n > EPS) {
+      nu = clampAcos(vdot(nvec, r) / (n * rmag));
+      if (r[2] < 0) nu = TWO_PI - nu;
+    } else {
+      nu = Math.atan2(r[1], r[0]);
+      if (nu < 0) nu += TWO_PI;
+    }
+  }
+  return {
+    a: Number.isFinite(a) ? a : Infinity,
+    e,
+    i,
+    raan: wrap0_2pi(raan),
+    argp: wrap0_2pi(argp),
+    nu: wrap0_2pi(nu),
+    h,
+    energy
+  };
+}
 
 // src/lib/physics/kepler.ts
 function stumpffC(z) {
@@ -21902,8 +21973,14 @@ function lambertSolve(mu2, r1, r2, tof, shortWay = true) {
   void h;
   return { v1, v2, a, e, dnu };
 }
+function coplanarRadii(r1mag, r2mag, angleRad) {
+  return {
+    r1: [r1mag, 0, 0],
+    r2: [r2mag * Math.cos(angleRad), r2mag * Math.sin(angleRad), 0]
+  };
+}
 
-// node_modules/satellite.js/dist/constants.js
+// ../../../.bun/install/cache/links/satellite.js@7.1.0-e704b73aa606a069/node_modules/satellite.js/dist/constants.js
 var pi = Math.PI;
 var twoPi = pi * 2;
 var deg2rad = pi / 180;
@@ -21919,7 +21996,7 @@ var j3oj2 = j3 / j2;
 var x2o3 = 2 / 3;
 var xpdotp = 1440 / (2 * pi);
 
-// node_modules/satellite.js/dist/propagation/SatRec.js
+// ../../../.bun/install/cache/links/satellite.js@7.1.0-e704b73aa606a069/node_modules/satellite.js/dist/propagation/SatRec.js
 var SatRecError;
 (function(SatRecError2) {
   SatRecError2[SatRecError2["None"] = 0] = "None";
@@ -21929,6 +22006,9 @@ var SatRecError;
   SatRecError2[SatRecError2["SemiLatusRectumBelowZero"] = 4] = "SemiLatusRectumBelowZero";
   SatRecError2[SatRecError2["Decayed"] = 6] = "Decayed";
 })(SatRecError || (SatRecError = {}));
+
+// src/lib/physics/sgp4.ts
+var CIVIL_DARKNESS_RAD = -6 * Math.PI / 180;
 
 // src/lib/physics/j2.ts
 var EARTH_J2 = 0.00108262668;
@@ -22601,7 +22681,7 @@ function geodeticToEcef(lat, lon, heightM, bodyRadiusM) {
   const cl = Math.cos(lat);
   return [r * cl * Math.cos(lon), r * cl * Math.sin(lon), r * Math.sin(lat)];
 }
-function topocentricElAz(siteLat, siteLon, siteHM, tgtLat, tgtLon, tgtHM, bodyRadiusM) {
+function enuComponents(siteLat, siteLon, siteHM, tgtLat, tgtLon, tgtHM, bodyRadiusM) {
   const rSite = geodeticToEcef(siteLat, siteLon, siteHM, bodyRadiusM);
   const rTgt = geodeticToEcef(tgtLat, tgtLon, tgtHM, bodyRadiusM);
   if (!rSite || !rTgt) return null;
@@ -22615,13 +22695,15 @@ function topocentricElAz(siteLat, siteLon, siteHM, tgtLat, tgtLon, tgtHM, bodyRa
   const east = [-sinLon, cosLon, 0];
   const north = [-sinLat * cosLon, -sinLat * sinLon, cosLat];
   const up = [cosLat * cosLon, cosLat * sinLon, sinLat];
-  const e = vdot(d, east);
-  const n = vdot(d, north);
-  const u = vdot(d, up);
-  const el = Math.asin(Math.min(1, Math.max(-1, u / range)));
-  let az = Math.atan2(e, n);
+  return { east: vdot(d, east), north: vdot(d, north), up: vdot(d, up), range };
+}
+function topocentricElAz(siteLat, siteLon, siteHM, tgtLat, tgtLon, tgtHM, bodyRadiusM) {
+  const c = enuComponents(siteLat, siteLon, siteHM, tgtLat, tgtLon, tgtHM, bodyRadiusM);
+  if (!c) return null;
+  const el = Math.asin(Math.min(1, Math.max(-1, c.up / c.range)));
+  let az = Math.atan2(c.east, c.north);
   if (az < 0) az += 2 * Math.PI;
-  return { el, az, range, east: e, north: n, up: u };
+  return { el, az, range: c.range, east: c.east, north: c.north, up: c.up };
 }
 
 // src/lib/physics/planetary.ts
@@ -26564,34 +26646,81 @@ var MCP_TOOL_DEFS = [
   },
   {
     name: "lambert",
-    description: "Chord geometry for Lambert (r1,r2,tof \u2192 chord; not full Lambert solve).",
+    description: "Universal-variable Lambert solve from r1, r2 magnitudes and a coplanar transfer angle (via coplanarRadii). Real solver, golden-anchored to Vallado Example 5-5. ang_rad optional, default pi/2 (90 deg). way optional: short or long, default short.",
     inputSchema: {
       r1_m: number2(),
       r2_m: number2(),
       tof_s: number2(),
-      mu: number2().optional()
+      mu: number2().optional(),
+      ang_rad: number2().optional(),
+      way: _enum(["short", "long"]).optional()
     },
     sample: { "r1_m": 6778137, "r2_m": 42164e3, "tof_s": 18e3 },
     run: (args) => {
-      const c = Math.abs(args.r2_m - args.r1_m);
-      const s = (args.r1_m + args.r2_m + c) / 2;
-      return { chord_m: c, semi_perimeter_m: s, tof_s: args.tof_s, mu: args.mu ?? EARTH_MU, note: "Educational chord sketch; full Lambert in UI tool" };
+      const mu2 = args.mu ?? EARTH_MU;
+      const ang_rad = args.ang_rad ?? Math.PI / 2;
+      const way = args.way ?? "short";
+      if (!(args.r1_m > 0) || !(args.r2_m > 0) || !(args.tof_s > 0)) return null;
+      const { r1, r2 } = coplanarRadii(args.r1_m, args.r2_m, ang_rad);
+      const sol = lambertSolve(mu2, r1, r2, args.tof_s, way === "short");
+      if (!sol) return null;
+      return {
+        v1x: sol.v1[0],
+        v1y: sol.v1[1],
+        v1z: sol.v1[2],
+        v1_m_s: vnorm(sol.v1),
+        v2x: sol.v2[0],
+        v2y: sol.v2[1],
+        v2z: sol.v2[2],
+        v2_m_s: vnorm(sol.v2)
+      };
     }
   },
   {
     name: "rv_elements",
-    description: "Energy and h magnitude from r,v norms (not full COE).",
+    description: "Classical orbital elements from position/velocity vectors (rx,ry,rz,vx,vy,vz): full a,e,i,raan,argp,nu via real rvToElements, golden-anchored to Vallado Example 2-4. Magnitude-only mode (r_m,v_m_s) returns energy and semi-major axis only. Inclination, RAAN, argument of periapsis, and true anomaly require the vector form.",
     inputSchema: {
-      r_m: number2(),
-      v_m_s: number2(),
+      r_m: number2().optional(),
+      v_m_s: number2().optional(),
+      rx: number2().optional(),
+      ry: number2().optional(),
+      rz: number2().optional(),
+      vx: number2().optional(),
+      vy: number2().optional(),
+      vz: number2().optional(),
       mu: number2().optional()
     },
-    sample: { "r_m": 6778137, "v_m_s": 7660 },
+    sample: { "rx": 1131340, "ry": -2282343, "rz": 6672423, "vx": -5643.05, "vy": 4303.33, "vz": 2428.79 },
     run: (args) => {
       const mu2 = args.mu ?? EARTH_MU;
-      const energy = args.v_m_s ** 2 / 2 - mu2 / args.r_m;
-      const a = -mu2 / (2 * energy);
-      return { energy_j_kg: energy, a_m: a, note: "Norm-based energy/a; full r,v\u2194COE in UI" };
+      const hasVector = args.rx != null && args.ry != null && args.rz != null && args.vx != null && args.vy != null && args.vz != null;
+      if (hasVector) {
+        const el = rvToElements([args.rx, args.ry, args.rz], [args.vx, args.vy, args.vz], mu2);
+        if (!el) return null;
+        return {
+          a_m: el.a,
+          e: el.e,
+          i_rad: el.i,
+          raan_rad: el.raan,
+          argp_rad: el.argp,
+          nu_rad: el.nu,
+          h_m2_s: el.h,
+          energy_j_kg: el.energy
+        };
+      }
+      if (args.r_m != null && args.v_m_s != null) {
+        if (!(args.r_m > 0)) return null;
+        const energy = args.v_m_s ** 2 / 2 - mu2 / args.r_m;
+        const a = -mu2 / (2 * energy);
+        return {
+          energy_j_kg: energy,
+          a_m: a,
+          note: "Magnitude-only mode: inclination, RAAN, argument of periapsis, and true anomaly require rx,ry,rz,vx,vy,vz."
+        };
+      }
+      throw new Error(
+        "rv_elements needs either rx,ry,rz,vx,vy,vz (vector mode, full COE) or r_m,v_m_s (magnitude mode, energy and a only)"
+      );
     }
   },
   {
