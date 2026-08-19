@@ -50,6 +50,37 @@ const DEFAULT_TOLERANCE = 1e-9
 /** Below this magnitude a relative comparison is meaningless: use absolute. */
 const NEAR_ZERO = 1e-12
 
+/**
+ * Tectonic bundle-resolution failure text: a live fetch of the bundle's own
+ * index was attempted (mode-independent: this fetch is never gated by
+ * `--only-cached`) and failed. Never appears from a genuine LaTeX error.
+ */
+const INFRA_NETWORK_SIGNATURE = /bundle isn't cached|couldn't get it from the internet|429|Too Many Requests/i
+
+/**
+ * Tectonic cache-miss failure text, meaningful only in `--only-cached` mode:
+ * every snippet fragment shares the exact same fixed preamble (see
+ * `latexDocument`) and no snippet body ever declares its own file/preamble
+ * directive (enforced below), so the only files a fragment can ever request
+ * are preamble/format/glyph-triggered bundle content: a missing input file
+ * (TeX/LaTeX engine) or a missing PFB font (xdvipdfmx, when a glyph the
+ * warm-up probe never rendered needs its own font at a size the probe never
+ * used) is therefore a cache gap, never a genuine snippet defect: the warm-up
+ * step in CI didn't pre-populate that file.
+ */
+const INFRA_CACHE_MISS_SIGNATURE =
+  /failed to open input file|LaTeX Error: File `[^']*' not found|kpathsea library can find this font|Could not locate a virtual\/physical font/i
+
+/**
+ * A latex fragment must never carry its own file/preamble directive: every
+ * fragment shares `latexDocument`'s fixed preamble, so this can only be a
+ * rule-breaking snippet trying to pull in a file of its own choosing. Checked
+ * before compiling so such a directive is always reported as a genuine
+ * failure and can never be laundered into `fail-infra` by the cache-miss
+ * signature above.
+ */
+const FORBIDDEN_LATEX_DIRECTIVE = /\\(documentclass|usepackage|input|include|openin)\b/
+
 type Status =
   | 'ok'
   | 'ok-compile'
@@ -57,6 +88,7 @@ type Status =
   | 'fail-run'
   | 'fail-numeric'
   | 'fail-parse'
+  | 'fail-infra'
   | 'skip-no-source'
   | 'skip-no-expected'
   | 'skip-toolchain'
@@ -316,6 +348,9 @@ function tail(s: string, n = 400): string {
 }
 
 function runLatex(name: string, body: string): CaseResult['status'] | { status: Status; detail: string } {
+  if (FORBIDDEN_LATEX_DIRECTIVE.test(body)) {
+    return { status: 'fail-compile', detail: 'forbidden file/preamble directive in fragment' }
+  }
   const engine = hasExecutable('pdflatex')
     ? 'pdflatex'
     : hasExecutable('tectonic')
@@ -324,13 +359,29 @@ function runLatex(name: string, body: string): CaseResult['status'] | { status: 
   if (!engine) return 'skip-toolchain'
   const file = path.join(TMP, `${name}.tex`)
   writeFileSync(file, latexDocument(body), 'utf8')
+  // --only-cached: verify never fetches the TeX bundle over the network. CI warms
+  // the bundle cache in a dedicated step before this script ever runs; a cell that
+  // still can't find what it needs offline is an infra problem, not a physics one.
   const args =
     engine === 'pdflatex'
       ? ['-interaction=nonstopmode', '-halt-on-error', '-output-directory', TMP, file]
-      : ['--outdir', TMP, file]
+      : ['--only-cached', '--outdir', TMP, file]
   const r = spawnSync(engine, args, { cwd: TMP, encoding: 'utf8', timeout: 120_000 })
   if (r.status === 0) return 'ok-compile'
-  return { status: 'fail-compile', detail: tail(`${r.stdout ?? ''}\n${r.stderr ?? ''}`) }
+  const output = `${r.stdout ?? ''}\n${r.stderr ?? ''}`
+  if (engine === 'tectonic' && INFRA_NETWORK_SIGNATURE.test(output)) {
+    return { status: 'fail-infra', detail: tail(output) }
+  }
+  // Cache-miss text is only meaningful under --only-cached (the mode tectonic
+  // always runs in here): outside it, tectonic would have fetched the file
+  // instead of reporting it missing, so the same text could not appear.
+  if (engine === 'tectonic' && INFRA_CACHE_MISS_SIGNATURE.test(output)) {
+    return {
+      status: 'fail-infra',
+      detail: `cache-miss under --only-cached; extend the warm probe\n${tail(output)}`,
+    }
+  }
+  return { status: 'fail-compile', detail: tail(output) }
 }
 
 /** A tool's resolved verification scenario: SAMPLE + overrides + scenario-specific bag. */
@@ -515,6 +566,7 @@ const SYMBOL: Record<Status, string> = {
   'fail-run': 'FAIL-r',
   'fail-numeric': 'FAIL-n',
   'fail-parse': 'FAIL-p',
+  'fail-infra': 'FAIL-i',
   'skip-no-source': '-',
   'skip-no-expected': 'no-exp',
   'skip-toolchain': 'no-tc',
@@ -542,6 +594,11 @@ function buildMarkdown(
   })
   const pct = toolIds.length ? Math.round((covered.length / toolIds.length) * 100) : 0
 
+  const nonLatexLangs = langs.filter((l) => l !== 'latex')
+  const verifiedTools = toolIds.filter(
+    (id) => nonLatexLangs.length > 0 && nonLatexLangs.every((l) => at(id, l)?.status === 'ok'),
+  )
+
   const lines: string[] = [
     '# Snippet verification matrix',
     '',
@@ -549,6 +606,19 @@ function buildMarkdown(
     '',
     'Each cell renders the shipped snippet with `renderLiveCode`, compiles/executes it with a',
     'local toolchain, and compares the printed numbers against shipped `src/lib/physics`.',
+    '',
+    '## Require-all semantics',
+    '',
+    '`--require-all` passes only when every tool with expected values compiles and matches shipped',
+    'physics in every available language, and every LaTeX cell compiles from the cached Tectonic',
+    'bundle. Skips (missing toolchain, missing language dependency, or no expected values) are',
+    'reported explicitly below and are never counted as passing.',
+    '',
+    '## Verified tools',
+    '',
+    `${verifiedTools.length} of ${toolIds.length} tools have every non-LaTeX language cell at \`ok\` in this run:`,
+    '',
+    verifiedTools.length ? verifiedTools.map((id) => `\`${id}\``).join(', ') : '_None._',
     '',
     '## Coverage',
     '',
@@ -582,7 +652,7 @@ function buildMarkdown(
     lines.push(`| \`${s}\` | ${n} |`)
   }
 
-  const fails = results.filter((r) => r.status.startsWith('fail'))
+  const fails = results.filter((r) => r.status.startsWith('fail') && r.status !== 'fail-infra')
   lines.push('', '## Failures', '')
   if (!fails.length) {
     lines.push('_None._')
@@ -608,12 +678,32 @@ function buildMarkdown(
     }
   }
 
+  const infraFails = results.filter((r) => r.status === 'fail-infra')
+  lines.push('', '## Infrastructure failures', '')
+  if (!infraFails.length) {
+    lines.push('_None._')
+  } else {
+    lines.push(
+      'These are Tectonic bundle/network problems, not physics or snippet defects. They still fail',
+      '`--require-all`.',
+      '',
+      '| Tool | Lang | Detail |',
+      '|------|------|--------|',
+    )
+    for (const f of infraFails) {
+      lines.push(
+        `| \`${f.toolId}\` | ${f.lang} | ${(f.detail ?? '').replace(/\|/g, '\\|').replace(/\n/g, ' ⏎ ').slice(0, 300)} |`,
+      )
+    }
+  }
+
   lines.push(
     '',
     '## Legend',
     '',
     '`ok(n)` all n scenarios match shipped physics · `ok(c)` LaTeX compiled · `FAIL-c` compile ·',
     '`FAIL-r` runtime · `FAIL-n` numeric mismatch (any scenario) · `FAIL-p` nothing comparable printed ·',
+    '`FAIL-i` Tectonic bundle/network infra failure (not a physics or snippet defect) ·',
     '`no-exp` no expected values · `no-tc` toolchain absent · `no-dep` language dep absent ·',
     '`-` snippet has no source for that language.',
     '',

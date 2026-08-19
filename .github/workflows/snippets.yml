@@ -32,10 +32,51 @@ jobs:
       - uses: julia-actions/setup-julia@v2
         with:
           version: '1.11'
+      - name: Cache tectonic bundle
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Tectonic
+          key: tectonic-bundle-v1
       - name: Install tectonic (latex compile check)
         run: |
           curl -fsSL https://drop-sh.fullyjustified.net | sh
           sudo mv tectonic /usr/local/bin/
+      - name: Warm tectonic bundle
+        run: |
+          # Body exercises the exact union of LaTeX constructs used across every shipped
+          # snippet fragment (verified via scripts/verify-snippets.ts against
+          # src/lib/snippets), so this run pre-populates every font/glyph sub-file the
+          # verify step's --only-cached run will ever need.
+          probe="$RUNNER_TEMP/tectonic-probe.tex"
+          cat > "$probe" <<'EOF'
+          \documentclass{article}
+          \usepackage{amsmath}
+          \usepackage{amssymb}
+          \begin{document}
+          $\frac{a}{b}\quad\tfrac{1}{2}\quad\sqrt{x}\quad x^{2}_{i}\quad\dot{x}\quad\ddot{x}\quad\hat{x}$
+          $\alpha\beta\gamma\delta\Delta\varepsilon\eta\theta\lambda\mu\nu\xi\pi\rho\sigma\tau\phi\varphi\chi\psi\omega\Gamma\Omega\Phi$
+          $\sin\cos\tan\arcsin\arccos\arctan\ln\log\exp\min\max$
+          $\sum_{i}x_i\quad a\times b\quad a\cdot b\quad a\approx b\quad a\sim b\quad a\propto b\quad a\otimes b\quad a\oplus b\quad a\odot b\quad a\in S\quad a\ge b\quad\infty$
+          $\left(\frac{1}{2}\right)\quad\Big(x\Big)\quad\Bigl(x\Bigr)\quad\bigl(x\bigr)$
+          $\mathrm{v}\quad\mathbf{v}\quad\mathsf{v}\quad\boldsymbol{v}\quad\text{words}$
+          $\top\uparrow\downarrow\leftrightarrow\cdots\to$
+          $\qquad$
+          $\sum_{i=0}^{n} x_i\quad v_{\pm}^{2}\quad 10^{-3}\quad \sqrt{\mu_{\oplus}}\quad x_{i,j}^{k}$
+          $e^{x_{sp}}\quad m_{\mathrm{O_2}}\quad T^{\mathsf{T}}$
+          \end{document}
+          EOF
+          for attempt in 1 2 3; do
+            if tectonic --outdir "$RUNNER_TEMP" "$probe"; then
+              echo "tectonic bundle warmed on attempt $attempt"
+              exit 0
+            fi
+            echo "tectonic bundle warm attempt $attempt failed"
+            if [ "$attempt" -lt 3 ]; then
+              sleep $((attempt * 10))
+            fi
+          done
+          echo "tectonic bundle unavailable (network); infra failure, not a physics failure" >&2
+          exit 1
       - name: Install python snippet libraries (pinned range)
         run: python3 -m pip install --user 'sgp4~=2.23' 'numpy>=1.26,<3'
       - name: Verify snippets
