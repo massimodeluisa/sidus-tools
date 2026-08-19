@@ -29,11 +29,11 @@ di = math.radians(di_deg)
 dv = 2 * v * math.sin(abs(di) / 2)`,
 
     javascript: `// Plane change: ${ASSUMPTIONS}
-const di = (diDeg * Math.PI) / 180
+const di = (di_deg * Math.PI) / 180
 const dv = 2 * v * Math.sin(Math.abs(di) / 2)`,
 
     typescript: `// Plane change: ${ASSUMPTIONS}
-const di: number = (diDeg * Math.PI) / 180
+const di: number = (di_deg * Math.PI) / 180
 const dv: number = 2 * v * Math.sin(Math.abs(di) / 2)`,
 
     matlab: `% Plane change: ${ASSUMPTIONS}

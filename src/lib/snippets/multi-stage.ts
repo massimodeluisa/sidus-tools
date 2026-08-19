@@ -23,12 +23,10 @@ def multi_stage_dv(stages):
         dvs.append(ve * math.log(m0 / mf))
     return dvs, sum(dvs)
 
-# Educational 3-stage free-var form (matches UI isp_i, m0_i, mf_i):
-# g0 = 9.80665
-# dv1 = isp1 * g0 * math.log(m01 / mf1)
-# dv2 = isp2 * g0 * math.log(m02 / mf2)
-# dv3 = isp3 * g0 * math.log(m03 / mf3)
-# dv_total = dv1 + dv2 + dv3`,
+dv1 = isp1 * G0 * math.log(m01 / mf1)
+dv2 = isp2 * G0 * math.log(m02 / mf2)
+dv3 = isp3 * G0 * math.log(m03 / mf3)
+dv_total = dv1 + dv2 + dv3`,
 
     javascript: `// Multi-stage Δv: ${ASSUMPTIONS}
 const G0 = 9.80665
@@ -41,7 +39,11 @@ function multiStageDv(stages) {
   })
   return { dv: dvs, dvTotal: dvs.reduce((a, b) => a + b, 0) }
 }
-// Free-var form: dv_i = isp_i * g0 * ln(m0_i / mf_i); sum stages`,
+
+const dv1 = isp1 * G0 * Math.log(m01 / mf1)
+const dv2 = isp2 * G0 * Math.log(m02 / mf2)
+const dv3 = isp3 * G0 * Math.log(m03 / mf3)
+const dv_total = dv1 + dv2 + dv3`,
 
     typescript: `// Multi-stage Δv: ${ASSUMPTIONS}
 const G0 = 9.80665
@@ -53,7 +55,11 @@ function multiStageDv(stages: Stage[]) {
   })
   return { dv, dvTotal: dv.reduce((a, b) => a + b, 0) }
 }
-// Free-var form: dv1+dv2+dv3 with isp1..isp3, m01..m03, mf1..mf3`,
+
+const dv1: number = isp1 * G0 * Math.log(m01 / mf1)
+const dv2: number = isp2 * G0 * Math.log(m02 / mf2)
+const dv3: number = isp3 * G0 * Math.log(m03 / mf3)
+const dv_total: number = dv1 + dv2 + dv3`,
 
     c: `/* Multi-stage (3-stage educational): ${ASSUMPTIONS} */
 const double g0 = 9.80665;

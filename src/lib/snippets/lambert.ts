@@ -72,7 +72,16 @@ def lambert(mu, r1, r2, tof, short_way=True):
     v2 = (gdot*r2 - r1) / g
     return v1, v2, dnu
 
-# Example: coplanar r1,r2 magnitudes + angle → vectors in XY, then lambert(mu,r1,r2,tof)`,
+r1 = [r1_m, 0.0, 0.0]
+r2 = [r2_m * math.cos(ang_rad), r2_m * math.sin(ang_rad), 0.0]
+result = lambert(mu, r1, r2, tof_s)
+v1_x = result[0][0]
+v1_y = result[0][1]
+v1_z = result[0][2]
+v2_x = result[1][0]
+v2_y = result[1][1]
+v2_z = result[1][2]
+dnu = result[2]`,
 
     javascript: `// Lambert universal-z: ${ASSUMPTIONS}
 function stumpffC(z) {
@@ -113,7 +122,18 @@ function lambert(mu, r1, r2, tof, shortWay = true) {
   const v1 = [(r2[0]-f*r1[0])/g, (r2[1]-f*r1[1])/g, (r2[2]-f*r1[2])/g]
   const v2 = [(gdot*r2[0]-r1[0])/g, (gdot*r2[1]-r1[1])/g, (gdot*r2[2]-r1[2])/g]
   return { v1, v2, dnu }
-}`,
+}
+
+const r1 = [r1_m, 0, 0]
+const r2 = [r2_m * Math.cos(ang_rad), r2_m * Math.sin(ang_rad), 0]
+const result = lambert(mu, r1, r2, tof_s)
+const v1_x = result.v1[0]
+const v1_y = result.v1[1]
+const v1_z = result.v1[2]
+const v2_x = result.v2[0]
+const v2_y = result.v2[1]
+const v2_z = result.v2[2]
+const dnu = result.dnu`,
 
     typescript: `// Lambert universal-z: ${ASSUMPTIONS}
 type Vec3 = [number, number, number]
@@ -155,7 +175,18 @@ function lambert(mu: number, r1: Vec3, r2: Vec3, tof: number, shortWay = true) {
   const v1: Vec3 = [(r2[0]-f*r1[0])/g, (r2[1]-f*r1[1])/g, (r2[2]-f*r1[2])/g]
   const v2: Vec3 = [(gdot*r2[0]-r1[0])/g, (gdot*r2[1]-r1[1])/g, (gdot*r2[2]-r1[2])/g]
   return { v1, v2, dnu }
-}`,
+}
+
+const r1: Vec3 = [r1_m, 0, 0]
+const r2: Vec3 = [r2_m * Math.cos(ang_rad), r2_m * Math.sin(ang_rad), 0]
+const result = lambert(mu, r1, r2, tof_s)
+const v1_x: number = result.v1[0]
+const v1_y: number = result.v1[1]
+const v1_z: number = result.v1[2]
+const v2_x: number = result.v2[0]
+const v2_y: number = result.v2[1]
+const v2_z: number = result.v2[2]
+const dnu: number = result.dnu`,
 
     c: `/* Lambert: educational core: ${ASSUMPTIONS}
  * Free vars: mu, r1_m, r2_m, ang_rad, tof_s (coplanar XY terminals).
@@ -271,37 +302,17 @@ v2x = (gdot*r2x - r1x) / g
 v2y = (gdot*r2y - r1y) / g`,
 
     matlab: `% Lambert: ${ASSUMPTIONS}
-function [v1,v2] = lambert(mu,r1,r2,tof,short)
-  r1n = norm(r1); r2n = norm(r2);
-  dnu = acos(max(-1, min(1, dot(r1,r2)/(r1n*r2n))));
-  if ~short, dnu = 2*pi - dnu; elseif dnu > pi, dnu = 2*pi - dnu; end
-  A = sin(dnu)*sqrt(r1n*r2n/(1-cos(dnu)));
-  z = 0;
-  for k = 1:60
-    if z > 1e-8
-      s = sqrt(z); C = (1-cos(s))/z; S = (s-sin(s))/s^3;
-    elseif z < -1e-8
-      s = sqrt(-z); C = (1-cosh(s))/z; S = (sinh(s)-s)/s^3;
-    else
-      C = 0.5 - z/24 + z^2/720; S = 1/6 - z/120 + z^2/5040;
-    end
-    y = r1n + r2n + A*(z*S-1)/sqrt(C);
-    if A > 0 && y < 0, z = z + 0.1; continue; end
-    chi = sqrt(y/C); dt = (chi^3*S + A*sqrt(y))/sqrt(mu);
-    dz = 1e-4;
-    zp = z+dz;
-    if zp > 1e-8
-      sp = sqrt(zp); Cp = (1-cos(sp))/zp; Sp = (sp-sin(sp))/sp^3;
-    elseif zp < -1e-8
-      sp = sqrt(-zp); Cp = (1-cosh(sp))/zp; Sp = (sinh(sp)-sp)/sp^3;
-    else
-      Cp = 0.5 - zp/24 + zp^2/720; Sp = 1/6 - zp/120 + zp^2/5040;
-    end
-    yp = r1n + r2n + A*(zp*Sp-1)/sqrt(Cp);
-    chip = sqrt(yp/Cp); dtp = (chip^3*Sp + A*sqrt(yp))/sqrt(mu);
-    z = z + (tof - dt)/((dtp-dt)/dz);
-    if abs(tof-dt) < 1e-8, break; end
-  end
+% Full universal-z Newton iteration; free vars mu,r1_m,r2_m,ang_rad,tof_s.
+% Pure top-level script (no local function): for/if are legal at top level in
+% both MATLAB and Octave, and this avoids the local-function ordering rule.
+r1 = [r1_m, 0, 0];
+r2 = [r2_m * cos(ang_rad), r2_m * sin(ang_rad), 0];
+r1n = norm(r1); r2n = norm(r2);
+dnu = acos(max(-1, min(1, dot(r1,r2)/(r1n*r2n))));
+if dnu > pi, dnu = 2*pi - dnu; end
+A = sin(dnu)*sqrt(r1n*r2n/(1-cos(dnu)));
+z = 0;
+for k = 1:60
   if z > 1e-8
     s = sqrt(z); C = (1-cos(s))/z; S = (s-sin(s))/s^3;
   elseif z < -1e-8
@@ -310,9 +321,38 @@ function [v1,v2] = lambert(mu,r1,r2,tof,short)
     C = 0.5 - z/24 + z^2/720; S = 1/6 - z/120 + z^2/5040;
   end
   y = r1n + r2n + A*(z*S-1)/sqrt(C);
-  f = 1 - y/r1n; g = A*sqrt(y/mu); gdot = 1 - y/r2n;
-  v1 = (r2 - f*r1)/g; v2 = (gdot*r2 - r1)/g;
-end`,
+  if A > 0 && y < 0, z = z + 0.1; continue; end
+  chi = sqrt(y/C); dt = (chi^3*S + A*sqrt(y))/sqrt(mu);
+  dz = 1e-4;
+  zp = z+dz;
+  if zp > 1e-8
+    sp = sqrt(zp); Cp = (1-cos(sp))/zp; Sp = (sp-sin(sp))/sp^3;
+  elseif zp < -1e-8
+    sp = sqrt(-zp); Cp = (1-cosh(sp))/zp; Sp = (sinh(sp)-sp)/sp^3;
+  else
+    Cp = 0.5 - zp/24 + zp^2/720; Sp = 1/6 - zp/120 + zp^2/5040;
+  end
+  yp = r1n + r2n + A*(zp*Sp-1)/sqrt(Cp);
+  chip = sqrt(yp/Cp); dtp = (chip^3*Sp + A*sqrt(yp))/sqrt(mu);
+  z = z + (tof_s - dt)/((dtp-dt)/dz);
+  if abs(tof_s-dt) < 1e-8, break; end
+end
+if z > 1e-8
+  s = sqrt(z); C = (1-cos(s))/z; S = (s-sin(s))/s^3;
+elseif z < -1e-8
+  s = sqrt(-z); C = (1-cosh(s))/z; S = (sinh(s)-s)/s^3;
+else
+  C = 0.5 - z/24 + z^2/720; S = 1/6 - z/120 + z^2/5040;
+end
+y = r1n + r2n + A*(z*S-1)/sqrt(C);
+f = 1 - y/r1n; g = A*sqrt(y/mu); gdot = 1 - y/r2n;
+v1 = (r2 - f*r1)/g; v2 = (gdot*r2 - r1)/g;
+v1_x = v1(1);
+v1_y = v1(2);
+v1_z = v1(3);
+v2_x = v2(1);
+v2_y = v2(2);
+v2_z = v2(3);`,
 
     julia: `# Lambert universal-z: ${ASSUMPTIONS}
 using LinearAlgebra
