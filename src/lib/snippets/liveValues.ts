@@ -1034,7 +1034,7 @@ export function extractAssignedNames(code: string, lang?: CodeLang): string[] {
           const c = chunk.trim().replace(/;+\s*$/, '')
           if (topLevelAssignEq(c) < 0) continue
           const m = c.match(
-            /^(?:(?:(?:const|static|volatile)\s+)*(?:double|float|int|long|auto|bool|size_t|char\s*\*)\s+|let\s+(?:mut\s+)?|var\s+|const\s+|real\s*\([^)]*\)\s*(?:::)?:?\s*)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*.+/,
+            /^(?:(?:(?:const|static|volatile)\s+)*(?:double|float|int|long|auto|bool|size_t|char\s*\*)\s+|let\s+(?:mut\s+)?|var\s+|const\s+|real\s*\([^)]*\)\s*(?:::)?:?\s*)?([A-Za-z_][A-Za-z0-9_]*)\s*(?::\s*[A-Za-z_][\w.<>[\]| ]*)?\s*=\s*.+/,
           )
           if (m && m[1] !== '_' && !c.endsWith(',')) addName(m[1])
         }

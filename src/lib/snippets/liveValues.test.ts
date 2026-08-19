@@ -234,6 +234,20 @@ const si = 1`),
     ).toEqual(['si'])
   })
 
+  it('extractAssignedNames recognizes a typed TS declaration (const NAME: TYPE = ...)', () => {
+    expect(
+      extractAssignedNames('const dv: number = isp * g0 * Math.log(m0/mf)'),
+    ).toContain('dv')
+  })
+
+  it('extractAssignedNames recognizes a typed Zig declaration (const NAME: TYPE = ...)', () => {
+    expect(extractAssignedNames('const L: f64 = 0.0065;')).toContain('L')
+  })
+
+  it('extractAssignedNames still finds an untyped declaration (unchanged)', () => {
+    expect(extractAssignedNames('const v = 1\nconst T = 2')).toEqual(['v', 'T'])
+  })
+
   it('stripTsTypes removes param and return annotations', () => {
     expect(stripTsTypes('const v: number = 1')).toBe('const v = 1')
     const stripped = stripTsTypes(
