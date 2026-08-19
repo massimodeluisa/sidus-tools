@@ -44,20 +44,22 @@ export function CabinLeakTool() {
 
   const V_m3 = toSi(p.V, p.Vu)
   const d_m = toSi(p.d, p.du)
+  // Orifice area: unconditional so it's always available for the code export,
+  // not only when the leak-time solve below succeeds.
+  const A = Math.PI * (d_m / 2) ** 2
   const P0 = toSi(p.P0, p.Pu)
   const P1 = toSi(p.P1, p.Pu)
   const T_K = toSi(p.T, p.Tu)
 
   const res = useMemo(() => {
     if (!(V_m3 > 0) || !(d_m > 0) || !(P0 > P1) || !(P1 > 0) || !(T_K > 0)) return null
-    const A = Math.PI * (d_m / 2) ** 2
     const t = leakDepressTime(V_m3, A, P0, P1, T_K, p.Cd)
     if (t == null) return null
     const dP = P0 - P1
     const mN2 = repressMass(V_m3, T_K, dP, M_N2)
     const mO2 = repressMass(V_m3, T_K, dP * 0.21, M_O2)
     return { A, t, mN2, mO2, dP }
-  }, [V_m3, d_m, P0, P1, T_K, p.Cd])
+  }, [A, V_m3, d_m, P0, P1, T_K, p.Cd])
 
   function changeVolumeUnit(Vu: string, V: number) {
     setP({ Vu, V })
@@ -193,7 +195,7 @@ export function CabinLeakTool() {
           </div>
         )
       }
-      code={<CodeExport formulaId="cabin-leak" values={{ V_m3, d_m, P0, P1, T_K, V: p.V, d: p.d, T: p.T, Cd: p.Cd, du: p.du, Pu: p.Pu }} />}
+      code={<CodeExport formulaId="cabin-leak" values={{ V_m3, d_m, A, P0, P1, T_K, V: p.V, d: p.d, T: p.T, Cd: p.Cd, du: p.du, Pu: p.Pu }} />}
     />
   )
 }

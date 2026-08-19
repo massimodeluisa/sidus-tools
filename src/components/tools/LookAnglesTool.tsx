@@ -9,6 +9,7 @@ import { ResultCard } from '@/components/shared/ResultCard'
 import { CodeExport } from '@/components/shared/CodeExport'
 import {
   DEFAULT_LAUNCH_SITE,
+  eciSiToEcefSi,
   lookAnglesFromEci,
   parseTle,
   propagateEci,
@@ -44,6 +45,13 @@ export function LookAnglesTool() {
       atDate,
     )
   }, [atDate, p.h_m, p.lat, p.lon, parsed])
+
+  const satEcef = useMemo(() => {
+    if (!parsed.ok) return null
+    const st = propagateEci(parsed.satrec, atDate)
+    if (!st) return null
+    return eciSiToEcefSi(st.r, atDate)
+  }, [atDate, parsed])
 
   return (
     <ToolShell
@@ -152,7 +160,15 @@ export function LookAnglesTool() {
       code={
         <CodeExport
           formulaId="look-angles"
-          values={{ lat: toSi(p.lat, 'deg'), lon: toSi(p.lon, 'deg'), h_m: p.h_m, at: p.at }}
+          values={{
+            lat: toSi(p.lat, 'deg'),
+            lon: toSi(p.lon, 'deg'),
+            h_m: p.h_m,
+            at: p.at,
+            sat_x: satEcef?.[0],
+            sat_y: satEcef?.[1],
+            sat_z: satEcef?.[2],
+          }}
         />
       }
     />

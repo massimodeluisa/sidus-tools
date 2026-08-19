@@ -154,7 +154,7 @@ export function ElevationAzimuthTool() {
           <p className="font-mono text-sm text-muted">{t('fields.invalid_geometry')}</p>
         )
       }
-      code={<CodeExport formulaId="elevation-azimuth" values={{ R: body.radius, slat: p.slat, slon: p.slon, sh: p.sh, tlat: p.tlat, tlon: p.tlon, th: p.th, body: p.body }} />}
+      code={<CodeExport formulaId="elevation-azimuth" values={{ R: body.radius, slat: p.slat, slon: p.slon, sh: p.sh, tlat: p.tlat, tlon: p.tlon, th: p.th, body: p.body, east: res?.east, north: res?.north, up: res?.up }} />}
     />
   )
 }
