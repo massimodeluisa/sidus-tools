@@ -17,9 +17,13 @@ import {
   degreesToRadians,
   geodeticToEcf,
   ecfToEci,
+  jday,
+  sunPos,
 } from '../vendor/satellite-js-pure'
 import type { SatRec } from 'satellite.js'
 import type { Vec3 } from './vector'
+import { vdot, vnorm, vscale, vsub, vunit } from './vector'
+import { AU, EARTH_RADIUS } from './constants'
 
 export type TleParseResult =
   | { ok: true; satrec: SatRec; name: string }
@@ -203,12 +207,76 @@ export function observerEciPosition(observer: GeodeticDeg, date: Date): Vec3 {
   return [eci.x * 1000, eci.y * 1000, eci.z * 1000]
 }
 
+/**
+ * Sun position in ECI (m) at `date`.
+ *
+ * Wraps vendor `sunPos` (Vallado low-precision solar ephemeris, valid
+ * 1950-2050, ~0.01 deg accuracy). Read from `node_modules/satellite.js/dist/sun.js`:
+ * it takes a Julian date and returns a "geocentric equatorial position
+ * vector" in AU, i.e. the mean equator/equinox-of-date (MOD) frame — not
+ * exactly the TEME frame SGP4 propagation uses. The MOD/TEME difference is
+ * arcseconds to sub-degree, far below the whole-degree accuracy this
+ * pass-visibility classifier needs, so both are treated as the same ECI
+ * frame here (standard practice for this class of low-precision spotting
+ * tool; see Vallado, "Fundamentals of Astrodynamics and Applications").
+ */
+export function sunEciSi(date: Date): Vec3 {
+  const { rsun } = sunPos(jday(date))
+  return [rsun.x * AU, rsun.y * AU, rsun.z * AU]
+}
+
+/**
+ * Cylindrical Earth-shadow model: the satellite is sunlit unless it sits on
+ * the night side of the terminator plane (its component along the anti-sun
+ * axis is positive) AND its perpendicular distance from the Earth-sun axis
+ * is inside a constant-radius (Earth-radius) shadow cylinder. This ignores
+ * penumbra/umbra taper and Earth's oblateness; it is the standard coarse
+ * model used for naked-eye ISS-spotting predictions (Vallado, "Fundamentals
+ * of Astrodynamics and Applications", shadow-analysis class), not a precise
+ * eclipse solver.
+ */
+export function isSatSunlitSi(rSatM: Vec3, date: Date): boolean {
+  const sHat = vunit(sunEciSi(date))
+  const alongSun = vdot(rSatM, sHat)
+  const alongAntiSun = -alongSun
+  const perpM = vsub(rSatM, vscale(sHat, alongSun))
+  const perpDistM = vnorm(perpM)
+  const inShadow = alongAntiSun > 0 && perpDistM < EARTH_RADIUS
+  return !inShadow
+}
+
+/**
+ * Elevation (rad) of the Sun above the observer's local horizon at `date`.
+ *
+ * Reuses `lookAnglesFromEci` with `sunEciSi`: its ECI→ECEF→look-angle chain
+ * (a rotation by GMST, then `asin`/`atan2` on topocentric SEZ components —
+ * see `ecfToLookAngles` in `node_modules/satellite.js/dist/transforms.js`)
+ * makes no near-Earth assumption, so it is equally valid at solar range.
+ */
+export function sunElevationRad(observer: GeodeticDeg, date: Date): number {
+  const rSunM = sunEciSi(date)
+  const look = lookAnglesFromEci(observer, rSunM, date)
+  // Unreachable: ecfToLookAngles never returns a falsy value (see above).
+  if (!look) throw new Error('sunElevationRad: lookAnglesFromEci unexpectedly failed')
+  return look.elevationRad
+}
+
+/**
+ * Naked-eye visibility threshold: sun elevation below which the observer's
+ * sky is dark enough for satellite spotting. Civil twilight (-6 deg) is the
+ * standard criterion used by ISS-spotting tools (e.g. Heavens-Above, NASA
+ * "Spot The Station").
+ */
+export const CIVIL_DARKNESS_RAD = (-6 * Math.PI) / 180
+
 export type PassWindow = {
   aos: Date
   los: Date
   maxElDeg: number
   maxElAt: Date
   durationS: number
+  visible: boolean
+  visibleAt: Date | null
 }
 
 /** Elevation (rad) at `ms` (epoch millis), or null if propagation/look-angle fails. */
@@ -272,6 +340,9 @@ function refineElevationPeak(
   return { maxEl: bestEl, maxElAtMs: bestMs }
 }
 
+/** `PassWindow` fields computed by AOS/LOS/peak search, before visibility classification. */
+type PassWindowCore = Omit<PassWindow, 'visible' | 'visibleAt'>
+
 /** Refine a coarsely-detected pass window's AOS/LOS/peak to `refineS` resolution. */
 function refinePassWindow(
   satrec: SatRec,
@@ -287,7 +358,7 @@ function refinePassWindow(
     maxEl: number
     maxElAtMs: number
   },
-): PassWindow {
+): PassWindowCore {
   const refineMs = refineS * 1000
   const elevationAt = (ms: number) => elevationRadAtMs(satrec, observer, ms)
 
@@ -312,6 +383,32 @@ function refinePassWindow(
 }
 
 /**
+ * Classify a pass window's naked-eye visibility: sunlit satellite seen
+ * against a dark sky (observer's sun below civil twilight). Standard
+ * ISS-spotting criterion (Heavens-Above / NASA "Spot The Station").
+ * Samples the window at `max(sampleS, 5)` s steps and returns the first
+ * qualifying sample, if any.
+ */
+function classifyPassVisibility(
+  satrec: SatRec,
+  observer: GeodeticDeg,
+  aosMs: number,
+  losMs: number,
+  sampleS: number,
+): { visible: boolean; visibleAt: Date | null } {
+  const stepMs = Math.max(sampleS, 5) * 1000
+  for (let t = aosMs; t <= losMs; t += stepMs) {
+    const date = new Date(t)
+    const st = propagateEci(satrec, date)
+    if (!st) continue
+    if (isSatSunlitSi(st.r, date) && sunElevationRad(observer, date) < CIVIL_DARKNESS_RAD) {
+      return { visible: true, visibleAt: date }
+    }
+  }
+  return { visible: false, visibleAt: null }
+}
+
+/**
  * Coarse next-pass search: sample elevation every `stepS` for `horizonH` hours.
  * Returns first AOS→LOS window above `minElDeg` (default 10°).
  *
@@ -319,6 +416,11 @@ function refinePassWindow(
  * the coarse-scan bracket, and the peak is refined by sampling its two
  * neighboring `stepS` intervals at `refineS` resolution. Omit `refineS` for
  * the original quantized-to-`stepS` behavior.
+ *
+ * Every returned window carries a naked-eye `visible`/`visibleAt`
+ * classification (see `classifyPassVisibility`). With `visibleOnly: true`,
+ * non-visible passes are skipped and the scan continues to the next one;
+ * returns `null` if no visible pass occurs before the horizon ends.
  */
 export function findNextPass(opts: {
   satrec: SatRec
@@ -328,12 +430,14 @@ export function findNextPass(opts: {
   stepS?: number
   minElDeg?: number
   refineS?: number
+  visibleOnly?: boolean
 }): PassWindow | null {
   const horizonH = opts.horizonH ?? 24
   const stepS = opts.stepS ?? 30
   const minElRad = ((opts.minElDeg ?? 10) * Math.PI) / 180
   const t0 = opts.start.getTime()
   const tEnd = t0 + horizonH * 3600 * 1000
+  const sampleS = opts.refineS ?? stepS
 
   let inPass = false
   let aosMs: number | null = null
@@ -342,6 +446,41 @@ export function findNextPass(opts: {
   let maxElAtMs: number | null = null
   let prevMs = t0
   let lastMs = t0
+
+  const buildWindow = (
+    curAosMs: number,
+    curAosBelowMs: number,
+    curMaxEl: number,
+    curMaxElAtMs: number,
+    losMs: number,
+    losAboveMs: number | null,
+  ): PassWindow => {
+    const core: PassWindowCore =
+      opts.refineS !== undefined
+        ? refinePassWindow(opts.satrec, opts.observer, minElRad, stepS, opts.refineS, {
+            aosMs: curAosMs,
+            aosBelowMs: curAosBelowMs,
+            losMs,
+            losAboveMs,
+            maxEl: curMaxEl,
+            maxElAtMs: curMaxElAtMs,
+          })
+        : {
+            aos: new Date(curAosMs),
+            los: new Date(losMs),
+            maxElDeg: (curMaxEl * 180) / Math.PI,
+            maxElAt: new Date(curMaxElAtMs),
+            durationS: (losMs - curAosMs) / 1000,
+          }
+    const { visible, visibleAt } = classifyPassVisibility(
+      opts.satrec,
+      opts.observer,
+      core.aos.getTime(),
+      core.los.getTime(),
+      sampleS,
+    )
+    return { ...core, visible, visibleAt }
+  }
 
   for (let t = t0; t <= tEnd; t += stepS * 1000) {
     const date = new Date(t)
@@ -367,27 +506,15 @@ export function findNextPass(opts: {
         const losAboveMs = prevMs
         const losMs = t
         if (aosMs !== null && aosBelowMs !== null && maxElAtMs !== null) {
-          if (opts.refineS !== undefined) {
-            return refinePassWindow(opts.satrec, opts.observer, minElRad, stepS, opts.refineS, {
-              aosMs,
-              aosBelowMs,
-              losMs,
-              losAboveMs,
-              maxEl,
-              maxElAtMs,
-            })
-          }
-          return {
-            aos: new Date(aosMs),
-            los: new Date(losMs),
-            maxElDeg: (maxEl * 180) / Math.PI,
-            maxElAt: new Date(maxElAtMs),
-            durationS: (losMs - aosMs) / 1000,
-          }
+          const win = buildWindow(aosMs, aosBelowMs, maxEl, maxElAtMs, losMs, losAboveMs)
+          if (!opts.visibleOnly || win.visible) return win
+          // visibleOnly and this pass wasn't visible: keep scanning for the next one.
         }
         inPass = false
         aosMs = null
         aosBelowMs = null
+        maxEl = -Infinity
+        maxElAtMs = null
       }
     }
     prevMs = t
@@ -395,23 +522,9 @@ export function findNextPass(opts: {
 
   // Pass still open at horizon end
   if (inPass && aosMs !== null && aosBelowMs !== null && maxElAtMs !== null) {
-    if (opts.refineS !== undefined) {
-      return refinePassWindow(opts.satrec, opts.observer, minElRad, stepS, opts.refineS, {
-        aosMs,
-        aosBelowMs,
-        losMs: lastMs,
-        losAboveMs: null,
-        maxEl,
-        maxElAtMs,
-      })
-    }
-    return {
-      aos: new Date(aosMs),
-      los: new Date(lastMs),
-      maxElDeg: (maxEl * 180) / Math.PI,
-      maxElAt: new Date(maxElAtMs),
-      durationS: (lastMs - aosMs) / 1000,
-    }
+    const win = buildWindow(aosMs, aosBelowMs, maxEl, maxElAtMs, lastMs, null)
+    if (!opts.visibleOnly || win.visible) return win
+    return null
   }
   return null
 }

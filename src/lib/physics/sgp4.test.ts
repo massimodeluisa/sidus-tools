@@ -1,15 +1,21 @@
 import { describe, expect, it } from 'vitest'
 import {
+  CIVIL_DARKNESS_RAD,
   eciSiToEcefSi,
   eciSiToGeodetic,
   findNextPass,
+  isSatSunlitSi,
   lookAnglesFromEci,
   observerEciPosition,
   parseTle,
   propagateEci,
+  sunEciSi,
+  sunElevationRad,
   topocentricSezSi,
 } from './sgp4'
 import { ecfToEci, ecfToLookAngles, degreesToRadians, gstime, sgp4, twoline2satrec } from '../vendor/satellite-js-pure'
+import { AU, EARTH_RADIUS } from './constants'
+import { vcross, vnorm, vscale, vsub, vunit } from './vector'
 
 /**
  * Published SGP4/SDP4 verification vectors and TLEs, copied verbatim from:
@@ -416,5 +422,120 @@ describe('topocentricSezSi: consistency with vendor ecfToLookAngles', () => {
     expect(Math.abs(az - vendorLook.azimuth)).toBeLessThanOrEqual(1e-9)
     const rangeRel = Math.abs(rangeM - vendorLook.rangeSat * 1000) / (vendorLook.rangeSat * 1000)
     expect(rangeRel).toBeLessThanOrEqual(1e-6)
+  })
+})
+
+describe('sunEciSi', () => {
+  it('|r| is within 3% of 1 AU near perihelion (early Jan) and aphelion (early Jul)', () => {
+    // Earth's orbital eccentricity (~0.0167) bounds sunPos's |rsun| to
+    // roughly 0.9833-1.0167 AU year-round; 3% is a generous published-fact
+    // margin around that, not a tight golden value.
+    for (const date of [
+      new Date('2026-01-03T00:00:00.000Z'),
+      new Date('2026-07-04T00:00:00.000Z'),
+    ]) {
+      const r = sunEciSi(date)
+      const mag = vnorm(r)
+      const relErr = Math.abs(mag - AU) / AU
+      expect(relErr, `${date.toISOString()}: |r|=${mag} vs AU=${AU}`).toBeLessThanOrEqual(0.03)
+    }
+  })
+
+  it('has near-zero declination at the March equinox (2026-03-20T12:00Z)', () => {
+    // |z|/|r| = sin(|declination|); bounding it by sin(1.5 deg) is
+    // equivalent to bounding |declination| by 1.5 deg (asin monotonic).
+    const date = new Date('2026-03-20T12:00:00.000Z')
+    const r = sunEciSi(date)
+    const mag = vnorm(r)
+    const bound = Math.sin((1.5 * Math.PI) / 180) * mag
+    expect(Math.abs(r[2]), `|z|=${Math.abs(r[2])} vs bound=${bound}`).toBeLessThan(bound)
+  })
+})
+
+describe('isSatSunlitSi', () => {
+  const date = new Date('2026-06-15T00:00:00.000Z')
+  const sHat = vunit(sunEciSi(date))
+  // Any unit vector perpendicular to sHat; z-axis cross is well-conditioned
+  // here because sHat sits within Earth's obliquity (~23.4 deg) of the
+  // equatorial plane, never close to the equatorial z-axis.
+  const perpHat = vunit(vcross(sHat, [0, 0, 1]))
+
+  it('satellite 7000 km along the sun direction is sunlit', () => {
+    const rSat = vscale(sHat, 7_000_000)
+    expect(isSatSunlitSi(rSat, date)).toBe(true)
+  })
+
+  it('satellite 7000 km along the anti-sun axis with zero perpendicular offset is in shadow', () => {
+    const rSat = vscale(sHat, -7_000_000)
+    expect(isSatSunlitSi(rSat, date)).toBe(false)
+  })
+
+  it('satellite on the anti-sun side but 7000 km off-axis (> Earth radius) is sunlit', () => {
+    expect(7_000_000).toBeGreaterThan(EARTH_RADIUS)
+    const rSat = vsub(vscale(sHat, -7_000_000), vscale(perpHat, -7_000_000))
+    expect(vnorm(vsub(rSat, vscale(sHat, -7_000_000)))).toBeCloseTo(7_000_000, 0)
+    expect(isSatSunlitSi(rSat, date)).toBe(true)
+  })
+})
+
+describe('sunElevationRad', () => {
+  it('flips sign between local noon and local midnight (observer lon 0, lat 0)', () => {
+    const observer = { latDeg: 0, lonDeg: 0, heightM: 0 }
+    const noon = sunElevationRad(observer, new Date('2026-03-20T12:00:00.000Z'))
+    const midnight = sunElevationRad(observer, new Date('2026-03-20T00:00:00.000Z'))
+    expect(noon).toBeGreaterThan(0)
+    expect(midnight).toBeLessThan(0)
+  })
+})
+
+describe('findNextPass: visible classification', () => {
+  it('CASE A TLE (00005), observer 34N/-118W, refineS=1 over 48h: visible field is self-consistent', () => {
+    const l1 = '1 00005U 58002B   00179.78495062  .00000023  00000-0  28098-4 0  4753'
+    const l2 = '2 00005  34.2682 348.7242 1859667 331.7664  19.3264 10.82419157413667'
+    const p = parseTle(`${l1}\n${l2}`)
+    expect(p.ok, 'parseTle(caseA)').toBe(true)
+    if (!p.ok) throw new Error('unreachable: narrowed by expect above')
+
+    const observer = { latDeg: 34, lonDeg: -118, heightM: 100 }
+    const start = new Date(Math.round((p.satrec.jdsatepoch - 2440587.5) * 86400000))
+
+    const pass = findNextPass({
+      satrec: p.satrec,
+      observer,
+      start,
+      horizonH: 48,
+      stepS: 30,
+      refineS: 1,
+    })
+    expect(pass, 'findNextPass over 48h').toBeTruthy()
+    if (!pass) throw new Error('unreachable: narrowed by expect above')
+
+    expect(typeof pass.visible).toBe('boolean')
+    expect(pass.visible ? pass.visibleAt !== null : pass.visibleAt === null).toBe(true)
+
+    if (pass.visible) {
+      if (!pass.visibleAt) throw new Error('unreachable: narrowed by expect above')
+      const st = propagateEci(p.satrec, pass.visibleAt)
+      expect(st, 'propagateEci at visibleAt').toBeTruthy()
+      if (!st) throw new Error('unreachable: narrowed by expect above')
+
+      expect(sunElevationRad(observer, pass.visibleAt)).toBeLessThan(CIVIL_DARKNESS_RAD)
+      expect(isSatSunlitSi(st.r, pass.visibleAt)).toBe(true)
+    }
+
+    const visibleOnly = findNextPass({
+      satrec: p.satrec,
+      observer,
+      start,
+      horizonH: 48,
+      stepS: 30,
+      refineS: 1,
+      visibleOnly: true,
+    })
+    if (visibleOnly === null) {
+      expect(visibleOnly).toBeNull()
+    } else {
+      expect(visibleOnly.visible).toBe(true)
+    }
   })
 })
