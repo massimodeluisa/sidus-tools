@@ -482,6 +482,39 @@ export const SAMPLE_OVERRIDES: Record<string, LiveCodeValues> = {
   'schweighart-sedwick': { inc: 51.6 * (Math.PI / 180), Rb: 6_378_137 },
   // Shared bag's beta=0 (a phase-angle default elsewhere) fails this tool's ballistic-coefficient>0 check.
   'orbit-lifetime-rough': { beta: 100 },
+  // System noise temperature exists in no shared bag.
+  'eirp-gt': { P: 10, G: 1000, Tsys: 290 },
+  // Miss distance / covariance sigmas / hard-body radius exist in no shared bag.
+  'conjunction-pc': { miss: 0, sx: 100, sy: 50, rad: 10 },
+  // Two body/reference vector pairs (TRIAD/QUEST) exist in no shared bag.
+  'quest-attitude': {
+    w1x: 1, w1y: 0, w1z: 0,
+    w2x: 0, w2y: 1, w2z: 0,
+    v1x: 1, v1y: 0, v1z: 0,
+    v2x: 0, v2y: 1, v2z: 0,
+  },
+  // Solar-pressure reflectivity coefficient exists in no shared bag; both Cr/cr spellings set
+  // (PHYSICS_ID_ALIASES maps Cr->cr and SAMPLE already defines cr, so a Cr-only override is discarded).
+  'solar-pressure': { A: 1, Cr: 1.2, cr: 1.2, r_au: 1, m: 100 },
+  // Heliocentric ephemeris constants and a real departure/arrival epoch pair exist in no shared bag.
+  'porkchop-earth-mars': {
+    mu: 1.32712440018e20,
+    aE: 149_597_870_700,
+    aM: 227_939_134_030.3053,
+    LE0: 1.7534336883759651,
+    LM0: 6.20383077114501,
+    t0: 946_728_000,
+    tDep: 1_596_067_200,
+    tArr: 1_613_606_400,
+    v1x: 28_103.33202062955,
+    v1y: 16_375.164072485328,
+    v1z: 0,
+  },
+  // Pump/crank flyby angles exist in no shared bag.
+  'pump-crank': { rp: 3_689_500, vinf: 5500, mu: 4.282837e13, pump: 0.4, crank: 0.9 },
+  // Shared bag's P0 (solar pressure constant, ~4.56e-6) is far below P1=50, failing this
+  // tool's P0>P1 depressurization guard; override with a real cabin-leak pressure pair.
+  'cabin-leak': { V: 100, A: 1e-4, P0: 101325, P1: 70000, T: 293.15, Cd: 0.65 },
 }
 
 /** Live-input bag for a tool: shared SAMPLE merged with its per-tool override. */

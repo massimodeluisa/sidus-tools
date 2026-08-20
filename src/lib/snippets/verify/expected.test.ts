@@ -89,8 +89,158 @@ const ORBITS_WAVE = [
   'schweighart-sedwick',
 ] as const
 
+/**
+ * Propulsion/launch/aero coverage wave: every category:'propulsion' tool
+ * (plus the 'utilities'-category ones this wave also covered) minus the
+ * pilots above.
+ */
+const PROPULSION_WAVE = [
+  'blowdown-tank',
+  'boiloff-rate',
+  'characteristic-velocity-cstar',
+  'cold-gas-thrust',
+  'delta-v-budget',
+  'edelbaum-dv',
+  'equal-stage',
+  'finite-burn-dv',
+  'geo-propellant-budget',
+  'gravity-loss',
+  'hall-thruster-isp',
+  'ideal-thrust',
+  'impulse-budget',
+  'ion-thruster-efficiency',
+  'isentropic-nozzle',
+  'mass-ratio-stack',
+  'mixture-ratio',
+  'multi-stage',
+  'payload-fraction',
+  'propellant-density-impulse',
+  'propellant-mass',
+  'rcs',
+  'rocket-thrust-chamber',
+  'solar-sail-accel',
+  'tank-ullage',
+  'throat-area-sizing',
+  'thrust-to-weight',
+  'thruster-impulse-bit',
+] as const
+
+/**
+ * RF/link/GNSS/optical + ADCS/pointing coverage wave: every category:'satellite'
+ * tool this wave covered, minus the pilots above.
+ */
+const SATELLITE_WAVE = [
+  'antenna-beamwidth',
+  'conjunction-pc',
+  'data-volume',
+  'diffraction',
+  'diffraction-limit',
+  'doppler-shift-leo',
+  'eclipse-beta',
+  'eclipse-duration',
+  'eirp-gt',
+  'geo-light-time',
+  'gnss-ionosphere-klobuchar',
+  'gnss-pseudorange',
+  'gravity-gradient-torque',
+  'ground-track',
+  'horizon-range',
+  'impedance-matching',
+  'laser-link-budget',
+  'laser-pointing-jitter',
+  'laser-time-of-flight',
+  'link-margin',
+  'magnetic-torque',
+  'magnetorquer-moment',
+  'nodal-period',
+  'optical-ber-q',
+  'pointing-budget-rss',
+  'quest-attitude',
+  'radar-equation',
+  'radar-range-resolution',
+  'rain-attenuation-simple',
+  'reaction-wheel',
+  'residual-dipole-torque',
+  'rw-momentum-capacity',
+  'sar-azimuth-resolution',
+  'slew-rate-pointing',
+  'solar-pressure',
+  'star-tracker-noise',
+  'sun-sensor-cone',
+  'ttc-ebno',
+] as const
+
+/**
+ * Systems/power/thermal + misc-utilities coverage wave: every category:'utilities'
+ * tool this wave covered, minus the pilots above.
+ */
+const UTILITIES_WAVE = [
+  'aerobraking-pass',
+  'angular-diameter',
+  'ballistic-drag',
+  'ballistic-range',
+  'battery',
+  'battery-dod',
+  'coordinated-turn-bank',
+  'custom-body',
+  'drag-force',
+  'earth-ir-flux',
+  'eps-orbit-average',
+  'exponential-density',
+  'free-fall-time',
+  'hoop-stress',
+  'light-time',
+  'orbit-3d',
+  'panel-eol-power',
+  'parachute-descent',
+  'planck-radiance',
+  'plotter',
+  'relativity-clock-rate',
+  'scale-height',
+  'solar-array',
+  'solar-flux-distance',
+  'stefan-boltzmann',
+  'terminal-velocity',
+  'units',
+  'wien-peak',
+] as const
+
+/**
+ * Crew/ECLSS + planetary/interplanetary + geometry coverage wave: every tool
+ * in category 'crew', 'planetary', or 'geometry', minus the pilots above
+ * (metabolic-load is the only pilot in those categories).
+ */
+const PLANETARY_WAVE = [
+  'b-plane-impact',
+  'b-plane-target',
+  'cabin-atmosphere',
+  'cabin-leak',
+  'capture-circularize',
+  'elevation-azimuth',
+  'helio-hohmann',
+  'hill-sphere',
+  'hyperbolic-eccentricity',
+  'lioh-scrubber',
+  'patched-conic-depart',
+  'porkchop-earth-mars',
+  'pump-crank',
+  'spherical-distance',
+  'surface-access',
+  'thermal-loop',
+  'thermal-rad',
+  'tisserand-parameter',
+  'vector-angle',
+] as const
+
 /** All tool ids currently covered by EXPECTED, across every wave. */
-const COVERED = [...PILOT, ...ORBITS_WAVE] as const
+const COVERED = [
+  ...PILOT,
+  ...ORBITS_WAVE,
+  ...PROPULSION_WAVE,
+  ...SATELLITE_WAVE,
+  ...UTILITIES_WAVE,
+  ...PLANETARY_WAVE,
+] as const
 
 /** Languages whose bodies may rename a result through `safeIdent`. */
 const IDENT_LANGS: CodeLang[] = ['c', 'rust', 'zig', 'fortran']
@@ -166,11 +316,20 @@ describe('snippet verification expected values', () => {
   })
 })
 
+/**
+ * Tools whose snippet body has zero free vars (every constant is hardcoded, e.g.
+ * geo-light-time's `t = h_GEO / c`): every possible scenario computes the exact
+ * same result, so a second or third scenario would be a literal-duplicate bag,
+ * not additional coverage. One scenario is the honest ceiling for these.
+ */
+const NO_FREE_VAR_TOOLS = new Set(['geo-light-time'])
+
 describe('snippet verification scenarios', () => {
   for (const id of COVERED) {
     describe(id, () => {
-      it('has at least 3 scenarios', () => {
-        expect(scenariosFor(id).length).toBeGreaterThanOrEqual(3)
+      it('has at least 3 scenarios (or 1, if the formula has no free vars)', () => {
+        const min = NO_FREE_VAR_TOOLS.has(id) ? 1 : 3
+        expect(scenariosFor(id).length).toBeGreaterThanOrEqual(min)
       })
 
       it('every scenario has a name and a finite expected-value map', () => {

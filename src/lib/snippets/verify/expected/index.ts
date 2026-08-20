@@ -17,9 +17,10 @@
  * functions; this barrel merges them into the flat maps the runner and tests use.
  */
 import { ORBITS_EXPECTED, TOLERANCE_OVERRIDES_ORBITS } from './orbits'
-import { RF_EXPECTED } from './rf'
+import { RF_EXPECTED, UNVERIFIABLE_RF } from './rf'
 import { SYSTEMS_EXPECTED } from './systems'
 import { OPS_EXPECTED, UNVERIFIABLE_OPS } from './ops'
+import { PLANETARY_EXPECTED, UNVERIFIABLE_PLANETARY } from './planetary'
 
 export type { ExpectedFn, ToleranceOverride, ToleranceOverrides } from './shared'
 
@@ -28,10 +29,13 @@ export const EXPECTED = {
   ...RF_EXPECTED,
   ...SYSTEMS_EXPECTED,
   ...OPS_EXPECTED,
+  ...PLANETARY_EXPECTED,
 }
 
 export const UNVERIFIABLE: Readonly<Record<string, string>> = {
   ...UNVERIFIABLE_OPS,
+  ...UNVERIFIABLE_RF,
+  ...UNVERIFIABLE_PLANETARY,
 }
 
 /** Justified per-(tool, scenario, key) absolute-tolerance overrides; see `ToleranceOverride`. */
