@@ -1,0 +1,6 @@
+# Project-local isolated store: globalStore=false keeps package realpaths inside
+# the repo so TypeScript can resolve @types/* for libraries that type against
+# React without declaring @types/react (react-router, etc.).
+[install]
+linker = "isolated"
+globalStore = false
