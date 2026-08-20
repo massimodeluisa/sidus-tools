@@ -15,7 +15,7 @@
 import { spawnSync } from 'node:child_process'
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { TOOLS } from '../src/data/tools.ts'
 import {
   CODE_LANGS,
@@ -29,8 +29,9 @@ import {
   type CodeLang,
   type LiveCodeValues,
 } from '../src/lib/snippets/index.ts'
-import { asInjected, inputBagFor, scenariosFor } from '../src/lib/snippets/verify/inputs.ts'
+import { asInjected, scenariosFor } from '../src/lib/snippets/verify/inputs.ts'
 import { EXPECTED, TOLERANCE_OVERRIDES, UNVERIFIABLE } from '../src/lib/snippets/verify/expected/index.ts'
+import { getAliasGroups } from '../src/lib/snippets/verify/expected/shared.ts'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 // PID+timestamp-scoped so a concurrent run of this script (e.g. another
@@ -349,9 +350,128 @@ function withinTolerance(expected: number, got: number, tol: number, absOverride
   return absOverride !== undefined && Math.abs(got - expected) <= absOverride
 }
 
+/**
+ * Every spelling an EXPECTED key can appear under in printed output. The render
+ * path (`wrapAsRunnable` → `canonicalizePhysicsIds`) rewrites physics-notation
+ * ids (Isp/ISP/Cd/CD/Cr/CR/Rn/RN/Qdot/QDot/QDOT/Tc/TC/G0) to their lowercase
+ * canonical spelling before printing, for every language, not just Fortran.
+ * Comparison must resolve the same spellings the render path produced, in
+ * both raw and language-safe-identifier form, or a canonicalized result is
+ * silently never looked up.
+ */
+export function printedKeyVariants(key: string, lang: CodeLang): string[] {
+  const canonKey = canonicalizePhysicsIds(key)
+  return [key, safeIdent(lang, key), canonKey, safeIdent(lang, canonKey)]
+}
+
+/** Look up an EXPECTED key's printed value across every variant spelling above. */
+export function resolvePrintedValue(
+  key: string,
+  lang: CodeLang,
+  printed: Map<string, number>,
+): number | undefined {
+  for (const variant of printedKeyVariants(key, lang)) {
+    const v = printed.get(variant)
+    if (v !== undefined) return v
+  }
+  return undefined
+}
+
 function relErr(expected: number, got: number): number {
   if (Math.abs(expected) < NEAR_ZERO) return Math.abs(got - expected)
   return Math.abs(got - expected) / Math.abs(expected)
+}
+
+/** Comparison outcome, pre-`fail-parse`: either a hard failure or the raw tallies. */
+type ComparisonResult =
+  | { status: 'fail-numeric'; detail: string }
+  | { compared: string[]; mismatches: Mismatch[] }
+
+/**
+ * Group `expected`'s keys by their `put()` declaration: keys from the same
+ * `put(out, names, value)` call are ONE logical value under multiple
+ * acceptable spellings — different language ports print only one of them, so
+ * the group (not each individual key) is the unit of strictness. A key
+ * `put()` never grouped (or an EXPECTED fn that built `out` without `put()`)
+ * is its own singleton group, which reduces to the original per-key rule.
+ */
+function groupExpectedKeys(expected: Record<string, number>): string[][] {
+  const grouped = new Set<string>()
+  const groups: string[][] = []
+  for (const declared of getAliasGroups(expected)) {
+    const present = declared.filter((k) => k in expected)
+    if (present.length === 0) continue
+    for (const k of present) grouped.add(k)
+    groups.push(present)
+  }
+  for (const key of Object.keys(expected)) {
+    if (!grouped.has(key)) groups.push([key])
+  }
+  return groups
+}
+
+/**
+ * Compare an EXPECTED result map against what the snippet actually printed.
+ * Extracted from `runScenario` so the render/compare symmetry (an EXPECTED key
+ * spelled the physics-notation way resolves through the same canonicalization
+ * the render path applied before printing) can be unit-tested without
+ * spawning a compiler.
+ *
+ * Strictness is per alias GROUP (see `groupExpectedKeys`), not per key: every
+ * declared spelling in a group is resolved (through the same canonicalization/
+ * safeIdent chain, and after excluding spellings that are actually echoed live
+ * inputs); zero resolved is a hard failure (a value no declared spelling
+ * matched is never silently skipped), one or more resolved are each compared
+ * numerically and any mismatch fails the cell.
+ */
+export function compareResults(
+  toolId: string,
+  scenarioName: string,
+  lang: CodeLang,
+  expected: Record<string, number>,
+  printed: Map<string, number>,
+  injected: Set<string>,
+  tol: number,
+): ComparisonResult {
+  const compared: string[] = []
+  const mismatches: Mismatch[] = []
+  for (const group of groupExpectedKeys(expected)) {
+    const candidates = group.filter((key) => !printedKeyVariants(key, lang).some((v) => injected.has(v)))
+    if (candidates.length === 0) continue // every declared spelling is an echoed live input, not a result
+
+    const resolved = candidates
+      .map((key) => ({ key, got: resolvePrintedValue(key, lang, printed) }))
+      .filter((r): r is { key: string; got: number } => r.got !== undefined)
+
+    if (resolved.length === 0) {
+      return {
+        status: 'fail-numeric',
+        detail:
+          group.length > 1
+            ? `value ${group[0]} never printed under any declared spelling (tried: ${group.join(', ')})`
+            : `expected key ${group[0]} was never printed by the snippet`,
+      }
+    }
+
+    for (const { key, got } of resolved) {
+      compared.push(key)
+      const want = expected[key]!
+      // A justified absolute-tolerance override (see ToleranceOverride) replaces the
+      // relative gate for this one (tool, scenario, key); an override missing its
+      // mandatory `why` never applies silently — it fails the cell loudly instead.
+      const override = TOLERANCE_OVERRIDES[toolId]?.[scenarioName]?.[key]
+      if (override && !override.why?.trim()) {
+        return {
+          status: 'fail-numeric',
+          detail: `tolerance override for ${toolId}/${scenarioName}/${key} has no justification ("why"); refusing to apply it`,
+        }
+      }
+      if (!withinTolerance(want, got, tol, override?.absTol)) {
+        mismatches.push({ name: key, expected: want, got, relErr: relErr(want, got) })
+      }
+    }
+  }
+  return { compared, mismatches }
 }
 
 function tail(s: string, n = 400): string {
@@ -479,29 +599,11 @@ function runScenario(
 
   const printed = parsePrinted(run.stdout ?? '')
   const tol = TOLERANCE[lang] ?? DEFAULT_TOLERANCE
-  const compared: string[] = []
-  const mismatches: Mismatch[] = []
-  for (const [key, want] of Object.entries(expected)) {
-    const alias = safeIdent(lang, key)
-    if (injected.has(key) || injected.has(alias)) continue
-    const got = printed.get(key) ?? printed.get(alias)
-    if (got === undefined) continue
-    compared.push(key)
-    // A justified absolute-tolerance override (see ToleranceOverride) replaces the
-    // relative gate for this one (tool, scenario, key); an override missing its
-    // mandatory `why` never applies silently — it fails the cell loudly instead.
-    const override = TOLERANCE_OVERRIDES[toolId]?.[scenario.name]?.[key]
-    if (override && !override.why?.trim()) {
-      return {
-        scenario: scenario.name,
-        status: 'fail-numeric',
-        detail: `tolerance override for ${toolId}/${scenario.name}/${key} has no justification ("why"); refusing to apply it`,
-      }
-    }
-    if (!withinTolerance(want, got, tol, override?.absTol)) {
-      mismatches.push({ name: key, expected: want, got, relErr: relErr(want, got) })
-    }
+  const cmp = compareResults(toolId, scenario.name, lang, expected, printed, injected, tol)
+  if ('status' in cmp) {
+    return { scenario: scenario.name, status: cmp.status, detail: cmp.detail }
   }
+  const { compared, mismatches } = cmp
 
   if (compared.length === 0) {
     return {
@@ -597,6 +699,27 @@ const SYMBOL: Record<Status, string> = {
   'skip-dep-missing': 'no-dep',
 }
 
+/**
+ * Whether `id` has expected values the per-cell loop would actually compare,
+ * probed with the exact same bag `verifyCase` uses: the first resolved
+ * scenario (`scenariosFor(id)[0].bag`), not the bare `inputBagFor(id)`. A
+ * scenario can supply a key (e.g. `Tsys` for eirp-gt) that only exists as a
+ * scenario override and is absent from the generic SAMPLE bag; probing with
+ * `inputBagFor` alone throws on that missing input and got this tool (and
+ * conjunction-pc, solar-pressure) wrongly reported as "no EXPECTED entry" in
+ * the Coverage/Uncovered table while the Matrix section, built from the same
+ * `results` this function also receives, showed it fully compared.
+ */
+function hasExpectedValues(id: string): boolean {
+  const fn = EXPECTED[id]
+  if (!fn) return false
+  try {
+    return Object.keys(fn(asInjected(scenariosFor(id)[0]!.bag) as Record<string, number | string>)).length > 0
+  } catch {
+    return false
+  }
+}
+
 function buildMarkdown(
   results: CaseResult[],
   toolIds: string[],
@@ -607,15 +730,7 @@ function buildMarkdown(
   const counts = new Map<Status, number>()
   for (const r of results) counts.set(r.status, (counts.get(r.status) ?? 0) + 1)
 
-  const covered = toolIds.filter((id) => {
-    const fn = EXPECTED[id]
-    if (!fn) return false
-    try {
-      return Object.keys(fn(asInjected(inputBagFor(id)) as Record<string, number | string>)).length > 0
-    } catch {
-      return false
-    }
-  })
+  const covered = toolIds.filter(hasExpectedValues)
   const pct = toolIds.length ? Math.round((covered.length / toolIds.length) * 100) : 0
 
   const nonLatexLangs = langs.filter((l) => l !== 'latex')
@@ -809,4 +924,8 @@ function main() {
   if (failures.length || (args.requireAll && blockedSkips.length)) process.exitCode = 1
 }
 
-main()
+// Only run the CLI when this file is the process entrypoint, not when a test
+// imports its exported helpers (`resolvePrintedValue`, `printedKeyVariants`).
+if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+  main()
+}
