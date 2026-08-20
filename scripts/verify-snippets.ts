@@ -157,7 +157,9 @@ const RUNNERS: Partial<Record<CodeLang, Runner>> = {
   },
   fortran: {
     ext: 'f90',
-    compile: (f, bin) => ['gfortran', f, '-o', bin],
+    // -ffree-line-length-none: rendered snippets carry machine-injected values
+    // on single long lines; Ubuntu gfortran errors past 132 free-form columns.
+    compile: (f, bin) => ['gfortran', '-ffree-line-length-none', f, '-o', bin],
     run: (_f, bin) => [bin],
   },
   julia: { ext: 'jl', run: (f) => ['julia', f] },
