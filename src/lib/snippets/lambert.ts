@@ -416,12 +416,16 @@ let g = a_lam * (y / mu).sqrt();
 let gdot = 1.0 - y/r2n;
 let r1x = r1n;
 let r1y = 0.0_f64;
+let r1z = 0.0_f64;
 let r2x = r2n * dnu.cos();
 let r2y = r2n * dnu.sin();
+let r2z = 0.0_f64;
 let v1x = (r2x - f*r1x) / g;
 let v1y = (r2y - f*r1y) / g;
+let v1z = (r2z - f*r1z) / g;
 let v2x = (gdot*r2x - r1x) / g;
-let v2y = (gdot*r2y - r1y) / g;`,
+let v2y = (gdot*r2y - r1y) / g;
+let v2z = (gdot*r2z - r1z) / g;`,
 
     zig: `// Lambert: educational core: ${ASSUMPTIONS}
 // Free vars: mu, r1_m, r2_m, ang_rad, tof_s. Newton on z (Stumpff C(z)/S(z));
@@ -497,12 +501,16 @@ const g = A * std.math.sqrt(y / mu);
 const gdot = 1.0 - y/r2n;
 const r1x = r1n;
 const r1y: f64 = 0.0;
+const r1z: f64 = 0.0;
 const r2x = r2n * std.math.cos(dnu);
 const r2y = r2n * std.math.sin(dnu);
+const r2z: f64 = 0.0;
 const v1x = (r2x - f*r1x) / g;
 const v1y = (r2y - f*r1y) / g;
+const v1z = (r2z - f*r1z) / g;
 const v2x = (gdot*r2x - r1x) / g;
-const v2y = (gdot*r2y - r1y) / g;`,
+const v2y = (gdot*r2y - r1y) / g;
+const v2z = (gdot*r2z - r1z) / g;`,
 
     fortran: `! Lambert: educational core: ${ASSUMPTIONS}
 ! Free vars: mu, r1_m, r2_m, ang_rad, tof_s. Newton on z (Stumpff C(z)/S(z));
@@ -588,12 +596,16 @@ g = A * sqrt(y / mu)
 gdot = 1.0d0 - y/r2n
 r1x = r1n
 r1y = 0.0d0
+r1z = 0.0d0
 r2x = r2n * cos(dnu)
 r2y = r2n * sin(dnu)
+r2z = 0.0d0
 v1x = (r2x - f*r1x) / g
 v1y = (r2y - f*r1y) / g
+v1z = (r2z - f*r1z) / g
 v2x = (gdot*r2x - r1x) / g
-v2y = (gdot*r2y - r1y) / g`,
+v2y = (gdot*r2y - r1y) / g
+v2z = (gdot*r2z - r1z) / g`,
 
     matlab: `% Lambert: ${ASSUMPTIONS}
 % Full universal-z Newton iteration; free vars mu,r1_m,r2_m,ang_rad,tof_s.

@@ -14,7 +14,11 @@ export const dynamicPressureSnippets: FormulaSnippet = {
   code: {
     python: `# Dynamic pressure + ISA troposphere: ${A}
 import math
-T0, P0, L, g0, R = 288.15, 101325.0, 0.0065, 9.80665, 287.05287
+T0 = 288.15
+P0 = 101325.0
+L = 0.0065
+g0 = 9.80665
+R = 287.05287
 T = T0 - L * h
 p = P0 * (T / T0) ** (g0 / (L * R))
 rho = p / (R * T)
@@ -110,7 +114,11 @@ q = 0.5d0 * rho * v * v
 M = v / a`,
 
     matlab: `% Dynamic pressure + ISA troposphere: ${A}
-T0 = 288.15; P0 = 101325; L = 0.0065; g0 = 9.80665; R = 287.05287;
+T0 = 288.15;
+P0 = 101325;
+L = 0.0065;
+g0 = 9.80665;
+R = 287.05287;
 T = T0 - L * h;
 p = P0 * (T / T0)^(g0 / (L * R));
 rho = p / (R * T);
@@ -119,7 +127,11 @@ q = 0.5 * rho * v^2;
 M = v / a;`,
 
     julia: `# Dynamic pressure + ISA troposphere: ${A}
-T0, P0, L, g0, R = 288.15, 101325.0, 0.0065, 9.80665, 287.05287
+T0 = 288.15
+P0 = 101325.0
+L = 0.0065
+g0 = 9.80665
+R = 287.05287
 T = T0 - L * h
 p = P0 * (T / T0)^(g0 / (L * R))
 rho = p / (R * T)

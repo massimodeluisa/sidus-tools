@@ -13,7 +13,7 @@ export const hallThrusterIspSnippets: FormulaSnippet = {
     cpp: "// Ideal ion exit speed from voltage; SI.\nconst double q = 1.602176634e-19;\nconst double ve = sqrt(2 * q * V / mIon);\nconst double Isp = ve / 9.80665;",
     rust: "// Ideal ion exit speed from voltage; SI.\nlet q = 1.602176634e-19_f64;\nlet ve = (2.0_f64 * q * V / mIon).sqrt();\nlet Isp = ve / 9.80665_f64;",
     zig: "// Ideal ion exit speed from voltage; SI.\nconst q = @as(f64, 1.602176634e-19);\nconst ve = std.math.sqrt(@as(f64, 2.0) * q * V / mIon);\nconst Isp = ve / @as(f64, 9.80665);",
-    fortran: "! Ideal ion exit speed from voltage; SI.\n  q = 1.602176634e-19\n  ve = sqrt(2.0d0 * q * V / mIon)\n  Isp = ve / 9.80665",
+    fortran: "! Ideal ion exit speed from voltage; SI.\n  q = 1.602176634d-19\n  ve = sqrt(2.0d0 * q * V / mIon)\n  Isp = ve / 9.80665d0",
     matlab: "% Ideal ion exit speed from voltage; SI.\nq = 1.602176634e-19\nve = sqrt(2 * q * V / mIon)\nIsp = ve / 9.80665",
     julia: "# Ideal ion exit speed from voltage; SI.\nq = 1.602176634e-19\nve = sqrt(2 * q * V / mIon)\nIsp = ve / 9.80665",
     latex: "% Ideal ion exit speed from voltage; SI.\n\\[v_e=\\sqrt{2qV/m_{\\mathrm{ion}}},\\quad I_{sp}=v_e/g_0\\]",

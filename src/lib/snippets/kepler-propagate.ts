@@ -70,6 +70,9 @@ def kepler_propagate(mu, r0, v0, dt, tol=1e-10, max_iter=50):
 # Example LEO (Earth μ, m, m/s, s):
 r0 = [rx, ry, rz]
 v0 = [vx, vy, vz]
+r0n = np.linalg.norm(r0)
+v0n = np.linalg.norm(v0)
+rdv = rx*vx + ry*vy + rz*vz
 result = kepler_propagate(mu, r0, v0, dt_s)
 r_x = result[0][0]
 r_y = result[0][1]
@@ -117,6 +120,9 @@ function keplerPropagate(mu, r0, v0, dt, tol = 1e-10, maxIter = 50) {
 
 const r0 = [rx, ry, rz]
 const v0 = [vx, vy, vz]
+const r0n = Math.hypot(rx, ry, rz)
+const v0n = Math.hypot(vx, vy, vz)
+const rdv = rx*vx + ry*vy + rz*vz
 const state = keplerPropagate(mu, r0, v0, dt_s)
 const r_x = state.r[0]
 const r_y = state.r[1]
@@ -162,6 +168,9 @@ function keplerPropagate(mu: number, r0: Vec3, v0: Vec3, dt: number) {
 
 const r0 = [rx, ry, rz]
 const v0 = [vx, vy, vz]
+const r0n = Math.hypot(rx, ry, rz)
+const v0n = Math.hypot(vx, vy, vz)
+const rdv = rx*vx + ry*vy + rz*vz
 const state = keplerPropagate(mu, r0, v0, dt_s)
 const r_x = state.r[0]
 const r_y = state.r[1]
@@ -391,7 +400,9 @@ v_z = fd*rz + gd*vz`,
 % both MATLAB and Octave, and this avoids the local-function ordering rule.
 r0 = [rx, ry, rz];
 v0 = [vx, vy, vz];
-r0n = norm(r0); v0n = norm(v0);
+r0n = norm(r0);
+v0n = norm(v0);
+rdv = dot(r0,v0);
 alpha = 2/r0n - dot(v0,v0)/mu;
 chi = sqrt(mu)*abs(alpha)*dt_s;
 for k = 1:50
@@ -426,6 +437,9 @@ r_z = r(3);
 v_x = v(1);
 v_y = v(2);
 v_z = v(3);
+fprintf('r0n = %g\\n', r0n);
+fprintf('v0n = %g\\n', v0n);
+fprintf('rdv = %g\\n', rdv);
 fprintf('r_x = %g\\n', r_x);
 fprintf('r_y = %g\\n', r_y);
 fprintf('r_z = %g\\n', r_z);
@@ -481,6 +495,9 @@ end
 
 r0 = [rx, ry, rz]
 v0 = [vx, vy, vz]
+r0n = hypot(rx, ry, rz)
+v0n = hypot(vx, vy, vz)
+rdv = rx*vx + ry*vy + rz*vz
 result = kepler_propagate(mu, r0, v0, dt_s)
 r_x = result[1][1]
 r_y = result[1][2]

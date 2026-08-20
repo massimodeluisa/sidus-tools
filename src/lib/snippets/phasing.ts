@@ -103,8 +103,8 @@ const double dv_total = 2.0 * (dv1 + dv2);`,
 let r = R + h;
 let n_t = (mu / (r * r * r)).sqrt();
 let t_t = 2.0 * std::f64::consts::PI / n_t;
-let t_c = t_t + phase / (n * n_t);
-let a_c = (mu * t_c * t_c / (4.0 * std::f64::consts::PI * std::f64::consts::PI)).cbrt();
+let tc = t_t + phase / (n * n_t);
+let a_c = (mu * tc * tc / (4.0 * std::f64::consts::PI * std::f64::consts::PI)).cbrt();
 let r1 = r;
 let r2 = a_c;
 let a_h = 0.5 * (r1 + r2);
@@ -156,12 +156,15 @@ n_t = sqrt(mu / r^3);
 T_t = 2*pi / n_t;
 T_c = T_t + phase / (n * n_t);
 a_c = (mu * T_c^2 / (4*pi^2))^(1/3);
-r1 = r; r2 = a_c;
+r1 = r;
+r2 = a_c;
 a_h = 0.5*(r1+r2);
-v1 = sqrt(mu/r1); v2 = sqrt(mu/r2);
+v1 = sqrt(mu/r1);
+v2 = sqrt(mu/r2);
 vp = sqrt(mu*(2/r1 - 1/a_h));
 va = sqrt(mu*(2/r2 - 1/a_h));
-dv1 = abs(vp - v1); dv2 = abs(v2 - va);
+dv1 = abs(vp - v1);
+dv2 = abs(v2 - va);
 dv_total = 2*(dv1 + dv2);`,
 
     julia: `# Phasing orbit: ${A}

@@ -257,6 +257,41 @@ const si = 1`),
     expect(stripped).toContain('function toSi(value, toBase, offset = 0)')
   })
 
+  it('stripTsTypes fully removes an arrow-function parameter type (no `: (x) => T` residue)', () => {
+    const stripped = stripTsTypes('function apply(fn: (x: number) => number, n: number) {}')
+    expect(stripped).toBe('function apply(fn, n) {}')
+    expect(stripped).not.toMatch(/:\s*\(/)
+  })
+
+  it('stripTsTypes removes an object-type array annotation', () => {
+    const stripped = stripTsTypes('const pts: { x: number; y: number }[] = []')
+    expect(stripped).toBe('const pts = []')
+  })
+
+  it('stripTsTypes fully strips plotter\'s real TS body (arrow-fn param + object-array locals)', () => {
+    const body = getSnippets('plotter')!.code.typescript!
+    const stripped = stripTsTypes(body)
+    expect(stripped).not.toMatch(/:\s*\(/)
+    expect(stripped).not.toMatch(/:\s*\{/)
+    expect(stripped).toContain('function sample(fn, xmin, xmax, n = 200)')
+    expect(stripped).toContain('const pts = []')
+    // The stripped body must be valid, executable plain JavaScript.
+    expect(() => new Function('xmin', 'xmax', 'n', stripped)).not.toThrow()
+  })
+
+  it('spherical-distance\'s real C body keeps its own multi-line `x` declaration intact (no SAMPLE x=100 shadowing)', () => {
+    const body = getSnippets('spherical-distance')!.code.c!
+    // `x` deliberately collides with the shared SAMPLE bag's generic `x` free var.
+    const values = { lat1: 0.5, lon1: 0.1, lat2: 0.6, lon2: 0.3, R: 6378137, x: 100 }
+    expect([...freeVarsNeeded(body, 'c')]).not.toContain('x')
+    const rendered = renderLiveCode(body, 'c', values)
+    // The injected preamble must never declare `x` at all: it is body-owned.
+    expect(rendered).not.toMatch(/const double x = 100/)
+    // The body's own two-line declaration survives whole, no orphaned continuation.
+    expect(rendered).toContain('const double x =\n      cos(lat1)')
+    expect(rendered).toContain('const double bearing = atan2(y, x);')
+  })
+
   it('rocket-equation C uses isp (not Isp) and only free live inputs', async () => {
     const { getSnippets } = await import('./index')
     const sn = getSnippets('rocket-equation')!

@@ -47,7 +47,7 @@ const double T = 2.0 * M_PI * std::sqrt(a * a * a / mu);`,
 let mu = 3.986004418e14_f64;
 let r_earth = 6378137.0_f64;
 let a = r_earth + h;
-let t = 2.0 * std::f64::consts::PI * (a * a * a / mu).sqrt();`,
+let T = 2.0 * std::f64::consts::PI * (a * a * a / mu).sqrt();`,
 
     zig: `// SSO / LEO circular period: ${A}
 const mu: f64 = 3.986004418e14;

@@ -73,13 +73,23 @@ def elements_to_rv(a, e, i, raan, argp, nu, mu):
     ])
     return R @ r_w, R @ v_w
 
-elements = rv_to_elements([rx, ry, rz], [vx, vy, vz], mu)
+r = [rx, ry, rz]
+v = [vx, vy, vz]
+rmag = math.sqrt(rx*rx + ry*ry + rz*rz)
+vmag = math.sqrt(vx*vx + vy*vy + vz*vz)
+hx = ry*vz - rz*vy
+hy = rz*vx - rx*vz
+hz = rx*vy - ry*vx
+h = math.sqrt(hx*hx + hy*hy + hz*hz)
+rdv = rx*vx + ry*vy + rz*vz
+elements = rv_to_elements(r, v, mu)
 a = elements['a']
 e = elements['e']
 i = elements['i']
 raan = elements['raan']
 argp = elements['argp']
-nu = elements['nu']`,
+nu = elements['nu']
+energy = elements['energy']`,
 
     javascript: `// RV → classical elements: ${ASSUMPTIONS}
 function rvToElements(r, v, mu) {
@@ -122,6 +132,13 @@ function rvToElements(r, v, mu) {
 
 const r = [rx, ry, rz]
 const v = [vx, vy, vz]
+const rmag = Math.hypot(rx, ry, rz)
+const vmag = Math.hypot(vx, vy, vz)
+const hx = ry*vz - rz*vy
+const hy = rz*vx - rx*vz
+const hz = rx*vy - ry*vx
+const h = Math.hypot(hx, hy, hz)
+const rdv = rx*vx + ry*vy + rz*vz
 const elements = rvToElements(r, v, mu)
 const a = elements.a
 const e = elements.e
@@ -129,6 +146,7 @@ const i = elements.i
 const raan = elements.raan
 const argp = elements.argp
 const nu = elements.nu
+const energy = elements.energy
 
 // Elements → RV (ellipse): p=a(1-e²); r_w = p/(1+e cosν) [cosν, sinν, 0]
 // v_w = √(μ/p) [-sinν, e+cosν, 0]; r = R3(Ω)R1(i)R3(ω) r_w`,
@@ -177,13 +195,21 @@ function rvToElements(r: Vec3, v: Vec3, mu: number) {
 
 const r: Vec3 = [rx, ry, rz]
 const v: Vec3 = [vx, vy, vz]
+const rmag: number = Math.hypot(rx, ry, rz)
+const vmag: number = Math.hypot(vx, vy, vz)
+const hx: number = ry*vz - rz*vy
+const hy: number = rz*vx - rx*vz
+const hz: number = rx*vy - ry*vx
+const h: number = Math.hypot(hx, hy, hz)
+const rdv: number = rx*vx + ry*vy + rz*vz
 const elements = rvToElements(r, v, mu)
 const a: number = elements.a
 const e: number = elements.e
 const i: number = elements.i
 const raan: number = elements.raan
 const argp: number = elements.argp
-const nu: number = elements.nu`,
+const nu: number = elements.nu
+const energy: number = elements.energy`,
 
     c: `/* RV → OE: educational core: ${ASSUMPTIONS}
  * Free vars: mu, rx,ry,rz, vx,vy,vz.
@@ -201,7 +227,30 @@ const double ez = ((vmag*vmag - mu/rmag)*rz - rdv*vz) / mu;
 const double e = sqrt(ex*ex + ey*ey + ez*ez);
 const double energy = vmag*vmag/2.0 - mu/rmag;
 const double a = -mu / (2.0 * energy);
-const double i = acos(fmax(-1.0, fmin(1.0, hz / h)));`,
+const double i = acos(fmax(-1.0, fmin(1.0, hz / h)));
+const double nx = -hy;
+const double ny = hx;
+const double nz = 0.0;
+const double n = sqrt(nx*nx + ny*ny + nz*nz);
+double raan = 0.0;
+if (n > 1e-12) {
+  raan = acos(fmax(-1.0, fmin(1.0, nx / n)));
+  if (ny < 0.0) raan = 2.0 * M_PI - raan;
+}
+double argp = 0.0;
+if (n > 1e-12 && e > 1e-12) {
+  argp = acos(fmax(-1.0, fmin(1.0, (nx*ex + ny*ey + nz*ez) / (n * e))));
+  if (ez < 0.0) argp = 2.0 * M_PI - argp;
+} else if (e > 1e-12) {
+  /* equatorial: longitude of periapsis from e_x, e_y */
+  argp = atan2(ey, ex);
+  if (argp < 0.0) argp += 2.0 * M_PI;
+}
+double nu = 0.0;
+if (e > 1e-12) {
+  nu = acos(fmax(-1.0, fmin(1.0, (ex*rx + ey*ry + ez*rz) / (e * rmag))));
+  if (rdv < 0.0) nu = 2.0 * M_PI - nu;
+}`,
 
     cpp: `// RV → OE: educational core: ${ASSUMPTIONS}
 // Free vars: mu, rx,ry,rz, vx,vy,vz.
@@ -218,7 +267,30 @@ const double ez = ((vmag*vmag - mu/rmag)*rz - rdv*vz) / mu;
 const double e = std::sqrt(ex*ex + ey*ey + ez*ez);
 const double energy = vmag*vmag/2.0 - mu/rmag;
 const double a = -mu / (2.0 * energy);
-const double i = std::acos(std::fmax(-1.0, std::fmin(1.0, hz / h)));`,
+const double i = std::acos(std::fmax(-1.0, std::fmin(1.0, hz / h)));
+const double nx = -hy;
+const double ny = hx;
+const double nz = 0.0;
+const double n = std::sqrt(nx*nx + ny*ny + nz*nz);
+double raan = 0.0;
+if (n > 1e-12) {
+  raan = std::acos(std::fmax(-1.0, std::fmin(1.0, nx / n)));
+  if (ny < 0.0) raan = 2.0 * M_PI - raan;
+}
+double argp = 0.0;
+if (n > 1e-12 && e > 1e-12) {
+  argp = std::acos(std::fmax(-1.0, std::fmin(1.0, (nx*ex + ny*ey + nz*ez) / (n * e))));
+  if (ez < 0.0) argp = 2.0 * M_PI - argp;
+} else if (e > 1e-12) {
+  // equatorial: longitude of periapsis from e_x, e_y
+  argp = std::atan2(ey, ex);
+  if (argp < 0.0) argp += 2.0 * M_PI;
+}
+double nu = 0.0;
+if (e > 1e-12) {
+  nu = std::acos(std::fmax(-1.0, std::fmin(1.0, (ex*rx + ey*ry + ez*rz) / (e * rmag))));
+  if (rdv < 0.0) nu = 2.0 * M_PI - nu;
+}`,
 
     rust: `// RV → OE: educational core: ${ASSUMPTIONS}
 // Free vars: mu, rx,ry,rz, vx,vy,vz.
@@ -235,7 +307,30 @@ let ez = ((vmag*vmag - mu/rmag)*rz - rdv*vz) / mu;
 let e = (ex*ex + ey*ey + ez*ez).sqrt();
 let energy = vmag*vmag/2.0 - mu/rmag;
 let a = -mu / (2.0 * energy);
-let i = (hz / h).clamp(-1.0, 1.0).acos();`,
+let i = (hz / h).clamp(-1.0, 1.0).acos();
+let nx = -hy;
+let ny = hx;
+let nz = 0.0_f64;
+let n = (nx*nx + ny*ny + nz*nz).sqrt();
+let mut raan = 0.0_f64;
+if n > 1e-12 {
+    raan = (nx / n).clamp(-1.0, 1.0).acos();
+    if ny < 0.0 { raan = 2.0 * std::f64::consts::PI - raan; }
+}
+let mut argp = 0.0_f64;
+if n > 1e-12 && e > 1e-12 {
+    argp = ((nx*ex + ny*ey + nz*ez) / (n * e)).clamp(-1.0, 1.0).acos();
+    if ez < 0.0 { argp = 2.0 * std::f64::consts::PI - argp; }
+} else if e > 1e-12 {
+    // equatorial: longitude of periapsis from e_x, e_y
+    argp = ey.atan2(ex);
+    if argp < 0.0 { argp += 2.0 * std::f64::consts::PI; }
+}
+let mut nu = 0.0_f64;
+if e > 1e-12 {
+    nu = ((ex*rx + ey*ry + ez*rz) / (e * rmag)).clamp(-1.0, 1.0).acos();
+    if rdv < 0.0 { nu = 2.0 * std::f64::consts::PI - nu; }
+}`,
 
     zig: `// RV → OE: educational core: ${ASSUMPTIONS}
 // Free vars: mu, rx,ry,rz, vx,vy,vz.
@@ -253,7 +348,33 @@ const e = std.math.sqrt(ex*ex + ey*ey + ez*ez);
 const energy = vmag*vmag/2.0 - mu/rmag;
 const a = -mu / (2.0 * energy);
 const cos_i = @max(-1.0, @min(1.0, hz / h));
-const i = std.math.acos(cos_i);`,
+const i = std.math.acos(cos_i);
+const nx = -hy;
+const ny = hx;
+const nz: f64 = 0.0;
+const n = std.math.sqrt(nx*nx + ny*ny + nz*nz);
+var raan: f64 = 0.0;
+if (n > 1e-12) {
+    const cos_raan = @max(-1.0, @min(1.0, nx / n));
+    raan = std.math.acos(cos_raan);
+    if (ny < 0.0) raan = 2.0 * std.math.pi - raan;
+}
+var argp: f64 = 0.0;
+if (n > 1e-12 and e > 1e-12) {
+    const cos_argp = @max(-1.0, @min(1.0, (nx*ex + ny*ey + nz*ez) / (n * e)));
+    argp = std.math.acos(cos_argp);
+    if (ez < 0.0) argp = 2.0 * std.math.pi - argp;
+} else if (e > 1e-12) {
+    // equatorial: longitude of periapsis from e_x, e_y
+    argp = std.math.atan2(ey, ex);
+    if (argp < 0.0) argp += 2.0 * std.math.pi;
+}
+var nu: f64 = 0.0;
+if (e > 1e-12) {
+    const cos_nu = @max(-1.0, @min(1.0, (ex*rx + ey*ry + ez*rz) / (e * rmag)));
+    nu = std.math.acos(cos_nu);
+    if (rdv < 0.0) nu = 2.0 * std.math.pi - nu;
+}`,
 
     fortran: `! RV → OE: educational core: ${ASSUMPTIONS}
 ! Free vars: mu, rx,ry,rz, vx,vy,vz.
@@ -270,17 +391,48 @@ ez = ((vmag*vmag - mu/rmag)*rz - rdv*vz) / mu
 e = sqrt(ex*ex + ey*ey + ez*ez)
 energy = vmag*vmag/2.0d0 - mu/rmag
 a = -mu / (2.0d0 * energy)
-i = acos(max(-1.0d0, min(1.0d0, hz / h)))`,
+i = acos(max(-1.0d0, min(1.0d0, hz / h)))
+nx = -hy
+ny = hx
+nz = 0.0d0
+n = sqrt(nx*nx + ny*ny + nz*nz)
+raan = 0.0d0
+if (n > 1.0d-12) then
+  raan = acos(max(-1.0d0, min(1.0d0, nx / n)))
+  if (ny < 0.0d0) raan = 2.0d0 * acos(-1.0d0) - raan
+end if
+argp = 0.0d0
+if (n > 1.0d-12 .and. e > 1.0d-12) then
+  argp = acos(max(-1.0d0, min(1.0d0, (nx*ex + ny*ey + nz*ez) / (n * e))))
+  if (ez < 0.0d0) argp = 2.0d0 * acos(-1.0d0) - argp
+else if (e > 1.0d-12) then
+  argp = atan2(ey, ex)
+  if (argp < 0.0d0) argp = argp + 2.0d0 * acos(-1.0d0)
+end if
+nu = 0.0d0
+if (e > 1.0d-12) then
+  nu = acos(max(-1.0d0, min(1.0d0, (ex*rx + ey*ry + ez*rz) / (e * rmag))))
+  if (rdv < 0.0d0) nu = 2.0d0 * acos(-1.0d0) - nu
+end if`,
 
     matlab: `% RV → elements: ${ASSUMPTIONS}
 r = [rx ry rz];
 v = [vx vy vz];
-hvec = cross(r,v); h = norm(hvec);
-nvec = cross([0 0 1], hvec); n = norm(nvec);
-evec = ((dot(v,v)-mu/norm(r))*r - dot(r,v)*v)/mu;
-e = norm(evec); energy = dot(v,v)/2 - mu/norm(r);
+rmag = norm(r);
+vmag = norm(v);
+hvec = cross(r,v);
+h = norm(hvec);
+hx = hvec(1);
+hy = hvec(2);
+hz = hvec(3);
+nvec = cross([0 0 1], hvec);
+n = norm(nvec);
+rdv = dot(r,v);
+evec = ((dot(v,v)-mu/rmag)*r - rdv*v)/mu;
+e = norm(evec);
+energy = dot(v,v)/2 - mu/rmag;
 a = -mu/(2*energy);
-i = acos(max(-1, min(1, hvec(3)/h)));
+i = acos(max(-1, min(1, hz/h)));
 if n > 1e-12
   raan = acos(max(-1, min(1, nvec(1)/n)));
   if nvec(2) < 0, raan = 2*pi - raan; end
@@ -298,7 +450,7 @@ else
   argp = 0;
 end
 if e > 1e-12
-  nu = acos(max(-1, min(1, dot(evec,r)/(e*norm(r)))));
+  nu = acos(max(-1, min(1, dot(evec,r)/(e*rmag))));
   if dot(r,v) < 0, nu = 2*pi - nu; end
 else
   nu = 0;
@@ -348,13 +500,21 @@ end
 
 r = [rx, ry, rz]
 v = [vx, vy, vz]
+rmag = hypot(rx, ry, rz)
+vmag = hypot(vx, vy, vz)
+hx = ry*vz - rz*vy
+hy = rz*vx - rx*vz
+hz = rx*vy - ry*vx
+h = hypot(hx, hy, hz)
+rdv = rx*vx + ry*vy + rz*vz
 elements = rv_to_elements(r, v, mu)
 a = elements.a
 e = elements.e
 i = elements.i
 raan = elements.raan
 argp = elements.argp
-nu = elements.nu`,
+nu = elements.nu
+energy = elements.energy`,
 
     latex: `% Classical elements from state
 \\[

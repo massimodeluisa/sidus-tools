@@ -1020,6 +1020,22 @@ export function extractAssignedNames(code: string, lang?: CodeLang): string[] {
           t,
         )
       ) {
+        // C-family declaration split across lines: `const double x =` with the
+        // RHS starting on a following line. The `.+` requirement below needs
+        // content after `=` on the SAME line, so a bare trailing `=` never
+        // matches there and the name is missed as "body-assigned" — freeVarsNeeded
+        // then wrongly treats it as a free var to inject, and the injected value
+        // shadows the body's own (still-intact) multi-line computation downstream.
+        // Narrowly scoped to the C-typed prefix: only C/C++ ever renders this
+        // wrapped-declaration shape (see spherical-distance's C/C++ bodies).
+        const cFamilyBareDecl = t.match(
+          /^(?:(?:const|static|volatile)\s+)*(?:double|float|int|long|auto|bool|size_t|char\s*\*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*$/,
+        )
+        if (cFamilyBareDecl) {
+          addName(cFamilyBareDecl[1]!)
+          updateDepths(line)
+          continue
+        }
         // Skip C/C++/Zig function signatures with default args:
         //   double to_si(..., double offset = 0.0) {
         //   (assignment `=` is inside parens → topLevelAssignEq = -1)
@@ -1270,6 +1286,7 @@ function wrapCFamily(
   const bodyLines = skipRedeclaredAssigns(
     inner.split('\n').filter((l) => !l.trim().startsWith('#include')),
     bound,
+    true,
   )
 
   // Prefer prints from top-level assigns in the main body only
@@ -1336,25 +1353,50 @@ function inputBoundNames(inputs: string[]): Set<string> {
   return s
 }
 
-/** Drop formula lines that redeclare a live input (prevents Zig/Rust redecl). */
-function skipRedeclaredAssigns(lines: string[], bound: Set<string>): string[] {
-  return lines.filter((line) => {
+/**
+ * Drop formula lines that redeclare a live input (prevents Zig/Rust redecl).
+ *
+ * `multiLineStatements` (C-family only, default off so Rust/Zig callers keep
+ * today's exact per-line filter behavior): a matched C-typed declaration whose
+ * own line has no terminating `;` also consumes every following line up to and
+ * including the one that does. Without this, a wrapped declaration split across
+ * lines (`const double x =\n    <expr>;`) only has its first line dropped: the
+ * continuation survives as an orphaned expression statement with no effect, and
+ * the SAMPLE-injected `x` silently wins downstream (see the spherical-distance
+ * C repro in liveValues.test.ts).
+ */
+function skipRedeclaredAssigns(
+  lines: string[],
+  bound: Set<string>,
+  multiLineStatements = false,
+): string[] {
+  const out: string[] = []
+  let skipUntilSemicolon = false
+  for (const line of lines) {
+    if (skipUntilSemicolon) {
+      if (line.includes(';')) skipUntilSemicolon = false
+      continue
+    }
     const t = line.trim()
     // C/C++ typed: const double x = …
     const cType = t.match(
       /^(?:(?:const|static|volatile)\s+)*(?:double|float|int|long|auto|bool|size_t|char\s*\*)\s+([A-Za-z_][\w$]*)\s*=/,
     )
-    if (cType && bound.has(cType[1]!)) return false
+    if (cType && bound.has(cType[1]!)) {
+      if (multiLineStatements && !t.includes(';')) skipUntilSemicolon = true
+      continue
+    }
     // let/const/var name …
     const m = t.match(
       /^(?:let\s+(?:mut\s+)?|const\s+|var\s+)([A-Za-z_][\w$]*)\b/,
     )
-    if (m && bound.has(m[1]!)) return false
+    if (m && bound.has(m[1]!)) continue
     // bare name =
     const bare = t.match(/^([A-Za-z_][\w$]*)\s*=/)
-    if (bare && bound.has(bare[1]!)) return false
-    return true
-  })
+    if (bare && bound.has(bare[1]!)) continue
+    out.push(line)
+  }
+  return out
 }
 
 function wrapRust(body: string, inputs: string[], prints: string[]): string {
@@ -2021,6 +2063,20 @@ export function stripTsTypes(code: string): string {
   s = s.replace(/\binterface\s+[A-Za-z_$][\w$]*\s*\{[^}]*\}\s*/g, '')
   // Return types: `): Type {` / `): Type =>`
   s = s.replace(/\)\s*:\s*[A-Za-z_$][\w$<>[\]|&.]*(?=\s*[{=])/g, ')')
+  // Arrow-function-typed params/locals: `name: (p: T1) => T2` -> `name`. Must run
+  // before the generic identifier-type rule below: that rule's type class starts
+  // with a letter and can never match a `(...)=>...` type, so on its own it only
+  // strips the nested `p: T1` and leaves `name: (p) => T2` behind.
+  s = s.replace(
+    /([,\(\s])([A-Za-z_$][\w$]*)\s*:\s*\([^()]*\)\s*=>\s*[A-Za-z_$][\w$<>[\]|&.]*(?=\s*[=,)])/g,
+    '$1$2',
+  )
+  // Object-type (optionally array) annotations: `name: { a: T; b: U }[]` -> `name`.
+  // Single-level braces only (no nested object types in these snippet fragments).
+  s = s.replace(
+    /([,\(\s])([A-Za-z_$][\w$]*)\s*:\s*\{[^{}]*\}(\s*\[\s*\])?(?=\s*[=,)])/g,
+    '$1$2',
+  )
   // Parameter / variable types: `name: Type` before `=`, `,`, `)`
   // Type class must NOT include `,` or whitespace: those terminate the type.
   s = s.replace(

@@ -113,7 +113,8 @@ const tof: number = Math.PI * Math.sqrt(a1 ** 3 / mu) + Math.PI * Math.sqrt(a2 *
 r1 = R + h1;
 r2 = R + h2;
 rb = R + hb;
-a1 = (r1+rb)/2; a2 = (r2+rb)/2;
+a1 = (r1+rb)/2;
+a2 = (r2+rb)/2;
 dv1 = abs(sqrt(mu*(2/r1-1/a1)) - sqrt(mu/r1));
 dv2 = abs(sqrt(mu*(2/rb-1/a2)) - sqrt(mu*(2/rb-1/a1)));
 dv3 = abs(sqrt(mu/r2) - sqrt(mu*(2/r2-1/a2)));

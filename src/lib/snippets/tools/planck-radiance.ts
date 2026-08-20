@@ -7,7 +7,7 @@ export const planckRadianceSnippets: FormulaSnippet = {
   assumptions: A,
   code: {
     python:
-      "# B_lam = 2 h c^2 / lam^5 / (exp(h c / (lam k T)) - 1); SI.\nimport math\nh = 6.62607015e-34\nkB = 1.380649e-23\nc = 299792458.0\nx = h * c / (lam * kB * T)\nB = (2.0 * h * c**2 / lam**5) / (math.exp(x) - 1.0)",
+      "# B_lam = 2 h c^2 / lam^5 / (exp(h c / (lam k T)) - 1); SI.\nimport math\nh = 6.62607015e-34\nkB = 1.380649e-23\nc = 299792458.0\nx = h * c / (lam * kB * T)\nif x > 700:\n    B = 0.0\nelse:\n    B = (2.0 * h * c**2 / lam**5) / (math.exp(x) - 1.0)",
     javascript:
       "// B_lam = 2 h c^2 / lam^5 / (exp(h c / (lam k T)) - 1); SI.\nconst h = 6.62607015e-34\nconst kB = 1.380649e-23\nconst c = 299792458.0\nconst x = h * c / (lam * kB * T)\nconst B = (2.0 * h * c**2 / lam**5) / (Math.exp(x) - 1.0)",
     typescript:

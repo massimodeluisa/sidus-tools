@@ -13,7 +13,7 @@ export const diffractionLimitSnippets: FormulaSnippet = {
     cpp: "// theta ≈ 1.22 lambda/D; SI.\nconst double theta = 1.22 * lam / D;",
     rust: "// theta ≈ 1.22 lambda/D; SI.\nlet theta = 1.22_f64 * lam / D;",
     zig: "// theta ≈ 1.22 lambda/D; SI.\nconst theta = @as(f64, 1.22) * lam / D;",
-    fortran: "! theta ≈ 1.22 lambda/D; SI.\n  theta = 1.22 * lam / D",
+    fortran: "! theta ≈ 1.22 lambda/D; SI.\n  theta = 1.22d0 * lam / D",
     matlab: "% theta ≈ 1.22 lambda/D; SI.\ntheta = 1.22 * lam / D",
     julia: "# theta ≈ 1.22 lambda/D; SI.\ntheta = 1.22 * lam / D",
     latex: "% theta ≈ 1.22 lambda/D; SI.\n\\[\\theta\\approx 1.22\\lambda/D\\]",

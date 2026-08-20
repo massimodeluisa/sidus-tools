@@ -24,10 +24,13 @@ def j2_rates(mu, a, e, i, R=6378137.0, J2=J2):
     T_raan_s = 2*math.pi / abs(dOmega) if abs(dOmega) > 1e-18 else None
     return dOmega, domega, dOmega_deg_day, domega_deg_day, T_raan_s
 
-# Free-var form (SI):
-# p = a * (1 - e*e); n = math.sqrt(mu / a**3); k = (R / p)**2
-# dOmega = -1.5 * n * J2 * k * math.cos(i)
-# domega = 0.75 * n * J2 * k * (5*math.cos(i)**2 - 1)`,
+n = math.sqrt(mu / a**3)
+j2_result = j2_rates(mu, a, e, i, R)
+dOmega = j2_result[0]
+domega = j2_result[1]
+dOmega_deg_day = j2_result[2]
+domega_deg_day = j2_result[3]
+T_raan_s = j2_result[4]`,
 
     javascript: `// J2 secular rates: ${ASSUMPTIONS}
 const J2 = 1.08262668e-3
@@ -41,7 +44,14 @@ function j2Rates(mu, a, e, i, R = 6378137, j2 = J2) {
   const domegaDegDay = (domega * 180/Math.PI) * 86400
   const T_raan = Math.abs(dOmega) > 1e-18 ? (2*Math.PI)/Math.abs(dOmega) : null
   return { dOmega, domega, dOmegaDegDay, domegaDegDay, T_raan }
-}`,
+}
+
+const n = Math.sqrt(mu / a**3)
+const j2Result = j2Rates(mu, a, e, i, R)
+const dOmega = j2Result.dOmega
+const domega = j2Result.domega
+const dOmega_deg_day = j2Result.dOmegaDegDay
+const domega_deg_day = j2Result.domegaDegDay`,
 
     typescript: `// J2 secular rates: ${ASSUMPTIONS}
 const J2 = 1.08262668e-3
@@ -57,7 +67,14 @@ function j2Rates(mu: number, a: number, e: number, i: number, R = 6378137) {
     dOmegaDegDay: (dOmega * 180/Math.PI) * 86400,
     domegaDegDay: (domega * 180/Math.PI) * 86400,
   }
-}`,
+}
+
+const n: number = Math.sqrt(mu / a**3)
+const j2Result = j2Rates(mu, a, e, i, R)
+const dOmega: number = j2Result.dOmega
+const domega: number = j2Result.domega
+const dOmega_deg_day: number = j2Result.dOmegaDegDay
+const domega_deg_day: number = j2Result.domegaDegDay`,
 
     c: `/* J2 secular rates: ${ASSUMPTIONS} */
 const double J2 = 1.08262668e-3;
