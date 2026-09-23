@@ -371,3 +371,52 @@ describe('snippet verification scenarios', () => {
     })
   }
 })
+
+describe('dynamic-pressure independent USSA 1976 anchors', () => {
+  const reference = EXPECTED['dynamic-pressure']!
+
+  it('preserves the sea-level reference state', () => {
+    const out = reference({ h: 0, v: 300 })
+    expect(out.T).toBeCloseTo(288.15, 10)
+    expect(out.p).toBeCloseTo(101_325, 8)
+    expect(out.rho).toBeCloseTo(1.225, 7)
+    expect(out.q).toBeCloseTo(55_125, 2)
+  })
+
+  it('is continuous at the geopotential 11 km and 20 km layer boundaries', () => {
+    const h11 = 11_019.06815051547
+    const at11 = reference({ h: h11, v: 300 })
+    expect(at11.T).toBeCloseTo(216.65, 5)
+    expect(at11.p).toBeCloseTo(22_632.040095, 3)
+
+    const h20 = 20_063.12473763781
+    const at20 = reference({ h: h20, v: 300 })
+    expect(at20.T).toBeCloseTo(216.65, 5)
+    expect(at20.p).toBeCloseTo(5_474.877424, 3)
+  })
+
+  it('matches the geometric 20 km isothermal-layer reference', () => {
+    const out = reference({ h: 20_000, v: 300 })
+    expect(out.T).toBeCloseTo(216.65, 8)
+    expect(out.p).toBeCloseTo(5_529.30148278, 5)
+    expect(out.rho).toBeCloseTo(0.0889098102871, 10)
+    expect(out.q).toBeCloseTo(4_000.94146292, 6)
+  })
+
+  it('matches the geometric 32 km upper-limit stratosphere reference', () => {
+    const out = reference({ h: 32_000, v: 300 })
+    expect(out.T).toBeCloseTo(228.489715997, 8)
+    expect(out.p).toBeCloseTo(889.061807060, 6)
+    expect(out.rho).toBeCloseTo(0.0135551211255, 12)
+    expect(out.q).toBeCloseTo(609.980450648, 8)
+  })
+
+  it('keeps the upper-layer cases in the cross-language scenario bag', () => {
+    const names = scenariosFor('dynamic-pressure').map((scenario) => scenario.name)
+    expect(names).toContain('sea-level')
+    expect(names).toContain('geopotential-11-km-layer-boundary')
+    expect(names).toContain('geometric-20-km-tropopause-layer')
+    expect(names).toContain('geopotential-20-km-layer-boundary')
+    expect(names).toContain('geometric-32-km-page-limit')
+  })
+})

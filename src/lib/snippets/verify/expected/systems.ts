@@ -1,15 +1,11 @@
 /**
  * Expected numeric results for spacecraft/vehicle-systems pilot tools (propulsion,
- * thermal, ECLSS, aero, attitude), sourced from shipped physics.
+ * thermal, ECLSS, aero, attitude), usually sourced from shipped physics. The
+ * dynamic-pressure export uses a separate USSA 1976 reference implementation.
  * See expected/index.ts for the verification chain this module feeds.
  */
 import {
   G0,
-  ISA_G0,
-  ISA_L,
-  ISA_P0,
-  ISA_R_AIR,
-  ISA_T0,
   METABOLIC_RATES,
   SUTTON_GRAVES_K_EARTH,
   blowdownPressureIsentropic,
@@ -19,7 +15,6 @@ import {
   coldGasThrust,
   densityImpulse,
   deltaVBudget,
-  dynamicPressure,
   edelbaumDv,
   equalStageMassRatio,
   euler321ToQuat,
@@ -33,12 +28,10 @@ import {
   impulseBit,
   ionThrusterEfficiency,
   lowThrustEscapeSpiral,
-  isaAtmosphere,
   isentropicExitVelocity,
   isentropicNozzle,
   ispFromExitVelocity,
   ispFromVe,
-  machNumber,
   metabolicBudget,
   mixtureRatio,
   multiStageDeltaV,
@@ -57,6 +50,36 @@ import {
   totalMassFlow,
 } from '../../../physics'
 import { num, put, type ExpectedFn } from './shared'
+
+/** Independent USSA 1976 check equation, using the NASA Appendix A radius. */
+function ussa1976AtGeometricAltitude(h: number) {
+  const T0 = 288.15
+  const P0 = 101325.0
+  const L = 0.0065
+  const g0 = 9.80665
+  const R = 287.05287
+  const gamma = 1.4
+  const RE = 6_356_660.0
+  const H = (h * RE) / (RE + h)
+  const T11 = T0 - L * 11_000
+  const p11 = P0 * (T11 / T0) ** (g0 / (L * R))
+  const p20 = p11 * Math.exp((-g0 * 9_000) / (R * T11))
+  let T: number
+  let p: number
+  if (H <= 11_000) {
+    T = T0 - L * H
+    p = P0 * (T / T0) ** (g0 / (L * R))
+  } else if (H <= 20_000) {
+    T = T11
+    p = p11 * Math.exp((-g0 * (H - 11_000)) / (R * T11))
+  } else {
+    T = 216.65 + 0.001 * (H - 20_000)
+    p = p20 * (T / 216.65) ** (-g0 / (0.001 * R))
+  }
+  const rho = p / (R * T)
+  const a = Math.sqrt(gamma * R * T)
+  return { T, p, rho, a }
+}
 
 export const SYSTEMS_EXPECTED: Record<string, ExpectedFn> = {
   'rocket-equation': (bag) => {
@@ -98,20 +121,21 @@ export const SYSTEMS_EXPECTED: Record<string, ExpectedFn> = {
 
   'dynamic-pressure': (bag) => {
     const v = num(bag, 'v')
-    const isa = isaAtmosphere(num(bag, 'h', 'h_m'))
+    const h = num(bag, 'h', 'h_m')
     const out: Record<string, number> = {}
-    put(out, ['T0', 't0'], ISA_T0)
-    put(out, ['P0', 'p0'], ISA_P0)
-    put(out, ['L', 'lapse'], ISA_L)
-    put(out, ['g0'], ISA_G0)
-    put(out, ['R', 'Rair', 'r_air'], ISA_R_AIR)
-    if (!isa) return out
-    put(out, ['T', 't'], isa.T)
-    put(out, ['p'], isa.p)
-    put(out, ['rho'], isa.rho)
-    put(out, ['a'], isa.a)
-    put(out, ['q'], dynamicPressure(isa.rho, v))
-    put(out, ['M', 'm'], machNumber(v, isa.a))
+    put(out, ['T0', 't0'], 288.15)
+    put(out, ['P0', 'p0'], 101325.0)
+    put(out, ['L', 'lapse'], 0.0065)
+    put(out, ['g0'], 9.80665)
+    put(out, ['R', 'Rair', 'r_air'], 287.05287)
+    if (!Number.isFinite(h) || h < 0 || h > 32_000) return out
+    const isa = ussa1976AtGeometricAltitude(h)
+    put(out, ['isa_temperature_k', 'T', 't'], isa.T)
+    put(out, ['isa_pressure_pa', 'p'], isa.p)
+    put(out, ['air_density_kg_m3', 'rho'], isa.rho)
+    put(out, ['speed_of_sound_m_s', 'a'], isa.a)
+    put(out, ['dynamic_pressure_pa', 'q'], 0.5 * isa.rho * v * v)
+    put(out, ['mach_number', 'M', 'm'], v / isa.a)
     return out
   },
 

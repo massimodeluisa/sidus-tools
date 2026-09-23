@@ -62,6 +62,11 @@ export const SYSTEMS_SCENARIOS: Record<string, Scenario[]> = {
 
   'dynamic-pressure': [
     {
+      name: 'sea-level',
+      source: 'U.S. Standard Atmosphere 1976 sea-level reference state',
+      bag: { h: 0, v: 300 },
+    },
+    {
       name: 'commercial-cruise',
       source: 'commercial-jet-class cruise (~9 km, ~Mach 0.85 ≈ 250 m/s), within troposphere validity',
       bag: { h: 9000, v: 250 },
@@ -75,6 +80,26 @@ export const SYSTEMS_SCENARIOS: Record<string, Scenario[]> = {
       name: 'synthetic',
       source: 'adversarial synthetic: distinct non-round h/v, within 0-11 km troposphere validity',
       bag: { h: 6234.7, v: 312.9 },
+    },
+    {
+      name: 'geopotential-11-km-layer-boundary',
+      source: 'geometric height corresponding to the USSA geopotential 11 km layer boundary',
+      bag: { h: 11_019.06815051547, v: 300 },
+    },
+    {
+      name: 'geometric-20-km-tropopause-layer',
+      source: 'U.S. Standard Atmosphere 1976 at geometric 20 km (geopotential H≈19.937 km), isothermal layer',
+      bag: { h: 20_000, v: 300 },
+    },
+    {
+      name: 'geopotential-20-km-layer-boundary',
+      source: 'geometric height corresponding to the USSA geopotential 20 km layer boundary',
+      bag: { h: 20_063.12473763781, v: 300 },
+    },
+    {
+      name: 'geometric-32-km-page-limit',
+      source: 'U.S. Standard Atmosphere 1976 at the calculator upper geometric-altitude limit',
+      bag: { h: 32_000, v: 300 },
     },
   ],
 
