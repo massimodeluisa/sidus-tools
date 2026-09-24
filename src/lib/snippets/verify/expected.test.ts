@@ -355,6 +355,29 @@ describe('snippet verification expected values', () => {
     expect(fixed.az).toBeGreaterThanOrEqual(0)
     expect(fixed.az).toBeLessThan(2 * Math.PI)
   })
+
+  it('matches analytic north/east/south/west vectors at an equatorial WGS-84 observer', () => {
+    const cases = [
+      { name: 'north', sat_x: 6_379_137, sat_y: 0, sat_z: 1000, az: 0 },
+      { name: 'east', sat_x: 6_379_137, sat_y: 1000, sat_z: 0, az: Math.PI / 2 },
+      { name: 'south', sat_x: 6_379_137, sat_y: 0, sat_z: -1000, az: Math.PI },
+      { name: 'west', sat_x: 6_379_137, sat_y: -1000, sat_z: 0, az: (3 * Math.PI) / 2 },
+    ]
+
+    for (const c of cases) {
+      const got = EXPECTED['look-angles']({
+        sat_x: c.sat_x,
+        sat_y: c.sat_y,
+        sat_z: c.sat_z,
+        lat: 0,
+        lon: 0,
+        h_m: 0,
+      })
+      expect(got.range_m, c.name).toBeCloseTo(Math.sqrt(2_000_000), 9)
+      expect(got.el, c.name).toBeCloseTo(Math.PI / 4, 14)
+      expect(got.az, c.name).toBeCloseTo(c.az, 14)
+    }
+  })
 })
 
 /**

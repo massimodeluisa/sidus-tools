@@ -55,7 +55,7 @@ function lookAnglesExpected(bag: Record<string, number | string>): Record<string
     [num(bag, 'sat_x'), num(bag, 'sat_y'), num(bag, 'sat_z')],
   )
   const rangeM = Math.hypot(sez.southM, sez.eastM, sez.zenithM)
-  const elevation = Math.asin(sez.zenithM / rangeM)
+  const elevation = Math.atan2(sez.zenithM, Math.hypot(sez.southM, sez.eastM))
   const azimuthRaw = Math.atan2(sez.eastM, -sez.southM)
   const azimuth = azimuthRaw < 0 ? azimuthRaw + 2 * Math.PI : azimuthRaw
   const out: Record<string, number> = {}

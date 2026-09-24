@@ -1,7 +1,7 @@
 import type { FormulaSnippet } from './types'
 
 const ASSUMPTIONS =
-  'Observer WGS-84 geodetic latitude and longitude in radians, height in metres; satellite ECEF at the selected UTC in metres. Outputs: azimuth from 0 inclusive to 2*pi exclusive in radians, elevation in radians, range in metres. Azimuth is undefined at exact zenith; the observer and satellite positions must differ.'
+  'Observer WGS-84 geodetic latitude between -pi/2 and pi/2 radians inclusive, longitude in radians, and height above the WGS-84 ellipsoid in metres; satellite ECEF at the selected UTC in metres. Inputs must be finite and observer/satellite positions must differ. Outputs: azimuth from zero inclusive to 2*pi exclusive, elevation between -pi/2 and pi/2 radians, and range in metres. Azimuth is mathematically undefined at exact zenith; atan2 still returns a conventional numeric value there.'
 
 /** Pure WGS-84 ECEF-to-SEZ educational exports in a common SI contract. */
 export const lookAnglesSnippets: FormulaSnippet = {
@@ -23,7 +23,8 @@ const south = Math.sin(lat) * Math.cos(lon) * rho_x + Math.sin(lat) * Math.sin(l
 const east = -Math.sin(lon) * rho_x + Math.cos(lon) * rho_y
 const zenith = Math.cos(lat) * Math.cos(lon) * rho_x + Math.cos(lat) * Math.sin(lon) * rho_y + Math.sin(lat) * rho_z
 const range_m = Math.hypot(south, east, zenith)
-const el = Math.asin(zenith / range_m)
+const horizontal_m = Math.hypot(south, east)
+const el = Math.atan2(zenith, horizontal_m)
 const azRaw = Math.atan2(east, -south)
 const az = azRaw < 0 ? azRaw + 2 * Math.PI : azRaw`,
 
@@ -42,7 +43,8 @@ const south = Math.sin(lat) * Math.cos(lon) * rho_x + Math.sin(lat) * Math.sin(l
 const east = -Math.sin(lon) * rho_x + Math.cos(lon) * rho_y
 const zenith = Math.cos(lat) * Math.cos(lon) * rho_x + Math.cos(lat) * Math.sin(lon) * rho_y + Math.sin(lat) * rho_z
 const range_m = Math.hypot(south, east, zenith)
-const el = Math.asin(zenith / range_m)
+const horizontal_m = Math.hypot(south, east)
+const el = Math.atan2(zenith, horizontal_m)
 const azRaw = Math.atan2(east, -south)
 const az = azRaw < 0 ? azRaw + 2 * Math.PI : azRaw`,
 
@@ -68,7 +70,8 @@ south = sL * cO * rho_x + sL * sO * rho_y - cL * rho_z
 east = -sO * rho_x + cO * rho_y
 zenith = cL * cO * rho_x + cL * sO * rho_y + sL * rho_z
 range_m = math.sqrt(south ** 2 + east ** 2 + zenith ** 2)
-el = math.asin(zenith / range_m)
+horizontal_m = math.hypot(south, east)
+el = math.atan2(zenith, horizontal_m)
 az = math.atan2(east, -south) % (2 * math.pi)  # from north, clockwise; [0, 2*pi)`,
 
     c: `/* Look angles (topocentric SEZ): pure SI educational */
@@ -91,7 +94,8 @@ const double south = sL * cO * rho_x + sL * sO * rho_y - cL * rho_z;
 const double east = -sO * rho_x + cO * rho_y;
 const double zenith = cL * cO * rho_x + cL * sO * rho_y + sL * rho_z;
 const double range_m = sqrt(south * south + east * east + zenith * zenith);
-const double el = asin(zenith / range_m);
+const double horizontal_m = hypot(south, east);
+const double el = atan2(zenith, horizontal_m);
 const double az_raw = atan2(east, -south);
 const double az = az_raw < 0.0 ? az_raw + 2.0 * acos(-1.0) : az_raw;`,
 
@@ -115,7 +119,8 @@ const double south = sL * cO * rho_x + sL * sO * rho_y - cL * rho_z;
 const double east = -sO * rho_x + cO * rho_y;
 const double zenith = cL * cO * rho_x + cL * sO * rho_y + sL * rho_z;
 const double range_m = std::sqrt(south * south + east * east + zenith * zenith);
-const double el = std::asin(zenith / range_m);
+const double horizontal_m = std::hypot(south, east);
+const double el = std::atan2(zenith, horizontal_m);
 const double az_raw = std::atan2(east, -south);
 const double az = az_raw < 0.0 ? az_raw + 2.0 * std::acos(-1.0) : az_raw;`,
 
@@ -139,7 +144,8 @@ let south = s_l * c_o * rho_x + s_l * s_o * rho_y - c_l * rho_z;
 let east = -s_o * rho_x + c_o * rho_y;
 let zenith = c_l * c_o * rho_x + c_l * s_o * rho_y + s_l * rho_z;
 let range_m = south.hypot(east).hypot(zenith);
-let el = (zenith / range_m).asin();
+let horizontal_m = south.hypot(east);
+let el = zenith.atan2(horizontal_m);
 let az_raw = east.atan2(-south);
 let az = if az_raw < 0.0 { az_raw + 2.0 * std::f64::consts::PI } else { az_raw };`,
 
@@ -163,7 +169,8 @@ const south = sL * cO * rho_x + sL * sO * rho_y - cL * rho_z;
 const east = -sO * rho_x + cO * rho_y;
 const zenith = cL * cO * rho_x + cL * sO * rho_y + sL * rho_z;
 const range_m = std.math.sqrt(south * south + east * east + zenith * zenith);
-const el = std.math.asin(zenith / range_m);
+const horizontal_m = std.math.sqrt(south * south + east * east);
+const el = std.math.atan2(zenith, horizontal_m);
 const az_raw = std.math.atan2(east, -south);
 const az = if (az_raw < 0.0) az_raw + 2.0 * std.math.pi else az_raw;`,
 
@@ -187,7 +194,8 @@ south = sL * cO * rho_x + sL * sO * rho_y - cL * rho_z
 east = -sO * rho_x + cO * rho_y
 zenith = cL * cO * rho_x + cL * sO * rho_y + sL * rho_z
 range_m = sqrt(south**2 + east**2 + zenith**2)
-el = asin(zenith / range_m)
+horizontal_m = sqrt(south**2 + east**2)
+el = atan2(zenith, horizontal_m)
 az = atan2(east, -south)
 if (az < 0.0d0) az = az + 2.0d0 * acos(-1.0d0)`,
 
@@ -203,7 +211,8 @@ south = sin(lat)*cos(lon)*rho_x + sin(lat)*sin(lon)*rho_y - cos(lat)*rho_z;
 east  = -sin(lon)*rho_x + cos(lon)*rho_y;
 zenith = cos(lat)*cos(lon)*rho_x + cos(lat)*sin(lon)*rho_y + sin(lat)*rho_z;
 range_m = sqrt(south^2 + east^2 + zenith^2);
-el = asin(zenith / range_m);
+horizontal_m = hypot(south, east);
+el = atan2(zenith, horizontal_m);
 az = mod(atan2(east, -south), 2*pi);`,
 
     julia: `# Look angles (topocentric SEZ): pure SI educational
@@ -222,13 +231,14 @@ south = sin(lat) * cos(lon) * rho_x + sin(lat) * sin(lon) * rho_y - cos(lat) * r
 east = -sin(lon) * rho_x + cos(lon) * rho_y
 zenith = cos(lat) * cos(lon) * rho_x + cos(lat) * sin(lon) * rho_y + sin(lat) * rho_z
 range_m = hypot(south, east, zenith)
-el = asin(zenith / range_m)
+horizontal_m = hypot(south, east)
+el = atan(zenith, horizontal_m)
 az = mod(atan(east, -south), 2*pi)`,
 
     latex: `% Topocentric elevation / azimuth (SEZ)
 \\[
   \\boldsymbol\\rho = \\mathbf r_{\\mathrm{sat}}-\\mathbf r_{\\mathrm{obs}},\\quad
-  \\sin el = \\hat\\rho\\cdot\\hat z_{\\mathrm{SEZ}},\\quad
+  el=\\operatorname{atan2}(\\rho_Z,\\operatorname{hypot}(\\rho_S,\\rho_E)),\\quad
   \\mathrm{az}=\\operatorname{mod}(\\operatorname{atan2}(\\rho_E,-\\rho_S),2\\pi),\\quad
   \\mathrm{az}\\in[0,2\\pi)
 \\]`,
