@@ -37,21 +37,36 @@ import {
   toSi,
   wienPeakWavelength,
 } from '../../../physics'
+import { topocentricSezSi } from '../../../physics/sgp4'
 import { num, put, type ExpectedFn } from './shared'
 
-/**
- * Tools whose snippets have no shipped counterpart with the same input contract.
- * They return `{}` on purpose: the runner reports them as uncovered instead of
- * asserting numbers that shipped physics does not actually produce.
- */
-export const UNVERIFIABLE_OPS: Readonly<Record<string, string>> = {
-  'look-angles':
-    'snippet uses a WGS-84 ellipsoid + ECEF satellite vector in a SEZ frame; shipped topocentricElAz is spherical and takes target lat/lon/height. js/ts additionally call satellite.js with new Date() (non-deterministic).',
+/** No ops snippets currently lack an expected-value implementation. */
+export const UNVERIFIABLE_OPS: Readonly<Record<string, string>> = {}
+
+function lookAnglesExpected(bag: Record<string, number | string>): Record<string, number> {
+  const latRad = num(bag, 'lat')
+  const lonRad = num(bag, 'lon')
+  const sez = topocentricSezSi(
+    {
+      latDeg: (latRad * 180) / Math.PI,
+      lonDeg: (lonRad * 180) / Math.PI,
+      heightM: num(bag, 'h_m'),
+    },
+    [num(bag, 'sat_x'), num(bag, 'sat_y'), num(bag, 'sat_z')],
+  )
+  const rangeM = Math.hypot(sez.southM, sez.eastM, sez.zenithM)
+  const elevation = Math.asin(sez.zenithM / rangeM)
+  const azimuthRaw = Math.atan2(sez.eastM, -sez.southM)
+  const azimuth = azimuthRaw < 0 ? azimuthRaw + 2 * Math.PI : azimuthRaw
+  const out: Record<string, number> = {}
+  put(out, ['az', 'azimuth'], azimuth)
+  put(out, ['el', 'elevation'], elevation)
+  put(out, ['range_m'], rangeM)
+  return out
 }
 
 export const OPS_EXPECTED: Record<string, ExpectedFn> = {
-  // See UNVERIFIABLE_OPS: no shipped export shares this snippet's contract.
-  'look-angles': () => ({}),
+  'look-angles': lookAnglesExpected,
 
   plotter: (bag) => {
     const xmin = num(bag, 'xmin')

@@ -315,12 +315,22 @@ describe('nested systems ports match pure-SI math', () => {
 })
 
 describe('library-backed snippets declare deps', () => {
-  it('sgp4 / look-angles / pass-predict expose package URLs', () => {
-    for (const id of ['sgp4', 'look-angles', 'pass-predict']) {
+  it('SGP4 and pass prediction expose package URLs; look angles stay pure SI', () => {
+    for (const id of ['sgp4', 'pass-predict']) {
       const s = getSnippets(id)!
       expect(s.deps?.length).toBeGreaterThan(0)
       expect(s.deps!.some((d) => /satellite|sgp4/i.test(d.name))).toBe(true)
       expect(s.deps!.every((d) => d.url.startsWith('http'))).toBe(true)
+    }
+
+    const look = getSnippets('look-angles')!
+    expect(look.deps ?? []).toHaveLength(0)
+    for (const lang of ['javascript', 'typescript'] as const) {
+      const body = look.code[lang]!
+      expect(body).toContain('sat_x')
+      expect(body).toContain('range_m')
+      expect(body).not.toContain('new Date()')
+      expect(body).not.toContain("from 'satellite.js'")
     }
   })
 

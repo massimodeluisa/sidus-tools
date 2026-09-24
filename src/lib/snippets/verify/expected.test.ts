@@ -339,6 +339,22 @@ describe('snippet verification expected values', () => {
     expect(fixed.az).toBeGreaterThanOrEqual(0)
     expect(fixed.az).toBeLessThan(2 * Math.PI)
   })
+
+  it('matches the analytic west-quadrant look-angle vector', () => {
+    const fixed = EXPECTED['look-angles']({
+      sat_x: 6_379_137,
+      sat_y: -1000,
+      sat_z: 0,
+      lat: 0,
+      lon: 0,
+      h_m: 0,
+    })
+    expect(fixed.range_m).toBeCloseTo(Math.sqrt(2_000_000), 9)
+    expect(fixed.el).toBeCloseTo(Math.PI / 4, 14)
+    expect(fixed.az).toBeCloseTo((3 * Math.PI) / 2, 14)
+    expect(fixed.az).toBeGreaterThanOrEqual(0)
+    expect(fixed.az).toBeLessThan(2 * Math.PI)
+  })
 })
 
 /**

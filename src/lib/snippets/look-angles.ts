@@ -1,74 +1,50 @@
 import type { FormulaSnippet } from './types'
 
 const ASSUMPTIONS =
-  'Topocentric SEZ from observer geodetic + satellite ECF; azimuth from north, elevation from local horizon. SI/km consistent with library.'
+  'Observer WGS-84 geodetic latitude and longitude in radians, height in metres; satellite ECEF at the selected UTC in metres. Outputs: azimuth from 0 inclusive to 2*pi exclusive in radians, elevation in radians, range in metres. Azimuth is undefined at exact zenith; the observer and satellite positions must differ.'
 
-/**
- * JS/TS: satellite.js. Other langs: pure topocentric SEZ educational core
- * (WGS-84 ellipsoid → ECEF, ρ → SEZ, el/az).
- */
+/** Pure WGS-84 ECEF-to-SEZ educational exports in a common SI contract. */
 export const lookAnglesSnippets: FormulaSnippet = {
   formulaId: 'look-angles',
   assumptions: ASSUMPTIONS,
-  deps: [
-    {
-      name: 'satellite.js',
-      ecosystem: 'npm',
-      url: 'https://www.npmjs.com/package/satellite.js',
-      install: 'npm i satellite.js',
-      note: 'TLE → ECI/ECF + topocentric look angles',
-      langs: ['javascript', 'typescript'],
-    },
-    {
-      name: 'satellite.js (GitHub)',
-      ecosystem: 'github',
-      url: 'https://github.com/shashwatak/satellite-js',
-      langs: ['javascript', 'typescript'],
-    },
-  ],
   code: {
-    javascript: `// Look angles via satellite.js: ${ASSUMPTIONS}
-import {
-  twoline2satrec, propagate, gstime, eciToEcf, ecfToLookAngles, degreesToRadians,
-} from 'satellite.js'
+    javascript: `// Look angles (topocentric SEZ): ${ASSUMPTIONS}
+const f = 1 / 298.257223563
+const e2 = f * (2 - f)
+const R_eq = 6378137.0
+const N = R_eq / Math.sqrt(1 - e2 * Math.sin(lat) ** 2)
+const obs_x = (N + h_m) * Math.cos(lat) * Math.cos(lon)
+const obs_y = (N + h_m) * Math.cos(lat) * Math.sin(lon)
+const obs_z = (N * (1 - e2) + h_m) * Math.sin(lat)
+const rho_x = sat_x - obs_x
+const rho_y = sat_y - obs_y
+const rho_z = sat_z - obs_z
+const south = Math.sin(lat) * Math.cos(lon) * rho_x + Math.sin(lat) * Math.sin(lon) * rho_y - Math.cos(lat) * rho_z
+const east = -Math.sin(lon) * rho_x + Math.cos(lon) * rho_y
+const zenith = Math.cos(lat) * Math.cos(lon) * rho_x + Math.cos(lat) * Math.sin(lon) * rho_y + Math.sin(lat) * rho_z
+const range_m = Math.hypot(south, east, zenith)
+const el = Math.asin(zenith / range_m)
+const azRaw = Math.atan2(east, -south)
+const az = azRaw < 0 ? azRaw + 2 * Math.PI : azRaw`,
 
-const satrec = twoline2satrec(tle1, tle2)
-const date = new Date()
-const pv = propagate(satrec, date)
-const gmst = gstime(date)
-const satEcf = eciToEcf(pv.position, gmst) // km
-
-// Observer: lat/lon degrees, height km
-const observer = {
-  longitude: degreesToRadians(lonDeg),
-  latitude: degreesToRadians(latDeg),
-  height: height_m / 1000,
-}
-const look = ecfToLookAngles(observer, satEcf)
-// look.azimuth, look.elevation [rad]; look.rangeSat [km]
-const azDeg = (look.azimuth * 180) / Math.PI
-const elDeg = (look.elevation * 180) / Math.PI
-const range_m = look.rangeSat * 1000`,
-
-    typescript: `// Look angles via satellite.js: ${ASSUMPTIONS}
-import {
-  twoline2satrec, propagate, gstime, eciToEcf, ecfToLookAngles, degreesToRadians,
-} from 'satellite.js'
-
-const satrec = twoline2satrec(tle1, tle2)
-const date = new Date()
-const pv = propagate(satrec, date)
-const gmst = gstime(date)
-const satEcf = eciToEcf(pv.position, gmst) // km
-const observer = {
-  longitude: degreesToRadians(lonDeg),
-  latitude: degreesToRadians(latDeg),
-  height: height_m / 1000,
-}
-const look = ecfToLookAngles(observer, satEcf)
-const azDeg = (look.azimuth * 180) / Math.PI
-const elDeg = (look.elevation * 180) / Math.PI
-const range_m = look.rangeSat * 1000`,
+    typescript: `// Look angles (topocentric SEZ): ${ASSUMPTIONS}
+const f = 1 / 298.257223563
+const e2 = f * (2 - f)
+const R_eq = 6378137.0
+const N = R_eq / Math.sqrt(1 - e2 * Math.sin(lat) ** 2)
+const obs_x = (N + h_m) * Math.cos(lat) * Math.cos(lon)
+const obs_y = (N + h_m) * Math.cos(lat) * Math.sin(lon)
+const obs_z = (N * (1 - e2) + h_m) * Math.sin(lat)
+const rho_x = sat_x - obs_x
+const rho_y = sat_y - obs_y
+const rho_z = sat_z - obs_z
+const south = Math.sin(lat) * Math.cos(lon) * rho_x + Math.sin(lat) * Math.sin(lon) * rho_y - Math.cos(lat) * rho_z
+const east = -Math.sin(lon) * rho_x + Math.cos(lon) * rho_y
+const zenith = Math.cos(lat) * Math.cos(lon) * rho_x + Math.cos(lat) * Math.sin(lon) * rho_y + Math.sin(lat) * rho_z
+const range_m = Math.hypot(south, east, zenith)
+const el = Math.asin(zenith / range_m)
+const azRaw = Math.atan2(east, -south)
+const az = azRaw < 0 ? azRaw + 2 * Math.PI : azRaw`,
 
     python: `# Look angles (topocentric SEZ): ${ASSUMPTIONS}
 import math
@@ -93,7 +69,7 @@ east = -sO * rho_x + cO * rho_y
 zenith = cL * cO * rho_x + cL * sO * rho_y + sL * rho_z
 range_m = math.sqrt(south ** 2 + east ** 2 + zenith ** 2)
 el = math.asin(zenith / range_m)
-az = math.atan2(east, -south)  # from north, clockwise`,
+az = math.atan2(east, -south) % (2 * math.pi)  # from north, clockwise; [0, 2*pi)`,
 
     c: `/* Look angles (topocentric SEZ): pure SI educational */
 /* free: sat_x,sat_y,sat_z [m ECEF], lat,lon [rad], h_m */
@@ -116,7 +92,8 @@ const double east = -sO * rho_x + cO * rho_y;
 const double zenith = cL * cO * rho_x + cL * sO * rho_y + sL * rho_z;
 const double range_m = sqrt(south * south + east * east + zenith * zenith);
 const double el = asin(zenith / range_m);
-const double az = atan2(east, -south);`,
+const double az_raw = atan2(east, -south);
+const double az = az_raw < 0.0 ? az_raw + 2.0 * acos(-1.0) : az_raw;`,
 
     cpp: `// Look angles (topocentric SEZ): pure SI educational
 // free: sat_x,sat_y,sat_z [m ECEF], lat,lon [rad], h_m
@@ -139,7 +116,8 @@ const double east = -sO * rho_x + cO * rho_y;
 const double zenith = cL * cO * rho_x + cL * sO * rho_y + sL * rho_z;
 const double range_m = std::sqrt(south * south + east * east + zenith * zenith);
 const double el = std::asin(zenith / range_m);
-const double az = std::atan2(east, -south);`,
+const double az_raw = std::atan2(east, -south);
+const double az = az_raw < 0.0 ? az_raw + 2.0 * std::acos(-1.0) : az_raw;`,
 
     rust: `// Look angles (topocentric SEZ): pure SI educational
 // free: sat_x,sat_y,sat_z [m ECEF], lat,lon [rad], h_m
@@ -162,7 +140,8 @@ let east = -s_o * rho_x + c_o * rho_y;
 let zenith = c_l * c_o * rho_x + c_l * s_o * rho_y + s_l * rho_z;
 let range_m = south.hypot(east).hypot(zenith);
 let el = (zenith / range_m).asin();
-let az = east.atan2(-south);`,
+let az_raw = east.atan2(-south);
+let az = if az_raw < 0.0 { az_raw + 2.0 * std::f64::consts::PI } else { az_raw };`,
 
     zig: `// Look angles (topocentric SEZ): pure SI educational
 // free: sat_x,sat_y,sat_z [m ECEF], lat,lon [rad], h_m
@@ -185,7 +164,8 @@ const east = -sO * rho_x + cO * rho_y;
 const zenith = cL * cO * rho_x + cL * sO * rho_y + sL * rho_z;
 const range_m = std.math.sqrt(south * south + east * east + zenith * zenith);
 const el = std.math.asin(zenith / range_m);
-const az = std.math.atan2(east, -south);`,
+const az_raw = std.math.atan2(east, -south);
+const az = if (az_raw < 0.0) az_raw + 2.0 * std.math.pi else az_raw;`,
 
     fortran: `! Look angles (topocentric SEZ): pure SI educational
 ! free: sat_x,sat_y,sat_z [m ECEF], lat,lon [rad], h_m
@@ -208,7 +188,8 @@ east = -sO * rho_x + cO * rho_y
 zenith = cL * cO * rho_x + cL * sO * rho_y + sL * rho_z
 range_m = sqrt(south**2 + east**2 + zenith**2)
 el = asin(zenith / range_m)
-az = atan2(east, -south)`,
+az = atan2(east, -south)
+if (az < 0.0d0) az = az + 2.0d0 * acos(-1.0d0)`,
 
     matlab: `% Look angles (topocentric SEZ): pure SI educational
 % free: sat_x,sat_y,sat_z [m ECEF], lat,lon [rad], h_m
@@ -223,7 +204,7 @@ east  = -sin(lon)*rho_x + cos(lon)*rho_y;
 zenith = cos(lat)*cos(lon)*rho_x + cos(lat)*sin(lon)*rho_y + sin(lat)*rho_z;
 range_m = sqrt(south^2 + east^2 + zenith^2);
 el = asin(zenith / range_m);
-az = atan2(east, -south);`,
+az = mod(atan2(east, -south), 2*pi);`,
 
     julia: `# Look angles (topocentric SEZ): pure SI educational
 # free: sat_x,sat_y,sat_z [m ECEF], lat,lon [rad], h_m
@@ -242,13 +223,14 @@ east = -sin(lon) * rho_x + cos(lon) * rho_y
 zenith = cos(lat) * cos(lon) * rho_x + cos(lat) * sin(lon) * rho_y + sin(lat) * rho_z
 range_m = hypot(south, east, zenith)
 el = asin(zenith / range_m)
-az = atan(east, -south)`,
+az = mod(atan(east, -south), 2*pi)`,
 
     latex: `% Topocentric elevation / azimuth (SEZ)
 \\[
   \\boldsymbol\\rho = \\mathbf r_{\\mathrm{sat}}-\\mathbf r_{\\mathrm{obs}},\\quad
   \\sin el = \\hat\\rho\\cdot\\hat z_{\\mathrm{SEZ}},\\quad
-  \\mathrm{az}=\\mathrm{atan2}(\\rho_E,-\\rho_S)
+  \\mathrm{az}=\\operatorname{mod}(\\operatorname{atan2}(\\rho_E,-\\rho_S),2\\pi),\\quad
+  \\mathrm{az}\\in[0,2\\pi)
 \\]`,
   },
 }

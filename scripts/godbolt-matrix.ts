@@ -352,7 +352,7 @@ function buildMarkdown(results: CaseResult[], meta: Record<string, unknown>): st
   lines.push('```')
   lines.push('')
   lines.push(
-    'Pure-SI snippets (no `deps`) should pass. Library-backed tools (SGP4, look-angles, …) are skipped unless `--include-lib`.',
+    'Pure-SI snippets (no `deps`) should pass. Library-backed tools (such as SGP4) are skipped unless `--include-lib`.',
   )
   lines.push('')
   return lines.join('\n')

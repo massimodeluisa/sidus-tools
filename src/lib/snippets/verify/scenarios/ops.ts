@@ -2,10 +2,8 @@
  * Verification scenarios for ground-ops/tracking pilot tools.
  * See scenarios/index.ts for how these merge into the runner's SCENARIOS map.
  *
- * `look-angles` is UNVERIFIABLE (EXPECTED returns `{}` regardless of bag; see
- * expected/ops.ts), so these scenarios never reach a numeric comparison — they
- * exist to satisfy the pilot's >=3-scenario minimum and to document plausible
- * topocentric SEZ inputs (satellite ECEF, observer geodetic) for future waves.
+ * Look-angle scenarios pass precomputed satellite ECEF coordinates in metres
+ * and observer geodetic coordinates in radians and metres.
  */
 import type { Scenario } from '../inputs'
 

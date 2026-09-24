@@ -158,18 +158,20 @@ export function LookAnglesTool() {
         )
       }
       code={
-        <CodeExport
-          formulaId="look-angles"
-          values={{
-            lat: toSi(p.lat, 'deg'),
-            lon: toSi(p.lon, 'deg'),
-            h_m: p.h_m,
-            at: p.at,
-            sat_x: satEcef?.[0],
-            sat_y: satEcef?.[1],
-            sat_z: satEcef?.[2],
-          }}
-        />
+        look && satEcef ? (
+          <CodeExport
+            formulaId="look-angles"
+            values={{
+              lat: toSi(p.lat, 'deg'),
+              lon: toSi(p.lon, 'deg'),
+              h_m: p.h_m,
+              at: p.at,
+              sat_x: satEcef[0],
+              sat_y: satEcef[1],
+              sat_z: satEcef[2],
+            }}
+          />
+        ) : null
       }
     />
   )
