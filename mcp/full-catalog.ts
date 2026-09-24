@@ -73,6 +73,7 @@ import {
   apoapsisRaiseFromCircular,
   deltaVBudget,
   equalStageMassRatio,
+  normalizeEqualStageCount,
   semiMajorFromPeriod,
   horizonSlantRange,
   antennaBeamwidth,
@@ -904,7 +905,8 @@ return dv == null ? null : { dv_m_s: dv, impulse_n_s: args.thrust_n * args.burn_
   },
     sample: {"total_dv_m_s":9000,"n_stages":3,"isp_s":300},
     run: (args) => {
-      return equalStageMassRatio(args.total_dv_m_s, Math.round(args.n_stages), args.isp_s)
+      const nStages = normalizeEqualStageCount(args.n_stages)
+      return nStages === null ? null : equalStageMassRatio(args.total_dv_m_s, nStages, args.isp_s)
     },
   },
   {

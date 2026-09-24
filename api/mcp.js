@@ -22707,8 +22707,13 @@ function meanMotionFromAltitude(h, mu2 = EARTH_MU, bodyR = EARTH_RADIUS) {
   const n = Math.sqrt(mu2 / (a * a * a));
   return { a, n, period: orbitalPeriod(mu2, a), v: circularOrbitVelocity(mu2, a) };
 }
+function normalizeEqualStageCount(nStages) {
+  if (!Number.isFinite(nStages)) return null;
+  const rounded = Math.round(nStages);
+  return Number.isSafeInteger(rounded) && rounded >= 1 ? rounded : null;
+}
 function equalStageMassRatio(totalDv, nStages, ispS, g0 = 9.80665) {
-  if (!(totalDv >= 0) || !(nStages >= 1) || !(ispS > 0) || !(g0 > 0)) return null;
+  if (!(totalDv >= 0) || !Number.isSafeInteger(nStages) || nStages < 1 || !(ispS > 0) || !(g0 > 0)) return null;
   const ve = ispS * g0;
   const dvStage = totalDv / nStages;
   return { dvStage, massRatio: Math.exp(dvStage / ve), ve };
@@ -25116,7 +25121,8 @@ var MCP_TOOL_DEFS = [
     },
     sample: { "total_dv_m_s": 9e3, "n_stages": 3, "isp_s": 300 },
     run: (args) => {
-      return equalStageMassRatio(args.total_dv_m_s, Math.round(args.n_stages), args.isp_s);
+      const nStages = normalizeEqualStageCount(args.n_stages);
+      return nStages === null ? null : equalStageMassRatio(args.total_dv_m_s, nStages, args.isp_s);
     }
   },
   {

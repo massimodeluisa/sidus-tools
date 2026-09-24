@@ -6,6 +6,7 @@ import {
   deorbitBurn,
   deltaVBudget,
   equalStageMassRatio,
+  normalizeEqualStageCount,
   horizonSlantRange,
   losRangeRate,
   meanMotionFromAltitude,
@@ -73,6 +74,21 @@ describe('ops physics', () => {
       ve: 300 * 9.80665,
     })
     expect(equalStageMassRatio(-1, 3, 300)).toBeNull()
+  })
+
+  it('normalizes fractional equal-stage counts once and requires integers in the physics helper', () => {
+    const nStages = normalizeEqualStageCount(2.4)
+    expect(nStages).toBe(2)
+    expect(normalizeEqualStageCount(2.5)).toBe(3)
+    expect(normalizeEqualStageCount(0.49)).toBeNull()
+    expect(normalizeEqualStageCount(Number.POSITIVE_INFINITY)).toBeNull()
+    expect(equalStageMassRatio(9000, 2.4, 300)).toBeNull()
+
+    const result = equalStageMassRatio(9000, nStages!, 300)!
+    const exportedFormula = Math.exp((9000 / nStages!) / (300 * 9.80665))
+    expect(result.dvStage).toBe(4500)
+    expect(exportedFormula).toBeCloseTo(result.massRatio, 14)
+    expect(result.massRatio).toBeCloseTo(4.616211372684578, 14)
   })
 
   it('mean motion LEO ~0.001 rad/s', () => {

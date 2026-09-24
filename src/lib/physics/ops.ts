@@ -156,17 +156,32 @@ export function meanMotionFromAltitude(
 }
 
 /**
- * Invert multi-stage: given equal stages N, total Δv, Isp, structural fraction ε,
- * educational ideal equal-stage mass ratio (rocket equation per stage).
- * ve = Isp g0; Δv_stage = Δv/N; m0/mf = exp(Δv_stage/ve).
+ * Ideal equal-stage mass ratio for total Δv, Isp, and N identical stages.
+ * Structural mass is not modeled. ve = Isp g0; Δv_stage = Δv/N;
+ * m0/mf = exp(Δv_stage/ve).
  */
+export function normalizeEqualStageCount(nStages: number): number | null {
+  if (!Number.isFinite(nStages)) return null
+  const rounded = Math.round(nStages)
+  return Number.isSafeInteger(rounded) && rounded >= 1 ? rounded : null
+}
+
 export function equalStageMassRatio(
   totalDv: number,
   nStages: number,
   ispS: number,
   g0 = 9.80665,
 ): { dvStage: number; massRatio: number; ve: number } | null {
-  if (!(totalDv >= 0) || !(nStages >= 1) || !(ispS > 0) || !(g0 > 0)) return null
+  // Keep Δv = 0 as a valid no-burn limit; require an integer stage count (≥ 1).
+  if (
+    !(totalDv >= 0) ||
+    !Number.isSafeInteger(nStages) ||
+    nStages < 1 ||
+    !(ispS > 0) ||
+    !(g0 > 0)
+  ) {
+    return null
+  }
   const ve = ispS * g0
   const dvStage = totalDv / nStages
   return { dvStage, massRatio: Math.exp(dvStage / ve), ve }

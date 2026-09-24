@@ -12,6 +12,7 @@ import {
   wrapAsRunnable,
 } from './live-values'
 import { getSnippets } from './index'
+import { normalizeEqualStageCount } from '@/lib/physics'
 
 describe('live code values', () => {
   it('formats numbers for code', () => {
@@ -400,6 +401,24 @@ const si = 1`),
     expect(out).toContain('const double n = 3')
     expect(out).toMatch(/dv\s*\/\s*n/)
     expect(out).toContain('g0 = 9.80665')
+  })
+
+  it('equal-stage fractional UI input exports the same rounded stage count as the calculator', () => {
+    const sn = getSnippets('equal-stage')!
+    const nStages = normalizeEqualStageCount(2.4)
+    const languages = [
+      'python', 'javascript', 'typescript', 'c', 'cpp', 'rust', 'zig', 'fortran', 'matlab', 'julia',
+    ] as const
+    for (const language of languages) {
+      const source = sn.code[language]
+      expect(source, language).toBeTruthy()
+      const out = renderLiveCode(source!, language, { dv: 9000, n: nStages!, isp: 300 })
+      expect(out, language).toMatch(/\bn(?::\s*f64)?\s*=\s*2(?:\.0)?(?:_f64|d0)?(?=;|\s|$)/)
+      expect(out, language).toContain('dv / n')
+    }
+
+    const exportedFormula = Math.exp((9000 / nStages!) / (300 * 9.80665))
+    expect(exportedFormula).toBeCloseTo(4.616211372684578, 14)
   })
 
   it('ideal-thrust is linear (no mdot used before define)', () => {
