@@ -22140,7 +22140,7 @@ function sunPos(jday2) {
 function gmstRad(date4) {
   return gstime(date4);
 }
-var CIVIL_DARKNESS_RAD = -6 * Math.PI / 180;
+var CIVIL_TWILIGHT_RAD = -6 * Math.PI / 180;
 
 // src/lib/physics/j2.ts
 var EARTH_J2 = 0.00108262668;

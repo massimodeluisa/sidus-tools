@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  CIVIL_DARKNESS_RAD,
+  CIVIL_TWILIGHT_RAD,
   eciSiToEcefSi,
   eciSiToGeodetic,
   findNextPass,
@@ -610,8 +610,8 @@ describe('sunElevationRad', () => {
   })
 })
 
-describe('findNextPass: visible classification', () => {
-  it('CASE A TLE (00005), observer 34N/-118W, refineS=1 over 48h: visible field is self-consistent', () => {
+describe('findNextPass: favorable lighting geometry classification', () => {
+  it('CASE A TLE (00005), observer 34N/-118W, refineS=1 over 48h: lighting fields match the geometry checks', () => {
     const l1 = '1 00005U 58002B   00179.78495062  .00000023  00000-0  28098-4 0  4753'
     const l2 = '2 00005  34.2682 348.7242 1859667 331.7664  19.3264 10.82419157413667'
     const p = parseTle(`${l1}\n${l2}`)
@@ -632,32 +632,64 @@ describe('findNextPass: visible classification', () => {
     expect(pass, 'findNextPass over 48h').toBeTruthy()
     if (!pass) throw new Error('unreachable: narrowed by expect above')
 
-    expect(typeof pass.visible).toBe('boolean')
-    expect(pass.visible ? pass.visibleAt !== null : pass.visibleAt === null).toBe(true)
+    expect(typeof pass.favorableLighting).toBe('boolean')
+    expect(pass.favorableLighting ? pass.favorableLightingAt !== null : pass.favorableLightingAt === null).toBe(true)
 
-    if (pass.visible) {
-      if (!pass.visibleAt) throw new Error('unreachable: narrowed by expect above')
-      const st = propagateEci(p.satrec, pass.visibleAt)
-      expect(st, 'propagateEci at visibleAt').toBeTruthy()
+    if (pass.favorableLighting) {
+      if (!pass.favorableLightingAt) throw new Error('unreachable: narrowed by expect above')
+      const st = propagateEci(p.satrec, pass.favorableLightingAt)
+      expect(st, 'propagateEci at favorableLightingAt').toBeTruthy()
       if (!st) throw new Error('unreachable: narrowed by expect above')
 
-      expect(sunElevationRad(observer, pass.visibleAt)).toBeLessThan(CIVIL_DARKNESS_RAD)
-      expect(isSatSunlitSi(st.r, pass.visibleAt)).toBe(true)
+      expect(sunElevationRad(observer, pass.favorableLightingAt)).toBeLessThan(CIVIL_TWILIGHT_RAD)
+      expect(isSatSunlitSi(st.r, pass.favorableLightingAt)).toBe(true)
     }
 
-    const visibleOnly = findNextPass({
+    const favorableLightingOnly = findNextPass({
       satrec: p.satrec,
       observer,
       start,
       horizonH: 48,
       stepS: 30,
       refineS: 1,
-      visibleOnly: true,
+      favorableLightingOnly: true,
     })
-    if (visibleOnly === null) {
-      expect(visibleOnly).toBeNull()
+    if (favorableLightingOnly === null) {
+      expect(favorableLightingOnly).toBeNull()
     } else {
-      expect(visibleOnly.visible).toBe(true)
+      expect(favorableLightingOnly.favorableLighting).toBe(true)
     }
+  })
+
+  it('returns a favorable-lighting pass only at a sample that is sunlit and after local civil twilight', () => {
+    const l1 = '1 00005U 58002B   00179.78495062  .00000023  00000-0  28098-4 0  4753'
+    const l2 = '2 00005  34.2682 348.7242 1859667 331.7664  19.3264 10.82419157413667'
+    const p = parseTle(`${l1}\n${l2}`)
+    expect(p.ok, 'parseTle(caseA)').toBe(true)
+    if (!p.ok) throw new Error('unreachable: narrowed by expect above')
+
+    const observer = { latDeg: 0, lonDeg: -118, heightM: 100 }
+    const pass = findNextPass({
+      satrec: p.satrec,
+      observer,
+      start: new Date('2000-06-28T02:30:00Z'),
+      horizonH: 24,
+      stepS: 20,
+      refineS: 1,
+      minElDeg: 10,
+      favorableLightingOnly: true,
+    })
+    expect(pass?.favorableLighting).toBe(true)
+    if (!pass) throw new Error('unreachable: narrowed by expect above')
+    expect(pass.favorableLightingAt).not.toBeNull()
+    if (!pass.favorableLightingAt) throw new Error('unreachable: narrowed by expect above')
+
+    const state = propagateEci(p.satrec, pass.favorableLightingAt)
+    expect(state, 'propagateEci at favorableLightingAt').toBeTruthy()
+    if (!state) throw new Error('unreachable: narrowed by expect above')
+    expect(isSatSunlitSi(state.r, pass.favorableLightingAt)).toBe(true)
+    expect(sunElevationRad(observer, pass.favorableLightingAt)).toBeLessThan(CIVIL_TWILIGHT_RAD)
+    expect(pass.favorableLightingAt.getTime()).toBeGreaterThanOrEqual(pass.aos.getTime())
+    expect(pass.favorableLightingAt.getTime()).toBeLessThanOrEqual(pass.los.getTime())
   })
 })
