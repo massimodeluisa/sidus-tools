@@ -12,8 +12,9 @@ import path from 'node:path'
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const port = 8791
 const base = `http://127.0.0.1:${port}/api/mcp`
+const tsxCli = path.join(root, 'node_modules', 'tsx', 'dist', 'cli.mjs')
 
-const child = spawn('npx', ['tsx', 'mcp/http-dev.ts'], {
+const child = spawn(process.execPath, [tsxCli, 'mcp/http-dev.ts'], {
   cwd: root,
   env: { ...process.env, MCP_HTTP_PORT: String(port), MCP_HTTP_HOST: '127.0.0.1' },
   stdio: ['ignore', 'pipe', 'pipe'],
@@ -132,6 +133,7 @@ try {
   console.log('HTTP_TOOL_COUNT', names.length)
   if (names.length < 170) throw new Error(`too few tools: ${names.length}`)
   if (!names.includes('hohmann')) throw new Error('hohmann missing from tools/list')
+  if (!names.includes('flyby_periapsis_speed')) throw new Error('flyby_periapsis_speed missing from tools/list')
 
   const hyper = await client.callTool({
     name: 'hyperbolic_c3',
@@ -143,6 +145,19 @@ try {
   const c3 = hyperParsed.result?.c3_m2_s2 ?? hyperParsed.c3_m2_s2
   if (Math.abs((c3 ?? 0) - 9e6) > 1) throw new Error(`c3 fail: ${c3}`)
   console.log('HTTP_HYPERBOLIC_C3', c3)
+
+  const flyby = await client.callTool({
+    name: 'flyby_periapsis_speed',
+    arguments: { mu_m3_s2: 3.986004418e14, periapsis_radius_m: 6_778_137, v_inf_m_s: 5000 },
+  })
+  const flybyText = flyby.content?.find((c) => c.type === 'text')?.text ?? ''
+  assertNotProbe(flybyText, 'flyby_periapsis_speed')
+  const flybyParsed = JSON.parse(flybyText)
+  const vp = flybyParsed.result?.v_p_m_s ?? flybyParsed.v_p_m_s
+  if (Math.abs((vp ?? 0) - 11942.092319991702) > 1e-8) {
+    throw new Error(`flyby periapsis speed fail: ${vp}`)
+  }
+  console.log('HTTP_FLYBY_PERIAPSIS_SPEED_M_S', vp)
 
   const hoh = await client.callTool({
     name: 'hohmann',

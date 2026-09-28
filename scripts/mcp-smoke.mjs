@@ -96,6 +96,16 @@ try {
     throw new Error(`hyperbolic c3 anchor fail: ${c3}`)
   }
 
+  const flyby = await client.callTool({
+    name: 'flyby_periapsis_speed',
+    arguments: SAMPLES.flyby_periapsis_speed,
+  })
+  const flybyRes = parseResult(flyby.content).json?.result
+  const expectedFlybySpeed = 11942.092319991702
+  if (Math.abs((flybyRes?.v_p_m_s ?? 0) - expectedFlybySpeed) > 1e-8) {
+    throw new Error(`flyby periapsis speed anchor fail: ${flybyRes?.v_p_m_s}`)
+  }
+
   const hoh = await client.callTool({
     name: 'hohmann',
     arguments: SAMPLES.hohmann,

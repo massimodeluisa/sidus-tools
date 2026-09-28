@@ -24401,7 +24401,8 @@ var MCP_TOOL_DEFS = [
     inputSchema: {},
     sample: {},
     run: (_args) => {
-      return { note: "Use each tool by name", count: CATALOG_NAMES.length, tools: CATALOG_NAMES };
+      const names = [.../* @__PURE__ */ new Set([...CATALOG_NAMES, ...MCP_TOOL_DEFS.map((tool) => tool.name)])];
+      return { note: "Use each tool by name", count: names.length, tools: names };
     }
   },
   {
@@ -25352,7 +25353,7 @@ var MCP_TOOL_DEFS = [
   },
   {
     name: "flyby_speed",
-    description: "Gravity assist / flyby excess sketch.",
+    description: "Legacy name: infers eccentricity from turn_deg; v_inf_in_m_s is echoed, not used. Does not calculate periapsis speed; use flyby_periapsis_speed.",
     inputSchema: {
       v_inf_in_m_s: number2(),
       turn_deg: number2()
@@ -25366,6 +25367,23 @@ var MCP_TOOL_DEFS = [
       const e = 1 / s;
       const turn = gravityAssistTurn(e);
       return turn == null ? null : { e, turn_rad: turn, turn_deg: turn * 180 / Math.PI, v_inf_m_s: args.v_inf_in_m_s };
+    }
+  },
+  {
+    name: "flyby_periapsis_speed",
+    description: "Hyperbolic periapsis speed and local escape speed from SI \u03BC, periapsis radius, and v\u221E (two-body).",
+    inputSchema: {
+      mu_m3_s2: number2().positive(),
+      periapsis_radius_m: number2().positive(),
+      v_inf_m_s: number2().nonnegative()
+    },
+    sample: { mu_m3_s2: EARTH_MU, periapsis_radius_m: 6778137, v_inf_m_s: 5e3 },
+    run: (args) => {
+      const { mu_m3_s2: mu2, periapsis_radius_m: rp, v_inf_m_s: vInf } = args;
+      if (![mu2, rp, vInf].every(Number.isFinite) || !(mu2 > 0) || !(rp > 0) || !(vInf >= 0)) return null;
+      const vp = hyperbolicPeriapsisSpeed(mu2, rp, vInf);
+      const vEsc = escapeVelocity(mu2, rp);
+      return vp == null || !Number.isFinite(vp) || !Number.isFinite(vEsc) ? null : { periapsis_radius_m: rp, v_esc_m_s: vEsc, v_p_m_s: vp };
     }
   },
   {

@@ -65,6 +65,12 @@ Both share `mcp/create-server.ts` (same tools, same pure-SI math).
 
 Orbital, hyperbolic/mission, propulsion, RF/ops, ECLSS: see `create-server.ts`.
 
+### Flyby tools
+
+- `flyby_periapsis_speed` computes `v_p = sqrt(v_inf^2 + 2*mu/r_p)` and local escape speed from `mu_m3_s2`, `periapsis_radius_m`, and `v_inf_m_s` (all SI).
+- `flyby_speed` is retained for backward compatibility. It infers hyperbolic eccentricity from `turn_deg`; `v_inf_in_m_s` is echoed only. It does not calculate a speed.
+- `hyperbolic_c3` also reports periapsis speed as part of its C3 result.
+
 Smoke (stdio): `npm run mcp:smoke`  
 Local HTTP smoke: `npm run mcp:http` then hit `http://127.0.0.1:8787/api/mcp`.
 

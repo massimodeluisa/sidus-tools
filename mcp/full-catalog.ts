@@ -42,6 +42,7 @@ import {
   surfaceGravity,
   departureBurnFromCircular,
   characteristicEnergy,
+  hyperbolicPeriapsisSpeed,
   hyperbolicEccentricity,
   gravityAssistTurn,
   hohmannWithPlaneChange,
@@ -245,7 +246,8 @@ export const MCP_TOOL_DEFS: McpToolDef[] = [
     inputSchema: {},
     sample: {},
     run: (_args) => {
-      return { note: 'Use each tool by name', count: CATALOG_NAMES.length, tools: CATALOG_NAMES }
+      const names = [...new Set([...CATALOG_NAMES, ...MCP_TOOL_DEFS.map((tool) => tool.name)])]
+      return { note: 'Use each tool by name', count: names.length, tools: names }
     },
   },
   {
@@ -1151,7 +1153,7 @@ return { r_m: r, nu_rad: nu }
   },
   {
     name: "flyby_speed",
-    description: "Gravity assist / flyby excess sketch.",
+    description: "Legacy name: infers eccentricity from turn_deg; v_inf_in_m_s is echoed, not used. Does not calculate periapsis speed; use flyby_periapsis_speed.",
     inputSchema: {
     v_inf_in_m_s: z.number(),
     turn_deg: z.number(),
@@ -1168,6 +1170,25 @@ return { r_m: r, nu_rad: nu }
       return turn == null
         ? null
         : { e, turn_rad: turn, turn_deg: (turn * 180) / Math.PI, v_inf_m_s: args.v_inf_in_m_s }
+    },
+  },
+  {
+    name: "flyby_periapsis_speed",
+    description: "Hyperbolic periapsis speed and local escape speed from SI μ, periapsis radius, and v∞ (two-body).",
+    inputSchema: {
+      mu_m3_s2: z.number().positive(),
+      periapsis_radius_m: z.number().positive(),
+      v_inf_m_s: z.number().nonnegative(),
+    },
+    sample: { mu_m3_s2: EARTH_MU, periapsis_radius_m: 6778137, v_inf_m_s: 5000 },
+    run: (args) => {
+      const { mu_m3_s2: mu, periapsis_radius_m: rp, v_inf_m_s: vInf } = args
+      if (![mu, rp, vInf].every(Number.isFinite) || !(mu > 0) || !(rp > 0) || !(vInf >= 0)) return null
+      const vp = hyperbolicPeriapsisSpeed(mu, rp, vInf)
+      const vEsc = escapeVelocity(mu, rp)
+      return vp == null || !Number.isFinite(vp) || !Number.isFinite(vEsc)
+        ? null
+        : { periapsis_radius_m: rp, v_esc_m_s: vEsc, v_p_m_s: vp }
     },
   },
   {
