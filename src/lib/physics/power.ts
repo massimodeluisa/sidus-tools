@@ -183,7 +183,15 @@ export function eclipseWithBeta(
   betaRad: number,
   periodS: number,
 ): number | null {
-  if (!(a > bodyR) || !(periodS > 0)) return null
+  // A beta angle is a finite principal angle; reject out-of-domain values before evaluating cos(beta).
+  if (
+    !(a > bodyR) ||
+    !(periodS > 0) ||
+    !Number.isFinite(betaRad) ||
+    Math.abs(betaRad) > Math.PI / 2
+  ) {
+    return null
+  }
   const cosb = Math.cos(betaRad)
   if (Math.abs(cosb) < 1e-6) return 0 // high beta → no eclipse often
   const arg = Math.sqrt(1 - (bodyR / a) ** 2) / cosb

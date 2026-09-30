@@ -1084,6 +1084,7 @@ export const en = {
     mass_for_accel: "Mass (for accel)",
     beta_angle: "\u03b2-angle",
     sun_elev_hint: "Sun elevation from orbit plane",
+    beta_angle_domain: 'Beta angle must be in [-90°, +90°].',
     invalid_params: 'Invalid parameters.',
     ratio_vesc_vc: 'Ratio v_esc / v_c',
     surface_hint: '0 = surface (mean body radius)',

@@ -1084,6 +1084,7 @@ export const de: TMessages = {
     mass_for_accel: "Mass (for accel)",
     beta_angle: "\u03b2-angle",
     sun_elev_hint: 'Sonnenhöhe über der Bahnebene',
+    beta_angle_domain: 'Der Beta-Winkel muss im Bereich von −90° bis +90° liegen.',
     invalid_params: 'Ungültige Parameter.',
     ratio_vesc_vc: 'Verhältnis v_esc / v_c',
     surface_hint: '0 = Oberfläche (mittlerer Körperradius)',

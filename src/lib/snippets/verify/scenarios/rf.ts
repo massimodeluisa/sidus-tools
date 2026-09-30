@@ -804,6 +804,11 @@ export const RF_SCENARIOS: Record<string, Scenario[]> = {
       bag: { mu: 3.986_004_418e14, R: 6_378_137, h: 400_000, betaRad: 0.3 },
     },
     {
+      name: 'iss-high-beta-no-eclipse',
+      source: 'ISS-class 400 km orbit at β=80°, beyond the roughly 70.2° cylindrical-shadow threshold',
+      bag: { mu: 3.986_004_418e14, R: 6_378_137, h: 400_000, betaRad: (80 * Math.PI) / 180 },
+    },
+    {
       name: 'synthetic',
       source: 'adversarial synthetic: distinct non-round mu/radius/altitude/β kept inside the valid (non-clamped) eclipse geometry',
       bag: { mu: 3.9e14, R: 6_371_000, h: 850_000, betaRad: 0.55 },

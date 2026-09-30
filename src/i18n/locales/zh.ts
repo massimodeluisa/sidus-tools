@@ -1078,6 +1078,7 @@ export const zh: TMessages = {
     mass_for_accel: "Mass (for accel)",
     beta_angle: "\u03b2-angle",
     sun_elev_hint: '太阳相对轨道面的仰角',
+    beta_angle_domain: 'β角必须在−90°到+90°之间。',
     invalid_params: '参数无效。',
     ratio_vesc_vc: '比值 v_esc / v_c',
     surface_hint: '0 = 表面（天体平均半径）',

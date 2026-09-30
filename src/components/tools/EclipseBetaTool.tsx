@@ -23,24 +23,60 @@ export function EclipseBetaTool() {
   const body = getBody(p.body)
   const h = toSi(p.h, p.hu)
   const betaRad = toSi(p.beta, p.betaU)
+  const betaInDomain = Number.isFinite(betaRad) && Math.abs(betaRad) <= Math.PI / 2
   const res = useMemo(() => {
+    if (!betaInDomain) return null
     const m = meanMotionFromAltitude(h, body.mu, body.radius)
     if (!m) return null
     const te = eclipseWithBeta(m.a, body.radius, betaRad, m.period)
     return { period: m.period, te, frac: te != null ? te / m.period : null }
-  }, [h, body, betaRad])
+  }, [h, body, betaRad, betaInDomain])
   return (
     <ToolShell
       parameters={<ParamsGrid>
         <BodySelect value={p.body} onChange={(body) => setP({ body })} />
         <UiUnitField label={t('fields.altitude')} category="length" unitIds={TOOL_UNIT_SETS.altitude} unitId={p.hu} value={p.h} min={0} onValueChange={(h) => setP({ h })} onUnitChange={(hu, h) => setP({ hu, h })} />
-        <UiUnitField label={t('fields.beta_angle')} category="angle" unitIds={TOOL_UNIT_SETS.angle} unitId={p.betaU} value={p.beta} onValueChange={(beta) => setP({ beta })} onUnitChange={(betaU, beta) => setP({ betaU, beta })} hint={t('fields.sun_elev_hint')} />
+        <UiUnitField
+          label={t('fields.beta_angle')}
+          category="angle"
+          unitIds={TOOL_UNIT_SETS.angle}
+          unitId={p.betaU}
+          value={p.beta}
+          onValueChange={(beta) => setP({ beta })}
+          onUnitChange={(betaU, beta) => setP({ betaU, beta })}
+          hint={t('fields.beta_angle_domain')}
+        />
       </ParamsGrid>}
-      results={res && res.te != null && res.frac != null ? <div className="sidus-results">
-        <ResultCard label={t('fields.eclipse_duration')} si={res.te} category="time" unitId="pretty" unitIds={TOOL_UNIT_SETS.timePretty} digits={4} accent />
-        <ResultCard label={t('fields.fraction')} value={(res.frac * 100).toFixed(2)} unit="%" />
-        <ResultCard label={t('fields.orbit_period')} si={res.period} category="time" unitId="pretty" unitIds={TOOL_UNIT_SETS.timePretty} digits={4} />
-      </div> : <p className="font-mono text-sm text-muted">{t('fields.no_eclipse_beta')}</p>}
+      results={
+        !betaInDomain ? (
+          <p role="alert" className="font-mono text-sm text-muted">
+            {t('fields.beta_angle_domain')}
+          </p>
+        ) : res && res.te != null && res.frac != null ? (
+          <div className="sidus-results">
+            <ResultCard
+              label={t('fields.eclipse_duration')}
+              si={res.te}
+              category="time"
+              unitId="pretty"
+              unitIds={TOOL_UNIT_SETS.timePretty}
+              digits={4}
+              accent
+            />
+            <ResultCard label={t('fields.fraction')} value={(res.frac * 100).toFixed(2)} unit="%" />
+            <ResultCard
+              label={t('fields.orbit_period')}
+              si={res.period}
+              category="time"
+              unitId="pretty"
+              unitIds={TOOL_UNIT_SETS.timePretty}
+              digits={4}
+            />
+          </div>
+        ) : (
+          <p className="font-mono text-sm text-muted">{t('fields.no_eclipse_beta')}</p>
+        )
+      }
       code={<CodeExport formulaId="eclipse-beta" values={{ h, betaRad, mu: body.mu, R: body.radius, beta: p.beta, body: p.body, betaU: p.betaU }} />}
     />
   )

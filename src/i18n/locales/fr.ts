@@ -1084,6 +1084,7 @@ export const fr: TMessages = {
     mass_for_accel: "Mass (for accel)",
     beta_angle: "\u03b2-angle",
     sun_elev_hint: 'Élévation du Soleil depuis le plan orbital',
+    beta_angle_domain: 'L’angle bêta doit être compris entre −90° et +90°.',
     invalid_params: 'Paramètres invalides.',
     ratio_vesc_vc: 'Rapport v_esc / v_c',
     surface_hint: '0 = surface (rayon moyen du corps)',

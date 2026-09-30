@@ -1084,6 +1084,7 @@ export const ja: TMessages = {
     mass_for_accel: "Mass (for accel)",
     beta_angle: "\u03b2-angle",
     sun_elev_hint: '軌道面からの太陽仰角',
+    beta_angle_domain: 'ベータ角は−90°から+90°の範囲で指定してください。',
     invalid_params: 'パラメータが無効です。',
     ratio_vesc_vc: '比 v_esc / v_c',
     surface_hint: '0 = 表面（天体平均半径）',

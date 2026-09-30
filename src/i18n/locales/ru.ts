@@ -1084,6 +1084,7 @@ export const ru: TMessages = {
     mass_for_accel: "Mass (for accel)",
     beta_angle: "\u03b2-angle",
     sun_elev_hint: 'Возвышение Солнца над плоскостью орбиты',
+    beta_angle_domain: 'Угол бета должен находиться в диапазоне от −90° до +90°.',
     invalid_params: 'Недопустимые параметры.',
     ratio_vesc_vc: 'Отношение v_esc / v_c',
     surface_hint: '0 = поверхность (средний радиус тела)',

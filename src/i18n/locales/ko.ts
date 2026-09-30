@@ -1083,6 +1083,7 @@ export const ko: TMessages = {
     mass_for_accel: "Mass (for accel)",
     beta_angle: "\u03b2-angle",
     sun_elev_hint: '궤도면 기준 태양 고도각',
+    beta_angle_domain: '베타각은 −90°부터 +90° 사이여야 합니다.',
     invalid_params: '잘못된 파라미터.',
     ratio_vesc_vc: '비 v_esc / v_c',
     surface_hint: '0 = 표면 (평균 천체 반경)',
