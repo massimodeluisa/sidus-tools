@@ -1,77 +1,79 @@
 import type { FormulaSnippet } from './types'
 
 const ASSUMPTIONS =
-  'Two-body, inertial equatorial frame, SI. Classical elements singular for e≈0 or i≈0.'
+  'Two-body, inertial equatorial frame, SI. Classical angles are singular for e≈0 or sin(i)≈0 (i≈0 or π).'
 
 export const rvElementsSnippets: FormulaSnippet = {
   formulaId: 'rv-elements',
   assumptions: ASSUMPTIONS,
-  deps: [
-    {
-      name: 'numpy',
-      ecosystem: 'pypi',
-      url: 'https://pypi.org/project/numpy/',
-      install: 'pip install numpy',
-      note: 'Educational kernel uses ndarray helpers; not available on Compiler Explorer.',
-      langs: ['python'],
-    },
-  ],
   code: {
     python: `# State ↔ classical elements: ${ASSUMPTIONS}
 import math
-import numpy as np
+
+def dot(a, b):
+    return sum(x*y for x, y in zip(a, b))
+
+def cross(a, b):
+    return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]]
+
+def norm(a):
+    return math.sqrt(dot(a, a))
 
 def rv_to_elements(r, v, mu):
-    r = np.asarray(r, float); v = np.asarray(v, float)
-    rmag, vmag = np.linalg.norm(r), np.linalg.norm(v)
-    hvec = np.cross(r, v); h = np.linalg.norm(hvec)
-    nvec = np.cross([0, 0, 1], hvec); n = np.linalg.norm(nvec)
+    rmag, vmag = norm(r), norm(v)
+    hvec = cross(r, v); h = norm(hvec)
+    nvec = cross([0, 0, 1], hvec); n = norm(nvec)
     v2 = vmag**2
-    rdotv = r[0]*v[0] + r[1]*v[1] + r[2]*v[2]
-    ex = ((v2 - mu/rmag)*r[0] - rdotv*v[0]) / mu
-    ey = ((v2 - mu/rmag)*r[1] - rdotv*v[1]) / mu
-    ez = ((v2 - mu/rmag)*r[2] - rdotv*v[2]) / mu
-    evec = [ex, ey, ez]
-    e = math.sqrt(ex*ex + ey*ey + ez*ez)
+    rdotv = dot(r, v)
+    evec = [((v2 - mu/rmag)*r[k] - rdotv*v[k]) / mu for k in range(3)]
+    e = norm(evec)
     energy = v2/2 - mu/rmag
-    a = np.inf if abs(e - 1) < 1e-10 else -mu/(2*energy)
-    i = np.arccos(np.clip(hvec[2]/h, -1, 1))
+    a = math.inf if abs(e - 1) < 1e-10 else -mu/(2*energy)
+    i = math.acos(max(-1, min(1, hvec[2]/h)))
     raan = 0.0
     if n > 1e-12:
-        raan = np.arccos(np.clip(nvec[0]/n, -1, 1))
-        if nvec[1] < 0: raan = 2*np.pi - raan
+        raan = math.acos(max(-1, min(1, nvec[0]/n)))
+        if nvec[1] < 0: raan = 2*math.pi - raan
     argp = 0.0
     if n > 1e-12 and e > 1e-12:
-        argp = np.arccos(np.clip(np.dot(nvec, evec)/(n*e), -1, 1))
-        if evec[2] < 0: argp = 2*np.pi - argp
+        argp = math.acos(max(-1, min(1, dot(nvec, evec)/(n*e))))
+        if evec[2] < 0: argp = 2*math.pi - argp
     elif e > 1e-12:
         # equatorial: longitude of periapsis from e_x, e_y
-        argp = math.atan2(evec[1], evec[0])
-        if argp < 0: argp += 2*np.pi
+        periapsis_y = -evec[1] if hvec[2] < 0 else evec[1]
+        argp = math.atan2(periapsis_y, evec[0])
+        if argp < 0: argp += 2*math.pi
     nu = 0.0
     if e > 1e-12:
         dot_evec_r = evec[0]*r[0] + evec[1]*r[1] + evec[2]*r[2]
         nu = math.acos(max(-1.0, min(1.0, dot_evec_r/(e*rmag))))
         if rdotv < 0: nu = 2*math.pi - nu
+    elif n > 1e-12:
+        nu = math.acos(max(-1.0, min(1.0, dot(nvec, r)/(n*rmag))))
+        if r[2] < 0: nu = 2*math.pi - nu
+    else:
+        nu = math.atan2(r[1], r[0])
+        if hvec[2] < 0: nu = -nu
+        if nu < 0: nu += 2*math.pi
     return dict(a=a, e=e, i=i, raan=raan, argp=argp, nu=nu, h=h, energy=energy)
 
 def elements_to_rv(a, e, i, raan, argp, nu, mu):
-    p = a * (1 - e*e) if e < 1 else a * (e*e - 1)  # ellipse / hyperbola
-    if e < 1:
-        p = a * (1 - e*e)
-    r_pf = p / (1 + e*np.cos(nu))
-    r_w = np.array([r_pf*np.cos(nu), r_pf*np.sin(nu), 0.0])
-    v_w = np.sqrt(mu/p) * np.array([-np.sin(nu), e + np.cos(nu), 0.0])
+    p = a * (1 - e*e) if e < 1 else abs(a) * (e*e - 1)  # ellipse / hyperbola
+    r_pf = p / (1 + e*math.cos(nu))
+    r_w = [r_pf*math.cos(nu), r_pf*math.sin(nu), 0.0]
+    speed_scale = math.sqrt(mu/p)
+    v_w = [-speed_scale*math.sin(nu), speed_scale*(e + math.cos(nu)), 0.0]
     # R3(Ω) R1(i) R3(ω)
-    cO, sO = np.cos(raan), np.sin(raan)
-    ci, si = np.cos(i), np.sin(i)
-    cw, sw = np.cos(argp), np.sin(argp)
-    R = np.array([
+    cO, sO = math.cos(raan), math.sin(raan)
+    ci, si = math.cos(i), math.sin(i)
+    cw, sw = math.cos(argp), math.sin(argp)
+    R = [
         [cO*cw - sO*sw*ci, -cO*sw - sO*cw*ci,  sO*si],
         [sO*cw + cO*sw*ci, -sO*sw + cO*cw*ci, -cO*si],
         [sw*si,             cw*si,              ci   ],
-    ])
-    return R @ r_w, R @ v_w
+    ]
+    rotate = lambda vec: [sum(R[row][col]*vec[col] for col in range(3)) for row in range(3)]
+    return rotate(r_w), rotate(v_w)
 
 r = [rx, ry, rz]
 v = [vx, vy, vz]
@@ -119,13 +121,21 @@ function rvToElements(r, v, mu) {
     if (evec[2] < 0) argp = 2*Math.PI - argp
   } else if (e > 1e-12) {
     // equatorial: longitude of periapsis from e_x, e_y
-    argp = Math.atan2(evec[1], evec[0])
+    const periapsisY = hvec[2] < 0 ? -evec[1] : evec[1]
+    argp = Math.atan2(periapsisY, evec[0])
     if (argp < 0) argp += 2*Math.PI
   }
   let nu = 0
   if (e > 1e-12) {
     nu = Math.acos(Math.min(1, Math.max(-1, dot(evec, r)/(e*rmag))))
     if (dot(r, v) < 0) nu = 2*Math.PI - nu
+  } else if (n > 1e-12) {
+    nu = Math.acos(Math.min(1, Math.max(-1, dot(nvec, r)/(n*rmag))))
+    if (r[2] < 0) nu = 2*Math.PI - nu
+  } else {
+    nu = Math.atan2(r[1], r[0])
+    if (hvec[2] < 0) nu = -nu
+    if (nu < 0) nu += 2*Math.PI
   }
   return { a, e, i, raan, argp, nu, h, energy }
 }
@@ -182,13 +192,21 @@ function rvToElements(r: Vec3, v: Vec3, mu: number) {
     if (evec[2] < 0) argp = 2*Math.PI - argp
   } else if (e > 1e-12) {
     // equatorial: longitude of periapsis from e_x, e_y
-    argp = Math.atan2(evec[1], evec[0])
+    const periapsisY = hvec[2] < 0 ? -evec[1] : evec[1]
+    argp = Math.atan2(periapsisY, evec[0])
     if (argp < 0) argp += 2*Math.PI
   }
   let nu = 0
   if (e > 1e-12) {
     nu = Math.acos(Math.min(1, Math.max(-1, dot(evec, r)/(e*rmag))))
     if (dot(r, v) < 0) nu = 2*Math.PI - nu
+  } else if (n > 1e-12) {
+    nu = Math.acos(Math.min(1, Math.max(-1, dot(nvec, r)/(n*rmag))))
+    if (r[2] < 0) nu = 2*Math.PI - nu
+  } else {
+    nu = Math.atan2(r[1], r[0])
+    if (hvec[2] < 0) nu = -nu
+    if (nu < 0) nu += 2*Math.PI
   }
   return { a, e, i, raan, argp, nu, h, energy }
 }
@@ -243,13 +261,21 @@ if (n > 1e-12 && e > 1e-12) {
   if (ez < 0.0) argp = 2.0 * M_PI - argp;
 } else if (e > 1e-12) {
   /* equatorial: longitude of periapsis from e_x, e_y */
-  argp = atan2(ey, ex);
+  const double periapsis_y = hz < 0.0 ? -ey : ey;
+  argp = atan2(periapsis_y, ex);
   if (argp < 0.0) argp += 2.0 * M_PI;
 }
 double nu = 0.0;
 if (e > 1e-12) {
   nu = acos(fmax(-1.0, fmin(1.0, (ex*rx + ey*ry + ez*rz) / (e * rmag))));
   if (rdv < 0.0) nu = 2.0 * M_PI - nu;
+} else if (n > 1e-12) {
+  nu = acos(fmax(-1.0, fmin(1.0, (nx*rx + ny*ry + nz*rz) / (n * rmag))));
+  if (rz < 0.0) nu = 2.0 * M_PI - nu;
+} else {
+  nu = atan2(ry, rx);
+  if (hz < 0.0) nu = -nu;
+  if (nu < 0.0) nu += 2.0 * M_PI;
 }`,
 
     cpp: `// RV → OE: educational core: ${ASSUMPTIONS}
@@ -283,13 +309,21 @@ if (n > 1e-12 && e > 1e-12) {
   if (ez < 0.0) argp = 2.0 * M_PI - argp;
 } else if (e > 1e-12) {
   // equatorial: longitude of periapsis from e_x, e_y
-  argp = std::atan2(ey, ex);
+  const double periapsis_y = hz < 0.0 ? -ey : ey;
+  argp = std::atan2(periapsis_y, ex);
   if (argp < 0.0) argp += 2.0 * M_PI;
 }
 double nu = 0.0;
 if (e > 1e-12) {
   nu = std::acos(std::fmax(-1.0, std::fmin(1.0, (ex*rx + ey*ry + ez*rz) / (e * rmag))));
   if (rdv < 0.0) nu = 2.0 * M_PI - nu;
+} else if (n > 1e-12) {
+  nu = std::acos(std::fmax(-1.0, std::fmin(1.0, (nx*rx + ny*ry + nz*rz) / (n * rmag))));
+  if (rz < 0.0) nu = 2.0 * M_PI - nu;
+} else {
+  nu = std::atan2(ry, rx);
+  if (hz < 0.0) nu = -nu;
+  if (nu < 0.0) nu += 2.0 * M_PI;
 }`,
 
     rust: `// RV → OE: educational core: ${ASSUMPTIONS}
@@ -323,13 +357,21 @@ if n > 1e-12 && e > 1e-12 {
     if ez < 0.0 { argp = 2.0 * std::f64::consts::PI - argp; }
 } else if e > 1e-12 {
     // equatorial: longitude of periapsis from e_x, e_y
-    argp = ey.atan2(ex);
+    let periapsis_y = if hz < 0.0 { -ey } else { ey };
+    argp = periapsis_y.atan2(ex);
     if argp < 0.0 { argp += 2.0 * std::f64::consts::PI; }
 }
 let mut nu = 0.0_f64;
 if e > 1e-12 {
     nu = ((ex*rx + ey*ry + ez*rz) / (e * rmag)).clamp(-1.0, 1.0).acos();
     if rdv < 0.0 { nu = 2.0 * std::f64::consts::PI - nu; }
+} else if n > 1e-12 {
+    nu = ((nx*rx + ny*ry + nz*rz) / (n * rmag)).clamp(-1.0, 1.0).acos();
+    if rz < 0.0 { nu = 2.0 * std::f64::consts::PI - nu; }
+} else {
+    nu = ry.atan2(rx);
+    if hz < 0.0 { nu = -nu; }
+    if nu < 0.0 { nu += 2.0 * std::f64::consts::PI; }
 }`,
 
     zig: `// RV → OE: educational core: ${ASSUMPTIONS}
@@ -366,7 +408,8 @@ if (n > 1e-12 and e > 1e-12) {
     if (ez < 0.0) argp = 2.0 * std.math.pi - argp;
 } else if (e > 1e-12) {
     // equatorial: longitude of periapsis from e_x, e_y
-    argp = std.math.atan2(ey, ex);
+    const periapsis_y = if (hz < 0.0) -ey else ey;
+    argp = std.math.atan2(periapsis_y, ex);
     if (argp < 0.0) argp += 2.0 * std.math.pi;
 }
 var nu: f64 = 0.0;
@@ -374,6 +417,14 @@ if (e > 1e-12) {
     const cos_nu = @max(-1.0, @min(1.0, (ex*rx + ey*ry + ez*rz) / (e * rmag)));
     nu = std.math.acos(cos_nu);
     if (rdv < 0.0) nu = 2.0 * std.math.pi - nu;
+} else if (n > 1e-12) {
+    const cos_u = @max(-1.0, @min(1.0, (nx*rx + ny*ry + nz*rz) / (n * rmag)));
+    nu = std.math.acos(cos_u);
+    if (rz < 0.0) nu = 2.0 * std.math.pi - nu;
+} else {
+    nu = std.math.atan2(ry, rx);
+    if (hz < 0.0) nu = -nu;
+    if (nu < 0.0) nu += 2.0 * std.math.pi;
 }`,
 
     fortran: `! RV → OE: educational core: ${ASSUMPTIONS}
@@ -406,13 +457,24 @@ if (n > 1.0d-12 .and. e > 1.0d-12) then
   argp = acos(max(-1.0d0, min(1.0d0, (nx*ex + ny*ey + nz*ez) / (n * e))))
   if (ez < 0.0d0) argp = 2.0d0 * acos(-1.0d0) - argp
 else if (e > 1.0d-12) then
-  argp = atan2(ey, ex)
+  if (hz < 0.0d0) then
+    argp = atan2(-ey, ex)
+  else
+    argp = atan2(ey, ex)
+  end if
   if (argp < 0.0d0) argp = argp + 2.0d0 * acos(-1.0d0)
 end if
 nu = 0.0d0
 if (e > 1.0d-12) then
   nu = acos(max(-1.0d0, min(1.0d0, (ex*rx + ey*ry + ez*rz) / (e * rmag))))
   if (rdv < 0.0d0) nu = 2.0d0 * acos(-1.0d0) - nu
+else if (n > 1.0d-12) then
+  nu = acos(max(-1.0d0, min(1.0d0, (nx*rx + ny*ry + nz*rz) / (n * rmag))))
+  if (rz < 0.0d0) nu = 2.0d0 * acos(-1.0d0) - nu
+else
+  nu = atan2(ry, rx)
+  if (hz < 0.0d0) nu = -nu
+  if (nu < 0.0d0) nu = nu + 2.0d0 * acos(-1.0d0)
 end if`,
 
     matlab: `% RV → elements: ${ASSUMPTIONS}
@@ -444,7 +506,7 @@ if n > 1e-12 && e > 1e-12
   if evec(3) < 0, argp = 2*pi - argp; end
 elseif e > 1e-12
   % equatorial: longitude of periapsis from e_x, e_y
-  argp = atan2(evec(2), evec(1));
+  if hz < 0, argp = atan2(-evec(2), evec(1)); else, argp = atan2(evec(2), evec(1)); end
   if argp < 0, argp = argp + 2*pi; end
 else
   argp = 0;
@@ -452,8 +514,13 @@ end
 if e > 1e-12
   nu = acos(max(-1, min(1, dot(evec,r)/(e*rmag))));
   if dot(r,v) < 0, nu = 2*pi - nu; end
+elseif n > 1e-12
+  nu = acos(max(-1, min(1, dot(nvec,r)/(n*rmag))));
+  if r(3) < 0, nu = 2*pi - nu; end
 else
-  nu = 0;
+  nu = atan2(r(2), r(1));
+  if hz < 0, nu = -nu; end
+  if nu < 0, nu = nu + 2*pi; end
 end`,
 
     julia: `# RV → classical elements: ${ASSUMPTIONS}
@@ -483,7 +550,8 @@ function rv_to_elements(r, v, mu)
         end
     elseif e > 1e-12
         # equatorial: longitude of periapsis from e_x, e_y
-        argp = atan(evec[2], evec[1])
+        periapsis_y = hvec[3] < 0 ? -evec[2] : evec[2]
+        argp = atan(periapsis_y, evec[1])
         if argp < 0
             argp += 2π
         end
@@ -493,6 +561,19 @@ function rv_to_elements(r, v, mu)
         nu = acos(clamp(dot(evec, r)/(e*rmag), -1, 1))
         if dot(r, v) < 0
             nu = 2π - nu
+        end
+    elseif n > 1e-12
+        nu = acos(clamp(dot(nvec, r)/(n*rmag), -1, 1))
+        if r[3] < 0
+            nu = 2π - nu
+        end
+    else
+        nu = atan(r[2], r[1])
+        if hvec[3] < 0
+            nu = -nu
+        end
+        if nu < 0
+            nu += 2π
         end
     end
     return (; a, e, i, raan, argp, nu, h, energy)

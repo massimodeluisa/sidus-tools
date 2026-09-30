@@ -8,6 +8,7 @@ import { planeChangeSnippets } from './plane-change'
 import { biellipticSnippets } from './bielliptic'
 import { rocketSnippets } from './rocket-equation'
 import { rvElementsSnippets } from './rv-elements'
+import { rvElementsInverseSnippets } from './rv-elements-inverse'
 import { keplerSnippets } from './kepler-propagate'
 import { lambertSnippets } from './lambert'
 import { sgp4Snippets } from './sgp4'
@@ -196,6 +197,7 @@ const MAP: Record<string, FormulaSnippet> = {
   [biellipticSnippets.formulaId]: biellipticSnippets,
   [rocketSnippets.formulaId]: rocketSnippets,
   [rvElementsSnippets.formulaId]: rvElementsSnippets,
+  [rvElementsInverseSnippets.formulaId]: rvElementsInverseSnippets,
   [keplerSnippets.formulaId]: keplerSnippets,
   [lambertSnippets.formulaId]: lambertSnippets,
   [sgp4Snippets.formulaId]: sgp4Snippets,

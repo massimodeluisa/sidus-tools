@@ -6,6 +6,34 @@
 import type { Scenario } from '../inputs'
 
 export const ORBITS_SCENARIOS: Record<string, Scenario[]> = {
+  'rv-elements-inverse': [
+    {
+      name: 'inclined-ellipse',
+      source: 'synthetic non-circular elliptic state; exercises all three Euler rotations',
+      bag: {
+        mu: 3.986004418e14, a: 9_000_000, e: 0.4,
+        i: Math.PI / 6, raan: 40 * Math.PI / 180,
+        argp: 20 * Math.PI / 180, nu: Math.PI / 4,
+      },
+    },
+    {
+      name: 'near-circular-retrograde',
+      source: 'synthetic near-circular retrograde elliptic elements; exercises i>90 degrees and small e',
+      bag: {
+        mu: 3.986004418e14, a: 7_000_000, e: 1e-4,
+        i: 120 * Math.PI / 180, raan: 70 * Math.PI / 180,
+        argp: 15 * Math.PI / 180, nu: 210 * Math.PI / 180,
+      },
+    },
+    {
+      name: 'physical-hyperbola',
+      source: 'synthetic hyperbola with a<0, e>1, and positive physical-branch radius denominator',
+      bag: {
+        mu: 3.986004418e14, a: -10_000_000, e: 1.5,
+        i: 0.7, raan: 1.1, argp: 0.5, nu: 2 * Math.PI / 3,
+      },
+    },
+  ],
   'circular-orbit': [
     {
       name: 'iss',
@@ -208,6 +236,32 @@ export const ORBITS_SCENARIOS: Record<string, Scenario[]> = {
       name: 'equatorial-synthetic',
       source: 'adversarial synthetic equatorial state (z=0, vz=0; exercises the i~0 node-vector singular branch noted in the tool assumptions)',
       bag: { rx: 8_123_456, ry: 1_234_567, rz: 0, vx: -1200, vy: 6900, vz: 0 },
+    },
+    {
+      name: 'equatorial-retrograde-eccentric',
+      source: 'analytic elliptic state with mu=3.986004e14 m^3/s^2, a=9000 km, e=0.2, i=pi, argp=0.7 rad, nu=0.4 rad; rotated with the retrograde-equatorial matrix',
+      bag: {
+        mu: 3.986004e14,
+        rx: 3_309_432.6279415116,
+        ry: -6_502_239.71576187,
+        rz: 0,
+        vx: -6_928.414088868012,
+        vy: -4_119.922295869929,
+        vz: 0,
+      },
+    },
+    {
+      name: 'equatorial-retrograde-circular',
+      source: 'analytic circular equatorial state with mu=4e13 m^3/s^2, radius=10000 km, and speed=2000 m/s; negative-z angular momentum gives true longitude 3pi/2 in the selected convention',
+      bag: {
+        mu: 4e13,
+        rx: 0,
+        ry: 10_000_000,
+        rz: 0,
+        vx: 2000,
+        vy: 0,
+        vz: 0,
+      },
     },
   ],
 

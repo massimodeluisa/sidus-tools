@@ -90,6 +90,18 @@ export function RvElementsTool() {
     return { dr, dv }
   }, [body.mu, p.rx, p.ry, p.rz, p.vx, p.vy, p.vz, result])
 
+  const codeValues = p.mode === 'rv2el'
+    ? { mu: body.mu, rx: p.rx, ry: p.ry, rz: p.rz, vx: p.vx, vy: p.vy, vz: p.vz }
+    : {
+        mu: body.mu,
+        a: p.a_km * 1000,
+        e: p.e,
+        i: toDeg ? rad(p.i_deg) : p.i_deg,
+        raan: toDeg ? rad(p.raan_deg) : p.raan_deg,
+        argp: toDeg ? rad(p.argp_deg) : p.argp_deg,
+        nu: toDeg ? rad(p.nu_deg) : p.nu_deg,
+      }
+
   return (
     <ToolShell
       parameters={
@@ -263,7 +275,7 @@ export function RvElementsTool() {
           </div>
         )
       }
-      code={<CodeExport formulaId="rv-elements" values={{ mu: body.mu, rx: p.rx, ry: p.ry, rz: p.rz, vx: p.vx, vy: p.vy, vz: p.vz, a_km: p.a_km, e: p.e, i_deg: p.i_deg, raan_deg: p.raan_deg, argp_deg: p.argp_deg, nu_deg: p.nu_deg, mode: p.mode, body: p.body, ang: p.ang }} />}
+      code={<CodeExport formulaId={p.mode === 'rv2el' ? 'rv-elements' : 'rv-elements-inverse'} values={codeValues} />}
     />
   )
 }

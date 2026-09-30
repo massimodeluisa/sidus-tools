@@ -207,12 +207,9 @@ export const ORBITS_EXPECTED: Record<string, ExpectedFn> = {
   },
 
   /**
-   * python/js/ts define rv_to_elements/rvToElements but never call or print
-   * anything (no top-level statement outside the function body): confirmed by
-   * rendering those three languages' live code, which produces only the live-input
-   * preamble with zero print lines. Those three cells are expected to fail-parse;
-   * see the report for this found snippet bug. c/cpp/rust/zig/fortran only compute
-   * through `i` (no raan/argp/nu branches); matlab/julia compute the full set.
+   * These values come from the shared kernel and check snippet parity, not
+   * independent physical truth. The degenerate retrograde branches are anchored
+   * separately by the direct Cartesian regression in orbital.test.ts.
    */
   'rv-elements': (bag) => {
     const mu = num(bag, 'mu')

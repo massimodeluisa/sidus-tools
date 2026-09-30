@@ -23,7 +23,7 @@ import {
   type CodeLang,
   type LiveCodeValues,
 } from '../src/lib/snippets/index.ts'
-import { inputBagFor } from '../src/lib/snippets/verify/inputs.ts'
+import { inputBagFor, scenariosFor } from '../src/lib/snippets/verify/inputs.ts'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const CE = 'https://godbolt.org'
@@ -70,6 +70,7 @@ function parseArgs(argv: string[]) {
   let limit = Infinity
   let concurrency = 3
   let includeLib = false
+  let scenarioName: string | null = null
   let outDir = path.join(ROOT, 'docs', 'godbolt-matrix')
   let toolsFilter: string[] | null = null
 
@@ -84,6 +85,7 @@ function parseArgs(argv: string[]) {
     } else if (a.startsWith('--limit=')) limit = Number(a.slice('--limit='.length))
     else if (a.startsWith('--concurrency='))
       concurrency = Math.max(1, Number(a.slice('--concurrency='.length)) || 3)
+    else if (a.startsWith('--scenario=')) scenarioName = a.slice('--scenario='.length)
     else if (a === '--include-lib') includeLib = true
     else if (a.startsWith('--out=')) outDir = path.resolve(a.slice('--out='.length))
     else if (a.startsWith('--tools=')) {
@@ -94,7 +96,7 @@ function parseArgs(argv: string[]) {
         .filter(Boolean)
     }
   }
-  return { langs, limit, concurrency, includeLib, outDir, toolsFilter }
+  return { langs, limit, concurrency, includeLib, scenarioName, outDir, toolsFilter }
 }
 
 function textLines(
@@ -349,6 +351,7 @@ function buildMarkdown(results: CaseResult[], meta: Record<string, unknown>): st
   lines.push('npm run godbolt:matrix                 # python + javascript + c')
   lines.push('npm run godbolt:matrix -- --all        # all Godbolt languages')
   lines.push('npm run godbolt:matrix -- --include-lib')
+  lines.push('npx tsx scripts/godbolt-matrix.ts --tools=rv-elements --scenario=equatorial-retrograde-eccentric')
   lines.push('```')
   lines.push('')
   lines.push(
@@ -426,7 +429,20 @@ async function main() {
 
       let source: string
       try {
-        const bag: LiveCodeValues = inputBagFor(job.toolId)
+        const selectedScenario = args.scenarioName
+          ? scenariosFor(job.toolId).find((scenario) => scenario.name === args.scenarioName)
+          : null
+        if (args.scenarioName && !selectedScenario) {
+          return {
+            toolId: job.toolId,
+            formulaId: job.formulaId,
+            lang: job.lang,
+            status: 'error-render',
+            stderr: `unknown scenario '${args.scenarioName}' for tool '${job.toolId}'`,
+            hasDeps: job.hasDeps,
+          }
+        }
+        const bag: LiveCodeValues = selectedScenario?.bag ?? inputBagFor(job.toolId)
         source = renderLiveCode(job.body, job.lang, bag)
       } catch (e) {
         return {
@@ -486,6 +502,7 @@ async function main() {
     langs: args.langs,
     concurrency: args.concurrency,
     includeLib: args.includeLib,
+    scenario: args.scenarioName,
     limit: args.limit === Infinity ? null : args.limit,
     cases: results.length,
   }

@@ -31,6 +31,7 @@ import {
 } from '../src/lib/snippets/index.ts'
 import { asInjected, scenariosFor } from '../src/lib/snippets/verify/inputs.ts'
 import { EXPECTED, TOLERANCE_OVERRIDES, UNVERIFIABLE } from '../src/lib/snippets/verify/expected/index.ts'
+import { SUPPLEMENTAL_EXPECTED } from '../src/lib/snippets/verify/expected/supplemental.ts'
 import { getAliasGroups } from '../src/lib/snippets/verify/expected/shared.ts'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -40,6 +41,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 // rule since it's a subdirectory. Cleaned up at the end as before.
 const TMP = path.join(ROOT, '.verify-tmp', `${process.pid}-${Date.now()}`)
 const ALL_LANGS = CODE_LANGS.map((l) => l.id)
+const ALL_EXPECTED = { ...EXPECTED, ...SUPPLEMENTAL_EXPECTED }
 
 /** Relative tolerance per language: printf precision, not physics disagreement. */
 const TOLERANCE: Partial<Record<CodeLang, number>> = {
@@ -639,7 +641,7 @@ function verifyCase(toolId: string, lang: CodeLang): CaseResult {
       : { toolId, lang, status: r.status, detail: r.detail }
   }
 
-  const expectedFn = EXPECTED[toolId]
+  const expectedFn = ALL_EXPECTED[toolId]
   if (!expectedFn) return { toolId, lang, status: 'skip-no-expected' }
 
   const scenarios = scenariosFor(toolId)
@@ -718,7 +720,7 @@ const SYMBOL: Record<Status, string> = {
  * `results` this function also receives, showed it fully compared.
  */
 function hasExpectedValues(id: string): boolean {
-  const fn = EXPECTED[id]
+  const fn = ALL_EXPECTED[id]
   if (!fn) return false
   try {
     return Object.keys(fn(asInjected(scenariosFor(id)[0]!.bag) as Record<string, number | string>)).length > 0
@@ -859,7 +861,10 @@ function buildMarkdown(
 
 function main() {
   const args = parseArgs(process.argv.slice(2))
-  const allIds = TOOLS.filter((t) => getSnippets(t.id)).map((t) => t.id)
+  const allIds = [
+    ...TOOLS.filter((t) => getSnippets(t.id)).map((t) => t.id),
+    ...Object.keys(SUPPLEMENTAL_EXPECTED),
+  ]
   let toolIds = args.tools ?? allIds
   if (args.changed) {
     const changed = changedToolIds(allIds)

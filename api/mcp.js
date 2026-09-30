@@ -21825,7 +21825,8 @@ function rvToElements(r, v, mu2) {
     argp = clampAcos(vdot(nvec, evec) / (n * e));
     if (evec[2] < 0) argp = TWO_PI - argp;
   } else if (e > EPS) {
-    argp = Math.atan2(evec[1], evec[0]);
+    const periapsisY = hvec[2] < 0 ? -evec[1] : evec[1];
+    argp = Math.atan2(periapsisY, evec[0]);
     if (argp < 0) argp += TWO_PI;
   }
   let nu = 0;
@@ -21838,6 +21839,7 @@ function rvToElements(r, v, mu2) {
       if (r[2] < 0) nu = TWO_PI - nu;
     } else {
       nu = Math.atan2(r[1], r[0]);
+      if (hvec[2] < 0) nu = -nu;
       if (nu < 0) nu += TWO_PI;
     }
   }
@@ -21869,6 +21871,7 @@ function elementsToRv(el, mu2) {
   const cnu = Math.cos(nu);
   const snu = Math.sin(nu);
   const denom = 1 + e * cnu;
+  if (e >= 1 && !(denom > 0)) return null;
   if (Math.abs(denom) < EPS) return null;
   const r_pqw = [p * cnu / denom, p * snu / denom, 0];
   const sqrtMuP = Math.sqrt(mu2 / p);

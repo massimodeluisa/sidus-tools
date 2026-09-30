@@ -4,11 +4,13 @@ import {
   EARTH_RADIUS,
   apsidesWithSpeeds,
   circularOrbitVelocity,
+  elementsToRv,
   hohmannTransfer,
   j2RaanRate,
   multiStageDeltaV,
   orbitalPeriod,
   planeChangeDeltaV,
+  rvToElements,
   visViva,
 } from './index'
 
@@ -71,6 +73,88 @@ describe('multi-stage', () => {
     expect(r).not.toBeNull()
     expect(r!.dv.length).toBe(2)
     expect(r!.dvTotal).toBeCloseTo(r!.dv[0] + r!.dv[1], 10)
+  })
+})
+
+describe('Cartesian / classical elements conversion', () => {
+  it('round-trips an equatorial retrograde circular state', () => {
+    const radius = 7_000_000
+    const r = [0, radius, 0] as [number, number, number]
+    const v = [circularOrbitVelocity(EARTH_MU, radius), 0, 0] as [number, number, number]
+    const elements = rvToElements(r, v, EARTH_MU)
+    expect(elements).not.toBeNull()
+    const state = elementsToRv(elements!, EARTH_MU)
+    expect(state).not.toBeNull()
+    expect(state!.r[0]).toBeCloseTo(r[0], 6)
+    expect(state!.r[1]).toBeCloseTo(r[1], 6)
+    expect(state!.r[2]).toBeCloseTo(r[2], 6)
+    expect(state!.v[0]).toBeCloseTo(v[0], 6)
+    expect(state!.v[1]).toBeCloseTo(v[1], 6)
+    expect(state!.v[2]).toBeCloseTo(v[2], 6)
+  })
+
+  it('recovers periapsis for an eccentric equatorial retrograde state', () => {
+    const a = 9_000_000
+    const e = 0.2
+    const argp = 0.7
+    const nu = 0.4
+    const p = a * (1 - e * e)
+    const rPf = p / (1 + e * Math.cos(nu))
+    const xPf = rPf * Math.cos(nu)
+    const yPf = rPf * Math.sin(nu)
+    const speedScale = Math.sqrt(EARTH_MU / p)
+    const vxPf = -speedScale * Math.sin(nu)
+    const vyPf = speedScale * (e + Math.cos(nu))
+    const cosArgp = Math.cos(argp)
+    const sinArgp = Math.sin(argp)
+
+    // R3(0) R1(pi) R3(argp) reflects the perifocal y-axis.
+    const r = [cosArgp * xPf - sinArgp * yPf, -sinArgp * xPf - cosArgp * yPf, 0] as [number, number, number]
+    const v = [cosArgp * vxPf - sinArgp * vyPf, -sinArgp * vxPf - cosArgp * vyPf, 0] as [number, number, number]
+    const elements = rvToElements(r, v, EARTH_MU)
+
+    expect(elements).not.toBeNull()
+    expect(elements!.a).toBeCloseTo(a, 7)
+    expect(elements!.e).toBeCloseTo(e, 13)
+    expect(elements!.i).toBeCloseTo(Math.PI, 13)
+    expect(elements!.raan).toBe(0)
+    expect(elements!.argp).toBeCloseTo(argp, 13)
+    expect(elements!.nu).toBeCloseTo(nu, 13)
+
+    const state = elementsToRv(elements!, EARTH_MU)
+    expect(state).not.toBeNull()
+    expect(Math.hypot(...state!.r.map((x, i) => x - r[i]!)) / Math.hypot(...r)).toBeLessThan(1e-12)
+    expect(Math.hypot(...state!.v.map((x, i) => x - v[i]!)) / Math.hypot(...v)).toBeLessThan(1e-12)
+  })
+
+  const hyperbola = { a: -10_000_000, e: 1.5, i: 0, raan: 0, argp: 0 }
+
+  it.each([140, 180, 220])('rejects hyperbolic true anomaly %i outside the physical branch', (nuDeg) => {
+    expect(elementsToRv({ ...hyperbola, nu: (nuDeg * Math.PI) / 180 }, EARTH_MU)).toBeNull()
+  })
+
+  it.each([120, 240])('preserves hyperbolic invariants at valid true anomaly %i deg', (nuDeg) => {
+    const state = elementsToRv(
+      { ...hyperbola, nu: (nuDeg * Math.PI) / 180 },
+      EARTH_MU,
+    )
+    expect(state).not.toBeNull()
+
+    const radius = Math.hypot(...state!.r)
+    const speedSquared = state!.v.reduce((sum, component) => sum + component * component, 0)
+    const energy = speedSquared / 2 - EARTH_MU / radius
+    const h = [
+      state!.r[1] * state!.v[2] - state!.r[2] * state!.v[1],
+      state!.r[2] * state!.v[0] - state!.r[0] * state!.v[2],
+      state!.r[0] * state!.v[1] - state!.r[1] * state!.v[0],
+    ]
+    const hSquared = h.reduce((sum, component) => sum + component * component, 0)
+    const p = Math.abs(hyperbola.a) * (hyperbola.e * hyperbola.e - 1)
+    const expectedEnergy = -EARTH_MU / (2 * hyperbola.a)
+    const expectedHSquared = EARTH_MU * p
+
+    expect(Math.abs(energy - expectedEnergy) / expectedEnergy).toBeLessThan(1e-12)
+    expect(Math.abs(hSquared - expectedHSquared) / expectedHSquared).toBeLessThan(1e-12)
   })
 })
 

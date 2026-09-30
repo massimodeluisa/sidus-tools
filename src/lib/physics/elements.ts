@@ -81,8 +81,9 @@ export function rvToElements(r: Vec3, v: Vec3, mu: number): ClassicalElements | 
     argp = clampAcos(vdot(nvec, evec) / (n * e))
     if (evec[2] < 0) argp = TWO_PI - argp
   } else if (e > EPS) {
-    // equatorial: use longitude of periapsis from e_x
-    argp = Math.atan2(evec[1], evec[0])
+    // Equatorial retrograde motion reflects the perifocal y-axis.
+    const periapsisY = hvec[2] < 0 ? -evec[1] : evec[1]
+    argp = Math.atan2(periapsisY, evec[0])
     if (argp < 0) argp += TWO_PI
   }
 
@@ -97,6 +98,10 @@ export function rvToElements(r: Vec3, v: Vec3, mu: number): ClassicalElements | 
       if (r[2] < 0) nu = TWO_PI - nu
     } else {
       nu = Math.atan2(r[1], r[0])
+      // For an equatorial retrograde orbit, i = π makes the PQW y-axis
+      // point toward -y in the inertial frame. Mirror the longitude so the
+      // elements round-trip to the original Cartesian state.
+      if (hvec[2] < 0) nu = -nu
       if (nu < 0) nu += TWO_PI
     }
   }
@@ -139,6 +144,9 @@ export function elementsToRv(
   const cnu = Math.cos(nu)
   const snu = Math.sin(nu)
   const denom = 1 + e * cnu
+  // A hyperbola occupies only the branch where the conic radius is positive.
+  // A negative denominator is the empty mirrored branch, not a negative radius.
+  if (e >= 1 && !(denom > 0)) return null
   if (Math.abs(denom) < EPS) return null
 
   const r_pqw: Vec3 = [(p * cnu) / denom, (p * snu) / denom, 0]
