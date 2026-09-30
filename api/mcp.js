@@ -23401,8 +23401,9 @@ function sarAzimuthResolution(wavelength, synthAngleRad) {
   return Number.isFinite(d) && d > 0 ? d : null;
 }
 function radarRangeResolution(bandwidthHz, c = C) {
-  if (!(bandwidthHz > 0) || !(c > 0)) return null;
-  return c / (2 * bandwidthHz);
+  if (!Number.isFinite(bandwidthHz) || !(bandwidthHz > 0) || !Number.isFinite(c) || !(c > 0)) return null;
+  const resolutionM = c / bandwidthHz / 2;
+  return Number.isFinite(resolutionM) && resolutionM > 0 ? resolutionM : null;
 }
 function linkMarginDb(cn0DbHz, requiredDbHz) {
   if (!Number.isFinite(cn0DbHz) || !Number.isFinite(requiredDbHz)) return null;
@@ -26556,9 +26557,9 @@ var MCP_TOOL_DEFS = [
   },
   {
     name: "radar_range_resolution",
-    description: "Radar range resolution.",
+    description: "Approximate bandwidth-limited slant-range resolution \u03B4\u03C1 \u2248 c/(2B) for effective processed pulse bandwidth B in Hz. This is not ground-projected cross-track resolution; waveform weighting changes point-target width. Model reference: NASA Earthdata, SWOT User Handbook \xA78.1.3, Eq. 8.28 (https://earthdata.nasa.gov/s3fs-public/2024-06/D-109532_SWOT_UserHandbook_20240502.pdf).",
     inputSchema: {
-      bandwidth_hz: number2()
+      bandwidth_hz: number2().finite().positive().describe("Effective transmitted/processed pulse bandwidth, in Hz.")
     },
     sample: { "bandwidth_hz": 5e7 },
     run: (args) => {

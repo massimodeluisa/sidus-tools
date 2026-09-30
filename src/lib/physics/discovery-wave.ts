@@ -483,10 +483,11 @@ export function sarAzimuthResolution(wavelength: number, synthAngleRad: number):
   return Number.isFinite(d) && d > 0 ? d : null
 }
 
-/** Radar range resolution [m]: δ_r = c / (2 B). */
+/** Nominal bandwidth-limited slant-range resolution [m]: δρ ≈ c / (2 B), with B the effective pulse bandwidth [Hz]. */
 export function radarRangeResolution(bandwidthHz: number, c = C): number | null {
-  if (!(bandwidthHz > 0) || !(c > 0)) return null
-  return c / (2 * bandwidthHz)
+  if (!Number.isFinite(bandwidthHz) || !(bandwidthHz > 0) || !Number.isFinite(c) || !(c > 0)) return null
+  const resolutionM = (c / bandwidthHz) / 2
+  return Number.isFinite(resolutionM) && resolutionM > 0 ? resolutionM : null
 }
 
 /** Link margin [dB]: CN0_dBHz − CN0_required. */

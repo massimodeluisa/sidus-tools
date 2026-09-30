@@ -2265,9 +2265,12 @@ return w == null ? null : { swath_m: w }
   },
   {
     name: "radar_range_resolution",
-    description: "Radar range resolution.",
+    description:
+      "Approximate bandwidth-limited slant-range resolution δρ ≈ c/(2B) for effective processed pulse bandwidth B in Hz. " +
+      "This is not ground-projected cross-track resolution; waveform weighting changes point-target width. " +
+      "Model reference: NASA Earthdata, SWOT User Handbook §8.1.3, Eq. 8.28 (https://earthdata.nasa.gov/s3fs-public/2024-06/D-109532_SWOT_UserHandbook_20240502.pdf).",
     inputSchema: {
-    bandwidth_hz: z.number(),
+    bandwidth_hz: z.number().finite().positive().describe("Effective transmitted/processed pulse bandwidth, in Hz."),
   },
     sample: {"bandwidth_hz":50000000},
     run: (args) => {
