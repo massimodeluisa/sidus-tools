@@ -70,7 +70,15 @@ export function multiStageDeltaV(
   let total = 0
   for (const s of stages) {
     if (!(s.ve > 0) || !(s.m0 > s.mf) || !(s.mf > 0)) return null
-    const d = s.ve * Math.log(s.m0 / s.mf)
+    // log1p preserves the small positive difference when m0/mf is near 1.
+    // For extreme finite masses, avoid overflow in (m0 - mf) / mf and the
+    // direct quotient by using a difference of logs away from the unit ratio.
+    const relativeMassDifference = (s.m0 - s.mf) / s.mf
+    const logMassRatio =
+      relativeMassDifference <= 0.5
+        ? Math.log1p(relativeMassDifference)
+        : Math.log(s.m0) - Math.log(s.mf)
+    const d = s.ve * logMassRatio
     dv.push(d)
     total += d
   }

@@ -162,16 +162,15 @@ export const SYSTEMS_EXPECTED: Record<string, ExpectedFn> = {
     const mf2 = num(bag, 'mf2')
     const m03 = num(bag, 'm03')
     const mf3 = num(bag, 'mf3')
+    const activeStages = Math.min(3, Math.max(1, Math.floor(num(bag, 'stages'))))
     const out: Record<string, number> = {}
     const res = multiStageDeltaV([
       { ve: exhaustVelocity(isp1), m0: m01, mf: mf1 },
       { ve: exhaustVelocity(isp2), m0: m02, mf: mf2 },
       { ve: exhaustVelocity(isp3), m0: m03, mf: mf3 },
-    ])
+    ].slice(0, activeStages))
     if (!res) return out
-    put(out, ['dv1'], res.dv[0])
-    put(out, ['dv2'], res.dv[1])
-    put(out, ['dv3'], res.dv[2])
+    res.dv.forEach((dv, i) => put(out, [`dv${i + 1}`], dv))
     put(out, ['dv_total'], res.dvTotal)
     return out
   },

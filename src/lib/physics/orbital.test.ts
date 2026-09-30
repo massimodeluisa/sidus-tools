@@ -72,6 +72,22 @@ describe('multi-stage', () => {
     expect(r!.dv.length).toBe(2)
     expect(r!.dvTotal).toBeCloseTo(r!.dv[0] + r!.dv[1], 10)
   })
+
+  it('preserves a tiny positive Δv for nearly equal masses', () => {
+    const m0 = 5000 + 1e-12
+    expect(m0 - 5000).toBe(9.094947017729282e-13)
+    const result = multiStageDeltaV([{ ve: 320 * 9.80665, m0, mf: 5000 }])
+    expect(result).not.toBeNull()
+    const expectedFromIndependentDecimal = 5.708221578970551e-13
+    const relativeError = Math.abs(result!.dv[0]! - expectedFromIndependentDecimal) / expectedFromIndependentDecimal
+    expect(relativeError).toBeLessThan(1e-14)
+  })
+
+  it('avoids overflow in the mass quotient for extreme finite masses', () => {
+    const result = multiStageDeltaV([{ ve: 1, m0: 1e300, mf: 1e-300 }])
+    expect(result).not.toBeNull()
+    expect(result!.dv[0]).toBeCloseTo(1381.5510557964274, 12)
+  })
 })
 
 describe('ECLSS', () => {

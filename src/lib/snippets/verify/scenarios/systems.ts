@@ -133,30 +133,63 @@ export const SYSTEMS_SCENARIOS: Record<string, Scenario[]> = {
 
   'multi-stage': [
     {
-      name: 'kerolox-3-stage',
-      source: 'well-known kerolox sea-level/vacuum/upper-stage Isp regimes (~282/311/320 s)',
+      name: 'kerolox-1-stage',
+      source: 'well-known kerolox first-stage Isp regime (~282 s), isolated one-stage calculation',
       bag: {
+        stages: 1,
         isp1: 282, m01: 500_000, mf1: 50_000,
         isp2: 311, m02: 100_000, mf2: 20_000,
         isp3: 320, m03: 20_000, mf3: 5_000,
       },
     },
     {
-      name: 'hydrolox-3-stage',
-      source: 'well-known hydrolox sea-level/vacuum/upper-stage Isp regimes (~363/452/465 s)',
+      name: 'hydrolox-2-stage',
+      source: 'well-known hydrolox sea-level/vacuum-stage Isp regimes (~363/452 s), third stage inactive',
       bag: {
+        stages: 2,
         isp1: 363, m01: 2_000_000, mf1: 200_000,
         isp2: 452, m02: 400_000, mf2: 40_000,
         isp3: 465, m03: 30_000, mf3: 6_000,
       },
     },
     {
-      name: 'synthetic',
-      source: 'adversarial synthetic: distinct non-round Isp/m0/mf per stage',
+      name: 'fractional-count-floors-to-one',
+      source: 'boundary regression: the UI floors a finite stage count of 1.9 to one active stage',
       bag: {
+        stages: 1.9,
+        isp1: 282, m01: 500_000, mf1: 50_000,
+        isp2: 311, m02: 100_000, mf2: 20_000,
+        isp3: 320, m03: 20_000, mf3: 5_000,
+      },
+    },
+    {
+      name: 'fractional-count-floors-to-two',
+      source: 'boundary regression: the UI floors a finite stage count of 2.9 to two active stages',
+      bag: {
+        stages: 2.9,
+        isp1: 282, m01: 500_000, mf1: 50_000,
+        isp2: 311, m02: 100_000, mf2: 20_000,
+        isp3: 320, m03: 20_000, mf3: 5_000,
+      },
+    },
+    {
+      name: 'synthetic-3-stage',
+      source: 'adversarial synthetic: distinct non-round Isp/m0/mf per active stage',
+      bag: {
+        stages: 3,
         isp1: 273.4, m01: 417_235.6, mf1: 41_723.5,
         isp2: 298.7, m02: 83_456.2, mf2: 9_123.7,
         isp3: 315.9, m03: 15_642.3, mf3: 3_012.8,
+      },
+    },
+    {
+      name: 'near-unit-mass-ratio',
+      source: 'floating-point stability regression: close positive mass ratio preserved by current code-literal precision',
+      bag: {
+        stages: 1,
+        isp1: 320, m01: 5000 + 5e-8, mf1: 5000,
+        isp2: 311, m02: 100_000, mf2: 20_000,
+        isp3: 320, m03: 20_000, mf3: 5_000,
       },
     },
   ],

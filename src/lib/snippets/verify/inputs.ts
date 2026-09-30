@@ -72,6 +72,7 @@ export const SAMPLE: LiveCodeValues = {
   m_0: 1000,
   mf: 400,
   m_f: 400,
+  stages: 2,
   Isp: 300,
   g0: 9.80665,
   n_stages: 2,
