@@ -543,6 +543,7 @@ export const zh: TMessages = {
     gamma: "比热比 γ",
     gamma_2: "Reflection coefficient |Γ|",
     gdop: "GDOP",
+    gdop_enu_hint: "无权重的几何DOP假设各伪距测量误差方差相同；这些无量纲数值不是位置误差估计。请在接收机本地东/北/天（ENU）坐标系中输入LOS分量，并确保四个向量的视线方向一致；计算前会对每个向量归一化。",
     gsd: "Ground sample distance",
     hdop: "HDOP",
     hfg: "Heat of vaporization",

@@ -11,6 +11,20 @@ export type SourceRef = {
  * Multi-source bibliography for tools. Prefer ≥2 independent references per formula tool.
  */
 export const SOURCES: Record<string, SourceRef> = {
+  'esa-navipedia-positioning-error': {
+    id: 'esa-navipedia-positioning-error',
+    name: 'Positioning Error',
+    org: 'ESA Navipedia / Technical University of Catalonia',
+    url: 'https://gssc.esa.int/navipedia/index.php/Positioning_Error',
+    note: 'GNSS geometry covariance, GDOP/PDOP definitions, and local ENU line-of-sight geometry rows.',
+  },
+  'uscg-gps-user-guide': {
+    id: 'uscg-gps-user-guide',
+    name: 'NAVSTAR GPS User Equipment Introduction',
+    org: 'U.S. Coast Guard Navigation Center / NAVSTAR GPS Joint Program Office',
+    url: 'https://www.navcen.uscg.gov/sites/default/files/pubs/gps/gpsuser/gpsuser.pdf',
+    note: '1996 GPS user-equipment guide: DOP as dimensionless geometry-only multipliers, equal-variance model, and PDOP/HDOP/VDOP definitions.',
+  },
   'apollo-11': {
     id: 'apollo-11',
     name: 'Apollo-11 AGC source',

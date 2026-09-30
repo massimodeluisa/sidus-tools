@@ -548,6 +548,7 @@ export const ko: TMessages = {
     gamma: "비열비 γ",
     gamma_2: "Reflection coefficient |Γ|",
     gdop: "GDOP",
+    gdop_enu_hint: "비가중 기하학적 DOP는 거리 측정 오차의 분산이 같다고 가정합니다. 무차원 값은 위치 오차 자체가 아닙니다. LOS 성분은 수신기 로컬 동·북·상향(ENU) 좌표계로 입력하고 네 벡터 모두 같은 시선 방향을 사용하세요. 계산 전에 각 벡터를 정규화합니다.",
     gsd: "Ground sample distance",
     hdop: "HDOP",
     hfg: "Heat of vaporization",

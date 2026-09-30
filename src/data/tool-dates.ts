@@ -117,7 +117,7 @@ export const TOOL_DATES: Record<string, ToolDates> = {
   'ion-thruster-efficiency': { created: '2026-08-07', updated: '2026-09-04' },
   'hall-thruster-isp': { created: '2026-08-07', updated: '2026-08-07' },
   'gnss-pseudorange': { created: '2026-08-07', updated: '2026-08-07' },
-  'gnss-geometry-gdop': { created: '2026-08-07', updated: '2026-08-07' },
+  'gnss-geometry-gdop': { created: '2026-08-07', updated: '2026-09-24' },
   'laser-link-budget': { created: '2026-08-07', updated: '2026-08-07' },
   'laser-pointing-jitter': { created: '2026-08-07', updated: '2026-08-07' },
   'laser-time-of-flight': { created: '2026-08-07', updated: '2026-08-07' },

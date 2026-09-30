@@ -549,6 +549,7 @@ export const de: TMessages = {
     gamma: "Isentropenexponent γ",
     gamma_2: "Reflection coefficient |Γ|",
     gdop: "GDOP",
+    gdop_enu_hint: "Ungewichtete, rein geometrische DOP-Werte setzen gleiche Varianz der Entfernungsmessfehler voraus; diese dimensionslosen Werte sind keine Positionsfehler. Geben Sie LOS-Komponenten im lokalen Ost/Nord/Oben-System (ENU) des Empfängers ein und verwenden Sie für alle vier Vektoren dieselbe Richtung; jeder Vektor wird vor der Berechnung normiert.",
     gsd: "Ground sample distance",
     hdop: "HDOP",
     hfg: "Heat of vaporization",

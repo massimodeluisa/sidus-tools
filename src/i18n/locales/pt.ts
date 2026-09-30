@@ -548,6 +548,7 @@ export const pt: TMessages = {
     gamma: "Razão de calores específicos γ",
     gamma_2: "Reflection coefficient |Γ|",
     gdop: "GDOP",
+    gdop_enu_hint: "O DOP geométrico não ponderado pressupõe a mesma variância do erro de medição de distância; estes valores adimensionais não são erros de posição. Insira as componentes LOS nas coordenadas locais Leste/Norte/Cima (ENU) do recetor, usando a mesma direção de visada nos quatro vetores; cada vetor é normalizado antes do cálculo.",
     gsd: "Ground sample distance",
     hdop: "HDOP",
     hfg: "Heat of vaporization",

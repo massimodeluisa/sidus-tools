@@ -111,7 +111,7 @@
   <url><loc>https://sidus.tools/tools/ion-thruster-efficiency</loc><lastmod>2026-09-04</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://sidus.tools/tools/hall-thruster-isp</loc><lastmod>2026-09-04</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://sidus.tools/tools/gnss-pseudorange</loc><lastmod>2026-09-04</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://sidus.tools/tools/gnss-geometry-gdop</loc><lastmod>2026-09-04</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://sidus.tools/tools/gnss-geometry-gdop</loc><lastmod>2026-09-24</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://sidus.tools/tools/laser-link-budget</loc><lastmod>2026-09-04</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://sidus.tools/tools/laser-pointing-jitter</loc><lastmod>2026-09-04</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://sidus.tools/tools/laser-time-of-flight</loc><lastmod>2026-09-04</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>

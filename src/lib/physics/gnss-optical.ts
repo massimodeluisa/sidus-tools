@@ -18,8 +18,10 @@ export function gnssPseudorange(
 }
 
 /**
- * GDOP from design matrix H (n×4) with rows [ux, uy, uz, 1].
- * Returns GDOP, PDOP, HDOP, VDOP when n ≥ 4 and HᵀH invertible.
+ * Unweighted DOP from design matrix H (n×4) with rows [uE, uN, uU, 1].
+ * Assumes equal pseudorange measurement variance for all observations.
+ * LOS components must be in the receiver-local ENU frame for HDOP/VDOP.
+ * Returns GDOP, PDOP, HDOP, VDOP when n ≥ 4 and HᵀH is invertible.
  */
 export function gnssDopFromUnitVectors(
   los: ReadonlyArray<readonly [number, number, number]>,

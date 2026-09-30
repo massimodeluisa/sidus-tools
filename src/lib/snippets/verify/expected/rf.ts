@@ -58,6 +58,7 @@ import {
   wheelTorque,
   groundTrackShiftPerOrbit,
   EARTH_J2,
+  gnssDopFromUnitVectors,
 } from '../../../physics'
 import { num, put, type ExpectedFn } from './shared'
 
@@ -67,8 +68,6 @@ import { num, put, type ExpectedFn } from './shared'
  * asserting numbers that shipped physics does not actually produce.
  */
 export const UNVERIFIABLE_RF: Readonly<Record<string, string>> = {
-  'gnss-geometry-gdop':
-    'snippet computes an ad hoc "spread * horiz" portability proxy (its own comment: "full inv not portable"), not the shipped gnssDopFromUnitVectors matrix-inversion GDOP; the two formulas diverge for every input, not just an edge case.',
   'gnss-troposphere-delay':
     'snippet omits the "- tan(z)^2" term shipped saastamoinenTropoDelay subtracts inside the parens, and omits its height/latitude scale factor (exp(-h/7000) * (1+0.1 cos 2*lat)) entirely; the two formulas diverge for every input.',
 }
@@ -120,6 +119,23 @@ export const RF_EXPECTED: Record<string, ExpectedFn> = {
       ['rho'],
       gnssPseudorange(num(bag, 'tTx'), num(bag, 'tRx'), num(bag, 'bias')),
     )
+    return out
+  },
+
+  'gnss-geometry-gdop': (bag) => {
+    const dop = gnssDopFromUnitVectors([
+      [num(bag, 'ux1'), num(bag, 'uy1'), num(bag, 'uz1')],
+      [num(bag, 'ux2'), num(bag, 'uy2'), num(bag, 'uz2')],
+      [num(bag, 'ux3'), num(bag, 'uy3'), num(bag, 'uz3')],
+      [num(bag, 'ux4'), num(bag, 'uy4'), num(bag, 'uz4')],
+    ])
+    const out: Record<string, number> = {}
+    if (dop) {
+      out.gdop = dop.gdop
+      out.pdop = dop.pdop
+      out.hdop = dop.hdop
+      out.vdop = dop.vdop
+    }
     return out
   },
 

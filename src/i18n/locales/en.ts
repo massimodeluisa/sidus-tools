@@ -547,6 +547,7 @@ export const en = {
     gamma: "Ratio of specific heats γ",
     gamma_2: "Reflection coefficient |Γ|",
     gdop: "GDOP",
+    gdop_enu_hint: "Unweighted geometry-only DOP assumes equal range-error variance; these dimensionless values are not position-error estimates. Enter LOS components in receiver-local East/North/Up (ENU), using one consistent direction for all four vectors; each vector is normalized before calculation.",
     gsd: "Ground sample distance",
     hdop: "HDOP",
     hfg: "Heat of vaporization",

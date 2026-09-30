@@ -1132,11 +1132,11 @@ const TOOLS_RAW: ToolMeta[] = [
     id: 'gnss-geometry-gdop',
     category: 'satellite',
     title: "GNSS GDOP",
-    description: "GDOP/PDOP/HDOP/VDOP from 4 LOS vectors.",
+    description: 'Unweighted, dimensionless GDOP/PDOP/HDOP/VDOP from 4 receiver-local ENU line-of-sight vectors, assuming equal range-error variance.',
     tags: ["satellite","GNSS","geometry"],
     formulaId: 'gnss-geometry-gdop',
     status: 'live' as const,
-    sourceIds: ["vallado", "curtis"],
+    sourceIds: ['esa-navipedia-positioning-error', 'uscg-gps-user-guide'],
   },
   {
     id: 'laser-link-budget',

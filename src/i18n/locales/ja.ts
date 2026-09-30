@@ -549,6 +549,7 @@ export const ja: TMessages = {
     gamma: "比熱比 γ",
     gamma_2: "Reflection coefficient |Γ|",
     gdop: "GDOP",
+    gdop_enu_hint: "非加重の幾何学的DOPは距離測定誤差の分散が等しいと仮定します。無次元の値は位置誤差そのものではありません。LOS成分は受信機ローカルの東・北・上（ENU）座標系で入力し、4つすべてのベクトルで視線方向を統一してください。各ベクトルは計算前に正規化されます。",
     gsd: "Ground sample distance",
     hdop: "HDOP",
     hfg: "Heat of vaporization",

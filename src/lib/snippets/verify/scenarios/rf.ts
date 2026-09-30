@@ -106,6 +106,49 @@ export const RF_SCENARIOS: Record<string, Scenario[]> = {
     },
   ],
 
+  'gnss-geometry-gdop': [
+    {
+      name: 'page-default-enu',
+      source: 'four default receiver-local ENU line-of-sight vectors from the calculator',
+      bag: {
+        ux1: 1, uy1: 0, uz1: 0.5,
+        ux2: -0.5, uy2: 0.866, uz2: 0.5,
+        ux3: -0.5, uy3: -0.866, uz3: 0.5,
+        ux4: 0, uy4: 0, uz4: 1,
+      },
+    },
+    {
+      name: 'regular-tetrahedron',
+      source: 'analytic optimum-geometry reference with four regular-tetrahedron LOS directions',
+      bag: {
+        ux1: 1, uy1: 1, uz1: 1,
+        ux2: 1, uy2: -1, uz2: -1,
+        ux3: -1, uy3: 1, uz3: -1,
+        ux4: -1, uy4: -1, uz4: 1,
+      },
+    },
+    {
+      name: 'scaled-tetrahedron',
+      source: 'same tetrahedron directions at different magnitudes to verify per-row normalization',
+      bag: {
+        ux1: 2, uy1: 2, uz1: 2,
+        ux2: 3, uy2: -3, uz2: -3,
+        ux3: -4, uy3: 4, uz3: -4,
+        ux4: -5, uy4: -5, uz4: 5,
+      },
+    },
+    {
+      name: 'asymmetric-enu-geometry',
+      source: 'non-symmetric, non-round ENU LOS vectors for matrix parity',
+      bag: {
+        ux1: 0.4, uy1: 0.2, uz1: 0.9,
+        ux2: -0.2, uy2: 0.8, uz2: 0.5,
+        ux3: -0.8, uy3: -0.3, uz3: 0.7,
+        ux4: 0.1, uy4: -0.9, uz4: 0.5,
+      },
+    },
+  ],
+
   'gnss-ionosphere-klobuchar': [
     {
       name: 'zenith-typical',

@@ -136,7 +136,7 @@ SIDUS (Latin *sidus* = constellation) is a non-profit educational project with n
 - [Eclipse duration (circular)](https://sidus.tools/tools/eclipse-duration): Order-of-magnitude umbra time for circular orbit (cylindrical shadow, coplanar worst case).
 - [EIRP and G/T](https://sidus.tools/tools/eirp-gt): EIRP = P G and receive figure of merit G/T.
 - [GEO light-time](https://sidus.tools/tools/geo-light-time): One-way and RTT delay to GEO altitude (nadir path).
-- [GNSS GDOP](https://sidus.tools/tools/gnss-geometry-gdop): GDOP/PDOP/HDOP/VDOP from 4 LOS vectors.
+- [GNSS GDOP](https://sidus.tools/tools/gnss-geometry-gdop): Unweighted, dimensionless GDOP/PDOP/HDOP/VDOP from 4 receiver-local ENU line-of-sight vectors, assuming equal range-error variance.
 - [GNSS ionosphere delay](https://sidus.tools/tools/gnss-ionosphere-klobuchar): Klobuchar-class slant iono delay from TECU and elevation.
 - [GNSS pseudorange](https://sidus.tools/tools/gnss-pseudorange): rho=c*dt + c*bias.
 - [Troposphere delay](https://sidus.tools/tools/gnss-troposphere-delay): Saastamoinen-class delay vs elevation.

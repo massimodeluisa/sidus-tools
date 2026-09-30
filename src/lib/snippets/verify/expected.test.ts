@@ -143,6 +143,7 @@ const SATELLITE_WAVE = [
   'eclipse-duration',
   'eirp-gt',
   'geo-light-time',
+  'gnss-geometry-gdop',
   'gnss-ionosphere-klobuchar',
   'gnss-pseudorange',
   'gravity-gradient-torque',
