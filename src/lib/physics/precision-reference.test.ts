@@ -246,4 +246,157 @@ describe('precision metadata coverage', () => {
       expect(p.errorClass.length).toBeGreaterThan(5)
     }
   })
+
+  it('does not describe non-orbital calculations as exact two-body dynamics', () => {
+    const examples = [
+      'hoop-stress',
+      'planck-radiance',
+      'nyquist-rate',
+      'quaternion-euler',
+      'pointing-budget-rss',
+      'data-volume',
+    ]
+
+    for (const id of examples) {
+      const precision = getToolPrecision(id)
+      expect(precision.modelClass, id).toBe('closed-form')
+      expect(precision.limits, id).not.toContain('spherical central mass')
+    }
+  })
+
+  it('does not claim a two-body model for an unknown tool id', () => {
+    expect(getToolPrecision('not-a-real-tool').modelClass).toBe('unclassified')
+  })
+
+  it('labels perturbation, restricted-three-body, probability, and geometry tools by their actual model', () => {
+    const expected: Record<string, string> = {
+      'custom-body': 'closed-form',
+      'hill-sphere': 'restricted-three-body',
+      'cr3bp-jacobi': 'restricted-three-body',
+      'lunisolar-rates': 'third-body-secular',
+      'arg-perigee-drift-j2': 'j2-secular',
+      'exponential-density': 'atmosphere-order',
+      'aerobraking-pass': 'atmosphere-order',
+      'eclipse-beta': 'two-body-exact',
+      'conjunction-pc': 'probabilistic-2d',
+      'look-angles': 'closed-form',
+      'horizon-range': 'closed-form',
+      'light-time': 'closed-form',
+      'spherical-distance': 'closed-form',
+      'elevation-azimuth': 'closed-form',
+      'angular-diameter': 'closed-form',
+      'rocket-equation': 'closed-form',
+      'multi-stage': 'closed-form',
+      'propellant-mass': 'closed-form',
+      'ideal-thrust': 'closed-form',
+      'isentropic-nozzle': 'closed-form',
+      'characteristic-velocity-cstar': 'closed-form',
+      'throat-area-sizing': 'closed-form',
+      'rocket-thrust-chamber': 'closed-form',
+      'mixture-ratio': 'closed-form',
+      'tank-ullage': 'closed-form',
+      'blowdown-tank': 'closed-form',
+      'propellant-density-impulse': 'closed-form',
+      'cold-gas-thrust': 'closed-form',
+      'ion-thruster-efficiency': 'closed-form',
+      'hall-thruster-isp': 'closed-form',
+      'solar-sail-accel': 'empirical-const',
+      'thruster-impulse-bit': 'closed-form',
+      'gravity-loss': 'closed-form',
+      'thrust-to-weight': 'closed-form',
+      'boiloff-rate': 'closed-form',
+      'edelbaum-dv': 'closed-form',
+      'geo-propellant-budget': 'closed-form',
+      'free-fall-time': 'closed-form',
+      'ballistic-range': 'closed-form',
+      'terminal-velocity': 'closed-form',
+      'coordinated-turn-bank': 'closed-form',
+      'stefan-boltzmann': 'closed-form',
+      'wien-peak': 'closed-form',
+      'panel-eol-power': 'empirical-const',
+      'solar-flux-distance': 'empirical-const',
+      'earth-ir-flux': 'empirical-const',
+      'battery-dod': 'utility',
+      'relativity-clock-rate': 'closed-form',
+      'optical-gsd': 'closed-form',
+      'repeating-ground-track': 'closed-form',
+      'launch-azimuth': 'closed-form',
+      'umbra-length': 'closed-form',
+      'tisserand-parameter': 'restricted-three-body',
+      'orbit-lifetime-rough': 'atmosphere-order',
+      'finite-burn-dv': 'closed-form',
+      'gravity-gradient-torque': 'closed-form',
+      'constellation-walker': 'closed-form',
+      'coverage-swath': 'closed-form',
+      'revisit-time-simple': 'empirical-const',
+      'geo-stationkeeping-dv': 'empirical-const',
+      'drag-make-up-dv': 'atmosphere-order',
+      'eps-orbit-average': 'closed-form',
+      soi: 'restricted-three-body',
+      'delta-a-burn': 'closed-form',
+      coelliptic: 'closed-form',
+      'along-track': 'closed-form',
+      'cw-rendezvous': 'closed-form',
+      'ground-track-shift': 'closed-form',
+      'herrick-gibbs': 'closed-form',
+      'gnss-pseudorange': 'closed-form',
+      'gnss-geometry-gdop': 'closed-form',
+      'laser-link-budget': 'closed-form',
+      'laser-pointing-jitter': 'closed-form',
+      'laser-time-of-flight': 'closed-form',
+      'impedance-matching': 'closed-form',
+      'antenna-gain-effective': 'rf-communications',
+      'radar-equation': 'rf-communications',
+      'rain-attenuation-simple': 'empirical-const',
+      'ttc-ebno': 'closed-form',
+      'optical-ber-q': 'closed-form',
+      'gnss-troposphere-delay': 'empirical-const',
+      'gnss-ionosphere-klobuchar': 'empirical-const',
+      'slew-rate-pointing': 'closed-form',
+      'magnetic-torque': 'closed-form',
+      'rw-momentum-capacity': 'closed-form',
+      'sun-sensor-cone': 'closed-form',
+      'star-tracker-noise': 'closed-form',
+      'sar-azimuth-resolution': 'closed-form',
+      'radar-range-resolution': 'closed-form',
+      'link-margin': 'closed-form',
+      'diffraction-limit': 'closed-form',
+      'magnetorquer-moment': 'closed-form',
+      'residual-dipole-torque': 'closed-form',
+      'eirp-gt': 'rf-communications',
+      'quest-attitude': 'closed-form',
+      'los-range-rate': 'closed-form',
+      bodies: 'reference-data',
+    }
+
+    for (const [id, modelClass] of Object.entries(expected)) {
+      expect(getToolPrecision(id).modelClass, id).toBe(modelClass)
+    }
+    expect(getToolPrecision('cr3bp-jacobi').limits).toContain('normalized barycentric rotating coordinates')
+    expect(getToolPrecision('cr3bp-jacobi').limits).toContain('spatial CR3BP')
+    expect(getToolPrecision('cr3bp-jacobi').errorClass).not.toContain('conserved only for the planar')
+    expect(getToolPrecision('hill-sphere').limits).toContain('m/M ≪ 1')
+    expect(getToolPrecision('look-angles').limits).toContain('does not propagate an orbit')
+    expect(getToolPrecision('custom-body').limits).toContain('Laplace SOI')
+    expect(getToolPrecision('bodies').errorClass).toContain('does not expose per-record source')
+    expect(getToolPrecision('spherical-distance').errorClass).toContain('16.8 km')
+    expect(getToolPrecision('spherical-distance').limits).toContain('equatorial semimajor axis')
+    expect(getToolPrecision('eclipse-beta').limits).toContain('beta must be in [-90°, +90°]')
+    expect(getToolPrecision('eclipse-beta').errorClass).not.toContain('full ephemeris')
+    expect(getToolPrecision('laser-link-budget').limits).toContain('No atmospheric/turbulence')
+    expect(getToolPrecision('laser-link-budget').limits).not.toContain('Friis/ITU FSPL')
+    expect(getToolPrecision('antenna-gain-effective').limits).toContain('Ae = G λ²/(4π)')
+    expect(getToolPrecision('antenna-gain-effective').limits).not.toContain('Friis/ITU FSPL')
+    expect(getToolPrecision('radar-equation').limits).toContain('monostatic free-space link')
+    expect(getToolPrecision('radar-equation').limits).not.toContain('Friis/ITU FSPL')
+    expect(getToolPrecision('eirp-gt').limits).toContain('EIRP = Pt Gt and G/T = Gr/Tsys')
+    expect(getToolPrecision('eirp-gt').limits).not.toContain('Friis/ITU FSPL')
+    expect(getToolPrecision('antenna-beamwidth').limits).toContain('half-power beamwidth')
+    expect(getToolPrecision('antenna-beamwidth').limits).not.toContain('Friis/ITU FSPL')
+    expect(getToolPrecision('antenna-beamwidth').referenceHint).toContain('aperture HPBW')
+    expect(getToolPrecision('link-budget').limits).toContain('Friis free-space path loss')
+    expect(getToolPrecision('dynamic-pressure').errorClass).not.toContain('factors of 2-10')
+    expect(getToolPrecision('solar-sail-accel').errorClass).not.toContain('few-tens of percent')
+    expect(getToolPrecision('critical-inclination').errorClass).not.toContain('percent-level')
+  })
 })

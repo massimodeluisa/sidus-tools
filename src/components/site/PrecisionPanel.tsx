@@ -12,9 +12,15 @@ const CLASS_KEY: Record<PrecisionClass, string> = {
   'j2-secular': 'j2_secular',
   'atmosphere-order': 'atmosphere_order',
   'eclss-educational': 'eclss_educational',
-  'rf-friis': 'rf_friis',
+  'rf-communications': 'rf_communications',
   'empirical-const': 'empirical_const',
   utility: 'utility',
+  'closed-form': 'closed_form',
+  unclassified: 'unclassified',
+  'restricted-three-body': 'restricted_three_body',
+  'third-body-secular': 'third_body_secular',
+  'probabilistic-2d': 'probabilistic_2d',
+  'reference-data': 'reference_data',
 }
 
 /**
