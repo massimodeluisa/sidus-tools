@@ -26543,10 +26543,10 @@ var MCP_TOOL_DEFS = [
   },
   {
     name: "sar_azimuth_resolution",
-    description: "SAR azimuth resolution sketch.",
+    description: "Focused SAR azimuth-resolution estimate: res_m \u2248 wavelength_m/(2 synth_angle_rad). synth_angle_rad is the total angular span of the coherently processed synthetic aperture (processing beamwidth), in radians; wavelength_m is in meters. Educational ideal-processing approximation.",
     inputSchema: {
-      wavelength_m: number2(),
-      synth_angle_rad: number2()
+      wavelength_m: number2().finite().positive(),
+      synth_angle_rad: number2().finite().positive()
     },
     sample: { "wavelength_m": 0.03, "synth_angle_rad": 0.1 },
     run: (args) => {

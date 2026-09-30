@@ -2252,10 +2252,10 @@ return w == null ? null : { swath_m: w }
   },
   {
     name: "sar_azimuth_resolution",
-    description: "SAR azimuth resolution sketch.",
+    description: "Focused SAR azimuth-resolution estimate: res_m ≈ wavelength_m/(2 synth_angle_rad). synth_angle_rad is the total angular span of the coherently processed synthetic aperture (processing beamwidth), in radians; wavelength_m is in meters. Educational ideal-processing approximation.",
     inputSchema: {
-    wavelength_m: z.number(),
-    synth_angle_rad: z.number(),
+    wavelength_m: z.number().finite().positive(),
+    synth_angle_rad: z.number().finite().positive(),
   },
     sample: {"wavelength_m":0.03,"synth_angle_rad":0.1},
     run: (args) => {
