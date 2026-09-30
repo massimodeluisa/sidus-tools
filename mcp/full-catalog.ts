@@ -2082,11 +2082,11 @@ return w == null ? null : { swath_m: w }
   },
   {
     name: "gnss_ionosphere_klobuchar",
-    description: "Klobuchar-class iono delay.",
+    description: "First-order slant ionospheric group delay from supplied vertical TEC using the GPS Klobuchar obliquity factor only, not the full broadcast correction.",
     inputSchema: {
-    elev_deg: z.number(),
-    tecu: z.number(),
-    freq_hz: z.number().optional(),
+    elev_deg: z.number().finite().min(0).max(90),
+    tecu: z.number().finite().nonnegative(),
+    freq_hz: z.number().finite().positive().optional(),
   },
     sample: {"elev_deg":45,"tecu":20},
     run: (args) => {

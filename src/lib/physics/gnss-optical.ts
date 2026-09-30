@@ -115,20 +115,32 @@ export function saastamoinenTropoDelay(
   return Number.isFinite(delay) && delay > 0 ? delay : null
 }
 
-/** Klobuchar-like vertical iono delay [m] at L1: 40.3 TEC / f² educational TECU. */
+/**
+ * First-order ionospheric group delay [m] from supplied vertical TEC and the
+ * GPS Klobuchar obliquity factor. This is not the full broadcast correction.
+ * elevRad is geometric elevation in radians; tecu is vertical TECU.
+ */
 export function klobucharIonoDelayM(
   elevRad: number,
   tecu: number,
   fHz = 1.57542e9,
 ): number | null {
-  if (!(elevRad > 0.05) || !(tecu >= 0) || !(fHz > 0)) return null
-  // slant factor ~ 1/sqrt(1 - (cos elev * Re/(Re+h))^2) simplified as 1/sin(elev)
-  const mf = 1 / Math.sin(elevRad)
-  const dVert = (40.3e16 * tecu) / (fHz * fHz) // meters if TEC in m^-2; TECU = 1e16
-  // tecu is TECU → electrons/m² = tecu * 1e16
-  const dV = (40.3 * tecu * 1e16) / (fHz * fHz)
-  const d = dV * mf
-  return Number.isFinite(d) && d >= 0 ? d : Number.isFinite(dVert) ? dVert * mf : null
+  if (
+    !Number.isFinite(elevRad) ||
+    elevRad < 0 ||
+    elevRad > Math.PI / 2 ||
+    !Number.isFinite(tecu) ||
+    tecu < 0 ||
+    !Number.isFinite(fHz) ||
+    fHz <= 0
+  )
+    return null
+
+  // GPS Klobuchar obliquity factor, with elevation E expressed in semicircles.
+  const elevationSemicircles = elevRad / Math.PI
+  const obliquity = 1 + 16 * (0.53 - elevationSemicircles) ** 3
+  const delay = (40.3 * tecu * 1e16 * obliquity) / (fHz * fHz)
+  return Number.isFinite(delay) && delay >= 0 ? delay : null
 }
 
 /**

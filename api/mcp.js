@@ -23147,12 +23147,12 @@ function saastamoinenTropoDelay(elevRad, latRad, heightM, pHpa = 1013.25, tK = 2
   return Number.isFinite(delay) && delay > 0 ? delay : null;
 }
 function klobucharIonoDelayM(elevRad, tecu, fHz = 157542e4) {
-  if (!(elevRad > 0.05) || !(tecu >= 0) || !(fHz > 0)) return null;
-  const mf = 1 / Math.sin(elevRad);
-  const dVert = 403e15 * tecu / (fHz * fHz);
-  const dV = 40.3 * tecu * 1e16 / (fHz * fHz);
-  const d = dV * mf;
-  return Number.isFinite(d) && d >= 0 ? d : Number.isFinite(dVert) ? dVert * mf : null;
+  if (!Number.isFinite(elevRad) || elevRad < 0 || elevRad > Math.PI / 2 || !Number.isFinite(tecu) || tecu < 0 || !Number.isFinite(fHz) || fHz <= 0)
+    return null;
+  const elevationSemicircles = elevRad / Math.PI;
+  const obliquity = 1 + 16 * (0.53 - elevationSemicircles) ** 3;
+  const delay = 40.3 * tecu * 1e16 * obliquity / (fHz * fHz);
+  return Number.isFinite(delay) && delay >= 0 ? delay : null;
 }
 function opticalLinkReceivedPower(opts) {
   const { ptW, etaT, etaR, gt, gr, wavelengthM: lam, rangeM: R } = opts;
@@ -26366,11 +26366,11 @@ var MCP_TOOL_DEFS = [
   },
   {
     name: "gnss_ionosphere_klobuchar",
-    description: "Klobuchar-class iono delay.",
+    description: "First-order slant ionospheric group delay from supplied vertical TEC using the GPS Klobuchar obliquity factor only, not the full broadcast correction.",
     inputSchema: {
-      elev_deg: number2(),
-      tecu: number2(),
-      freq_hz: number2().optional()
+      elev_deg: number2().finite().min(0).max(90),
+      tecu: number2().finite().nonnegative(),
+      freq_hz: number2().finite().positive().optional()
     },
     sample: { "elev_deg": 45, "tecu": 20 },
     run: (args) => {

@@ -578,9 +578,9 @@ export const TOOL_OG: Record<string, ToolOgMeta> = {
     blurb: "Relativistic clock rate",
   },
   'gnss-ionosphere-klobuchar': {
-    formula: "d_iono ∝ TEC / f² · m(el)",
+    formula: "d_iono = 40.3·VTEC·1e16·F(E)/f²; F=1+16(0.53−E/π)³",
     accent: '#c47a5a',
-    blurb: "Klobuchar-class iono delay",
+    blurb: "Supplied VTEC with GPS obliquity mapping, not full Klobuchar",
   },
   'optical-gsd': {
     formula: "GSD ≈ h · IFOV",

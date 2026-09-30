@@ -268,6 +268,13 @@ export const SOURCES: Record<string, SourceRef> = {
     url: 'https://descanso.jpl.nasa.gov/monograph/series1/Descanso1_all.pdf',
     note: 'DSN two-way range, Doppler, and clock-to-range-rate. Educational SI, not a tracking system.',
   },
+  'gps-icd-200m': {
+    id: 'gps-icd-200m',
+    name: 'GPS Interface Specification IS-GPS-200M',
+    org: 'U.S. Coast Guard Navigation Center / GPS program',
+    url: 'https://www.navcen.uscg.gov/sites/default/files/pdf/gps/IS_GPS_200M.pdf',
+    note: 'Primary reference for the GPS broadcast ionospheric correction and its elevation-dependent obliquity factor. SIDUS uses the factor with supplied vertical TEC only, not the full broadcast algorithm.',
+  },
   'descanso-arraying': {
     id: 'descanso-arraying',
     name: 'Antenna Arraying Techniques in the Deep Space Network',

@@ -1,21 +1,22 @@
 import type { FormulaSnippet } from '../types'
 
-const A = "Klobuchar-class slant iono delay; SI."
+const A =
+  'First-order group delay from supplied vertical TECU with the GPS Klobuchar obliquity factor only; not the full broadcast correction. Elevation is radians, frequency is Hz, and the factor uses semicircles.'
 
 export const gnssIonosphereKlobucharSnippets: FormulaSnippet = {
   formulaId: 'gnss-ionosphere-klobuchar',
   assumptions: A,
   code: {
-    python: "# Klobuchar-class slant iono delay; SI.\nimport math\nmf = 1 / math.sin(elev)\nd = (40.3 * tecu * 1e16) / (f**2) * mf",
-    javascript: "// Klobuchar-class slant iono delay; SI.\nconst mf = 1 / Math.sin(elev)\nconst d = (40.3 * tecu * 1e16) / (f**2) * mf",
-    typescript: "// Klobuchar-class slant iono delay; SI.\nconst mf = 1 / Math.sin(elev)\nconst d = (40.3 * tecu * 1e16) / (f**2) * mf",
-    c: "/* Klobuchar-class slant iono delay; SI. */\nconst double mf = 1 / sin(elev);\nconst double d = (40.3 * tecu * 1e16) / (pow(f, 2)) * mf;",
-    cpp: "// Klobuchar-class slant iono delay; SI.\nconst double mf = 1 / sin(elev);\nconst double d = (40.3 * tecu * 1e16) / (pow(f, 2)) * mf;",
-    rust: "// Klobuchar-class slant iono delay; SI.\nlet mf = 1.0_f64 / (elev).sin();\nlet d = (40.3_f64 * tecu * 1e16_f64) / ((f).powi(2)) * mf;",
-    zig: "// Klobuchar-class slant iono delay; SI.\nconst mf = @as(f64, 1.0) / std.math.sin(elev);\nconst d = (@as(f64, 40.3) * tecu * 1e16) / (std.math.pow(f64, f, @as(f64, 2.0))) * mf;",
-    fortran: "! Klobuchar-class slant iono delay; SI.\n  mf = 1.0d0 / sin(elev)\n  d = (40.3d0 * tecu * 1d16) / (f**2.0d0) * mf",
-    matlab: "% Klobuchar-class slant iono delay; SI.\nmf = 1 / sin(elev)\nd = (40.3 * tecu * 1e16) / (f^2) * mf",
-    julia: "# Klobuchar-class slant iono delay; SI.\nmf = 1 / sin(elev)\nd = (40.3 * tecu * 1e16) / (f^2) * mf",
-    latex: "% Klobuchar-class slant iono delay; SI.\n\\[d_{\\mathrm{iono}}\\propto\\mathrm{TEC}/f^2\\cdot m(el)\\]",
+    python: "# Supplied VTEC with the GPS Klobuchar obliquity factor only; SI.\nimport math\nif not (math.isfinite(elev) and 0 <= elev <= math.pi / 2 and math.isfinite(tecu) and tecu >= 0 and math.isfinite(f) and f > 0):\n    raise ValueError('Require 0 <= elev <= pi/2, finite tecu >= 0, and finite f > 0')\nelevation_semicircles = elev / math.pi\nobliquity = 1 + 16 * (0.53 - elevation_semicircles) ** 3\nd = (40.3 * tecu * 1e16 * obliquity) / (f**2)",
+    javascript: "// Supplied VTEC with the GPS Klobuchar obliquity factor only; SI.\nif (!(Number.isFinite(elev) && elev >= 0 && elev <= Math.PI / 2 && Number.isFinite(tecu) && tecu >= 0 && Number.isFinite(f) && f > 0)) throw new RangeError('Invalid ionosphere inputs')\nconst elevationSemicircles = elev / Math.PI\nconst obliquity = 1 + 16 * (0.53 - elevationSemicircles) ** 3\nconst d = (40.3 * tecu * 1e16 * obliquity) / (f ** 2)",
+    typescript: "// Supplied VTEC with the GPS Klobuchar obliquity factor only; SI.\nif (!(Number.isFinite(elev) && elev >= 0 && elev <= Math.PI / 2 && Number.isFinite(tecu) && tecu >= 0 && Number.isFinite(f) && f > 0)) throw new RangeError('Invalid ionosphere inputs')\nconst elevationSemicircles: number = elev / Math.PI\nconst obliquity: number = 1 + 16 * (0.53 - elevationSemicircles) ** 3\nconst d: number = (40.3 * tecu * 1e16 * obliquity) / (f ** 2)",
+    c: "/* Supplied VTEC with the GPS Klobuchar obliquity factor only; SI. */\nconst double pi = acos(-1.0);\nconst int valid = isfinite(elev) && elev >= 0 && elev <= pi / 2 && isfinite(tecu) && tecu >= 0 && isfinite(f) && f > 0;\nconst double elevation_semicircles = elev / pi;\nconst double obliquity = 1 + 16 * pow(0.53 - elevation_semicircles, 3);\nconst double d = valid ? (40.3 * tecu * 1e16 * obliquity) / pow(f, 2) : NAN;",
+    cpp: "// Supplied VTEC with the GPS Klobuchar obliquity factor only; SI.\nconst double pi = acos(-1.0);\nconst bool valid = isfinite(elev) && elev >= 0 && elev <= pi / 2 && isfinite(tecu) && tecu >= 0 && isfinite(f) && f > 0;\nconst double elevation_semicircles = elev / pi;\nconst double obliquity = 1 + 16 * pow(0.53 - elevation_semicircles, 3);\nconst double d = valid ? (40.3 * tecu * 1e16 * obliquity) / pow(f, 2) : NAN;",
+    rust: "// Supplied VTEC with the GPS Klobuchar obliquity factor only; SI.\nassert!(elev.is_finite() && (0.0..=std::f64::consts::FRAC_PI_2).contains(&elev) && tecu.is_finite() && tecu >= 0.0 && f.is_finite() && f > 0.0, \"invalid ionosphere inputs\");\nlet elevation_semicircles = elev / std::f64::consts::PI;\nlet obliquity = 1.0 + 16.0 * (0.53 - elevation_semicircles).powi(3);\nlet d = (40.3 * tecu * 1e16) * obliquity / f.powi(2);",
+    zig: "// Supplied VTEC with the GPS Klobuchar obliquity factor only; SI.\nif (!(std.math.isFinite(elev) and elev >= 0 and elev <= std.math.pi / 2 and std.math.isFinite(tecu) and tecu >= 0 and std.math.isFinite(f) and f > 0)) @panic(\"invalid ionosphere inputs\");\nconst elevation_semicircles = elev / std.math.pi;\nconst obliquity = 1.0 + 16.0 * std.math.pow(f64, 0.53 - elevation_semicircles, 3.0);\nconst d = (40.3 * tecu * 1e16 * obliquity) / std.math.pow(f64, f, 2.0);",
+    fortran: "! Supplied VTEC with the GPS Klobuchar obliquity factor only; SI.\n  if (.not. (elev >= 0.0d0 .and. elev <= acos(-1.0d0) / 2.0d0 .and. &\n      & tecu >= 0.0d0 .and. tecu <= huge(tecu) .and. &\n      & f > 0.0d0 .and. f <= huge(f))) error stop 'invalid ionosphere inputs'\n  elevation_semicircles = elev / acos(-1.0d0)\n  obliquity = 1.0d0 + 16.0d0 * (0.53d0 - elevation_semicircles)**3\n  d = (40.3d0 * tecu * 1.0d16 * obliquity) / f**2",
+    matlab: "% Supplied VTEC with the GPS Klobuchar obliquity factor only; SI.\nvalid = isfinite(elev) && elev >= 0 && elev <= pi / 2 && isfinite(tecu) && tecu >= 0 && isfinite(f) && f > 0;\nassert(valid, 'Invalid ionosphere inputs');\nelevation_semicircles = elev / pi;\nobliquity = 1 + 16 * (0.53 - elevation_semicircles)^3;\nd = (40.3 * tecu * 1e16 * obliquity) / f^2;",
+    julia: "# Supplied VTEC with the GPS Klobuchar obliquity factor only; SI.\n@assert isfinite(elev) && 0 <= elev <= pi / 2 && isfinite(tecu) && tecu >= 0 && isfinite(f) && f > 0 \"Invalid ionosphere inputs\"\nelevation_semicircles = elev / pi\nobliquity = 1 + 16 * (0.53 - elevation_semicircles)^3\nd = (40.3 * tecu * 1e16 * obliquity) / f^2",
+    latex: "% Supplied VTEC and obliquity factor only; not the full broadcast correction. SI. Domain: 0 <= E <= pi/2, VTEC >= 0, f > 0.\n\\[\\Delta R_{\\mathrm{iono}} = \\frac{40.3\\,(10^{16}\\,\\mathrm{VTEC}_{\\mathrm{TECU}})}{f^2} F(E), \\qquad F(E)=1+16\\left(0.53-\\frac{E}{\\pi}\\right)^3\\]",
   },
 }

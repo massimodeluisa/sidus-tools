@@ -1453,11 +1453,11 @@ const TOOLS_RAW: ToolMeta[] = [
     id: 'gnss-ionosphere-klobuchar',
     category: 'satellite',
     title: "GNSS ionosphere delay",
-    description: "Klobuchar-class slant iono delay from TECU and elevation.",
+    description: "First-order slant ionospheric group delay from supplied vertical TEC using the GPS Klobuchar obliquity factor only, not the full broadcast correction.",
     tags: ["satellite","GNSS","geometry"],
     formulaId: 'gnss-ionosphere-klobuchar',
     status: 'live' as const,
-    sourceIds: ["vallado","curtis"],
+    sourceIds: ["vallado", "curtis", "gps-icd-200m"],
   },
   {
     id: 'optical-gsd',

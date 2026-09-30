@@ -113,8 +113,13 @@ export const RF_SCENARIOS: Record<string, Scenario[]> = {
       bag: { elev: Math.PI / 2, tecu: 20, f: 1.575_42e9 },
     },
     {
+      name: 'low-el-fixed-reference',
+      source: '5-degree elevation with fixed VTEC and GPS L1, independently anchored to the Klobuchar obliquity factor',
+      bag: { elev: (5 * Math.PI) / 180, tecu: 10, f: 1.575_42e9 },
+    },
+    {
       name: 'low-el-high-tec',
-      source: 'low elevation with well-known high-solar-activity TEC and GPS L2',
+      source: 'low elevation with high TEC and GPS L2',
       bag: { elev: 0.3, tecu: 50, f: 1.227_6e9 },
     },
     {

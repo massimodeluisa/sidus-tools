@@ -149,7 +149,7 @@ export const TOOL_DATES: Record<string, ToolDates> = {
   'tisserand-parameter': { created: '2026-08-07', updated: '2026-08-07' },
   'eps-orbit-average': { created: '2026-08-07', updated: '2026-08-07' },
   'relativity-clock-rate': { created: '2026-08-07', updated: '2026-08-07' },
-  'gnss-ionosphere-klobuchar': { created: '2026-08-07', updated: '2026-08-07' },
+  'gnss-ionosphere-klobuchar': { created: '2026-08-07', updated: '2026-09-24' },
   'optical-gsd': { created: '2026-08-07', updated: '2026-08-07' },
   'solar-sail-accel': { created: '2026-08-07', updated: '2026-08-07' },
   'finite-burn-dv': { created: '2026-08-07', updated: '2026-08-07' },

@@ -42,15 +42,17 @@ export function GnssIonosphereKlobucharTool() {
           <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
         ) : (
           <div className="sidus-results">
-            <ResultCard label={t('fields.delay')} si={res} category="length" unitId="km" unitIds={TOOL_UNIT_SETS.length} digits={4} accent />
+          <ResultCard label={t('fields.delay')} si={res} category="length" unitId="m" unitIds={TOOL_UNIT_SETS.length} digits={4} accent />
           </div>
         )
       }
       code={
-        <CodeExport
-          formulaId="gnss-ionosphere-klobuchar"
-          values={{ ...p, elev: toSi(p.elev, p.elevu) }}
-        />
+        res == null ? null : (
+          <CodeExport
+            formulaId="gnss-ionosphere-klobuchar"
+            values={{ ...p, elev: toSi(p.elev, p.elevu) }}
+          />
+        )
       }
     />
   )
