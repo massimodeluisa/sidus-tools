@@ -77,6 +77,8 @@ export const SAMPLE: LiveCodeValues = {
   n_stages: 2,
   nt: 2,
   dv: 3000,
+  dv_target: 3000,
+  solve_for_m0: 0,
   dvs: 3000,
   dv1: 1000,
   dv2: 1000,

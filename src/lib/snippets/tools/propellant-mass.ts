@@ -6,7 +6,7 @@ import type { FormulaSnippet } from '../types'
  * Free vars: mf, dv, isp, g0. Matches PropellantMassTool + lib/physics/propulsion.ts.
  */
 const A =
-  'Invert Tsiolkovsky; ideal rocket, constant Isp, no gravity/drag losses; SI (m, s, kg).'
+  'Invert ideal Tsiolkovsky for nonnegative delta-v and positive Isp, g0, and dry mass; no gravity/drag losses; use expm1 for small propellant masses; SI (m, s, kg).'
 
 export const propellantMassSnippets: FormulaSnippet = {
   formulaId: 'propellant-mass',
@@ -14,49 +14,64 @@ export const propellantMassSnippets: FormulaSnippet = {
   code: {
     python: `# Propellant mass: ${A}
 import math
-m0 = mf * math.exp(dv / (isp * g0))
-prop = m0 - mf`,
+exponent = dv / (isp * g0)
+m0 = mf * math.exp(exponent)
+prop = mf * math.expm1(exponent)`,
 
     javascript: `// Propellant mass: ${A}
-const m0 = mf * Math.exp(dv / (isp * g0))
-const prop = m0 - mf`,
+const exponent = dv / (isp * g0)
+const m0 = mf * Math.exp(exponent)
+const prop = mf * Math.expm1(exponent)`,
 
     typescript: `// Propellant mass: ${A}
-const m0: number = mf * Math.exp(dv / (isp * g0))
-const prop: number = m0 - mf`,
+const exponent: number = dv / (isp * g0)
+const m0: number = mf * Math.exp(exponent)
+const prop: number = mf * Math.expm1(exponent)`,
 
     c: `/* Propellant mass: ${A} */
-const double m0 = mf * exp(dv / (isp * g0));
-const double prop = m0 - mf;`,
+const double exponent = dv / (isp * g0);
+const double m0 = mf * exp(exponent);
+const double prop = mf * expm1(exponent);`,
 
     cpp: `// Propellant mass: ${A}
-const double m0 = mf * std::exp(dv / (isp * g0));
-const double prop = m0 - mf;`,
+const double exponent = dv / (isp * g0);
+const double m0 = mf * std::exp(exponent);
+const double prop = mf * std::expm1(exponent);`,
 
     rust: `// Propellant mass: ${A}
-let m0 = mf * (dv / (isp * g0)).exp();
-let prop = m0 - mf;`,
+let exponent = dv / (isp * g0);
+let m0 = mf * exponent.exp();
+let prop = mf * exponent.exp_m1();`,
 
     zig: `// Propellant mass: ${A}
-const m0 = mf * std.math.exp(dv / (isp * g0));
-const prop = m0 - mf;`,
+const exponent = dv / (isp * g0);
+const m0 = mf * @exp(exponent);
+const prop = mf * (if (@abs(exponent) < 1e-3) exponent * (1.0 + exponent * (0.5 + exponent * (1.0 / 6.0 + exponent * (1.0 / 24.0 + exponent / 120.0)))) else @exp(exponent) - 1.0);`,
 
     fortran: `! Propellant mass: ${A}
-m0 = mf * exp(dv / (isp * g0))
-prop = m0 - mf`,
+exponent = dv / (isp * g0)
+m0 = mf * exp(exponent)
+if (abs(exponent) < 1.0d-3) then
+    prop = mf * exponent * (1.0d0 + exponent * (0.5d0 + exponent * (1.0d0 / 6.0d0 + exponent * (1.0d0 / 24.0d0 + exponent / 120.0d0))))
+else
+    prop = mf * (exp(exponent) - 1.0d0)
+end if`,
 
     matlab: `% Propellant mass: ${A}
-m0 = mf * exp(dv / (isp * g0));
-prop = m0 - mf;`,
+exponent = dv / (isp * g0);
+m0 = mf * exp(exponent);
+prop = mf * expm1(exponent);`,
 
     julia: `# Propellant mass: ${A}
-m0 = mf * exp(dv / (isp * g0))
-prop = m0 - mf`,
+exponent = dv / (isp * g0)
+m0 = mf * exp(exponent)
+prop = mf * expm1(exponent)`,
 
     latex: `% Invert Tsiolkovsky: pure SI
 \\[
-  m_0 = m_f\\, e^{\\Delta v/(I_{sp} g_0)},\\quad
-  m_{\\mathrm{prop}} = m_0 - m_f
+  x = \\frac{\\Delta v}{I_{sp} g_0},\\quad
+  m_0 = m_f e^x,\\quad
+  m_{\\mathrm{prop}} = m_f \\operatorname{expm1}(x)
 \\]`,
   },
 }

@@ -40,6 +40,7 @@ import {
   respiratoryQuotient,
   rocketDeltaV,
   rocketMassInitial,
+  rocketPropellantMassForDeltaV,
   solarSailAccel,
   suttonGravesHeatFlux,
   tankPropellantMass,
@@ -84,10 +85,24 @@ function ussa1976AtGeometricAltitude(h: number) {
 export const SYSTEMS_EXPECTED: Record<string, ExpectedFn> = {
   'rocket-equation': (bag) => {
     const isp = num(bag, 'isp', 'Isp')
+    const m0 = num(bag, 'm0')
+    const mf = num(bag, 'mf')
+    const dvTarget = num(bag, 'dv_target')
+    const solveForM0 = num(bag, 'solve_for_m0') >= 0.5
+    const ve = exhaustVelocity(isp)
+    const m0Result = solveForM0 ? rocketMassInitial(isp, dvTarget, mf) : m0
+    const dvResult = solveForM0 ? dvTarget : rocketDeltaV(isp, m0, mf)
     const out: Record<string, number> = {}
     put(out, ['g0'], G0)
-    put(out, ['ve'], exhaustVelocity(isp))
-    put(out, ['dv'], rocketDeltaV(isp, num(bag, 'm0'), num(bag, 'mf')))
+    put(out, ['ve'], ve)
+    put(out, ['dv_result'], dvResult)
+    put(out, ['m0_result'], m0Result)
+    put(
+      out,
+      ['propellant_result'],
+      solveForM0 ? rocketPropellantMassForDeltaV(isp, dvTarget, mf) : propellantMass(m0Result, mf),
+    )
+    put(out, ['mass_ratio'], m0Result / mf)
     return out
   },
 
@@ -184,7 +199,7 @@ export const SYSTEMS_EXPECTED: Record<string, ExpectedFn> = {
     const out: Record<string, number> = {}
     const m0 = rocketMassInitial(isp, dv, mf, g0)
     put(out, ['m0'], m0)
-    put(out, ['prop'], propellantMass(m0, mf))
+    put(out, ['prop'], rocketPropellantMassForDeltaV(isp, dv, mf, g0))
     return out
   },
 

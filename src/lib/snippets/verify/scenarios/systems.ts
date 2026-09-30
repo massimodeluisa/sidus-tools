@@ -22,6 +22,26 @@ export const SYSTEMS_SCENARIOS: Record<string, Scenario[]> = {
       source: 'adversarial synthetic: distinct non-round Isp/m0/mf',
       bag: { isp: 417.3, m0: 83_456.2, mf: 9123.7 },
     },
+    {
+      name: 'inverse-initial-mass-from-target-dv',
+      source: 'inverse Tsiolkovsky relation: solve m0 from a 9000 m/s target, Isp=330 s, and 100000 kg final mass',
+      bag: { solve_for_m0: 1, isp: 330, mf: 100_000, dv_target: 9000 },
+    },
+    {
+      name: 'inverse-zero-dv-boundary',
+      source: 'inverse Tsiolkovsky boundary: zero target delta-v must return m0=mf and zero propellant',
+      bag: { solve_for_m0: 1, isp: 300, mf: 1200, dv_target: 0 },
+    },
+    {
+      name: 'inverse-small-positive-dv-propellant',
+      source: 'small positive inverse delta-v: stable propellant calculation avoids subtracting nearly equal masses',
+      bag: { solve_for_m0: 1, isp: 320, mf: 5000, dv_target: 1e-12 },
+    },
+    {
+      name: 'forward-near-unit-mass-ratio',
+      source: 'near-unit mass ratio: stable logarithm preserves small positive delta-v',
+      bag: { solve_for_m0: 0, isp: 320, m0: 5000 + 1e-8, mf: 5000 },
+    },
   ],
 
   'heat-flux': [
@@ -176,6 +196,16 @@ export const SYSTEMS_SCENARIOS: Record<string, Scenario[]> = {
       name: 'synthetic',
       source: 'adversarial synthetic: distinct non-round mf/dv/isp',
       bag: { mf: 8_734.2, dv: 4_523.7, isp: 287.3, g0: 9.80665 },
+    },
+    {
+      name: 'tiny-positive-dv-1e-12',
+      source: 'adversarial boundary: propellant remains representable although wet-mass subtraction loses precision',
+      bag: { mf: 5_000, dv: 1e-12, isp: 320, g0: 9.80665 },
+    },
+    {
+      name: 'tiny-positive-dv-1e-13',
+      source: 'adversarial boundary: wet mass rounds to dry mass while propellant is still positive',
+      bag: { mf: 5_000, dv: 1e-13, isp: 320, g0: 9.80665 },
     },
   ],
 
