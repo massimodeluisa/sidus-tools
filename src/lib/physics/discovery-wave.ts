@@ -572,6 +572,11 @@ export function umbraLength(
 /** Mean anomaly from eccentric anomaly (radians): M = E − e sin E. */
 export function meanAnomalyFromE(E: number, e: number): number | null {
   if (!(e >= 0) || e >= 1 || !Number.isFinite(E)) return null
+  if (Math.abs(E) <= 0.5) {
+    const E2 = E * E
+    const EMinusSinE = E * E2 * (1 / 6 - E2 / 120 + E2 * E2 / 5040 - E2 * E2 * E2 / 362880 + E2 * E2 * E2 * E2 / 39916800 - E2 * E2 * E2 * E2 * E2 / 6227020800)
+    return (1 - e) * E + e * EMinusSinE
+  }
   return E - e * Math.sin(E)
 }
 

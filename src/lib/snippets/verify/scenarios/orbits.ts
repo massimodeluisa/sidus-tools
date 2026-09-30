@@ -1042,6 +1042,11 @@ export const ORBITS_SCENARIOS: Record<string, Scenario[]> = {
       source: 'adversarial synthetic: eccentric anomaly beyond pi, moderate eccentricity',
       bag: { E: 4.5, e: 0.5 },
     },
+    {
+      name: 'near-parabolic-small-E',
+      source: 'near-parabolic ellipse close to periapsis at snippet-injected precision',
+      bag: { E: 1e-8, e: 0.999999999999 },
+    },
   ],
 
   'flight-path-angle': [

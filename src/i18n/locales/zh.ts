@@ -444,6 +444,7 @@ export const zh: TMessages = {
     disc_dv: "Δv",
     disc_e: "偏心率",
     disc_e_2: "Eccentric anomaly",
+    elliptic_only: "仅适用于椭圆轨道：0 ≤ e < 1。",
     disc_ew: "E/W Δv per year",
     disc_f: "推力",
     disc_f_2: "Frequency",

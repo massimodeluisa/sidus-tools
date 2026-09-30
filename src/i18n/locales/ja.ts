@@ -450,6 +450,7 @@ export const ja: TMessages = {
     disc_dv: "Δv",
     disc_e: "離心率",
     disc_e_2: "Eccentric anomaly",
+    elliptic_only: "楕円軌道のみ: 0 ≤ e < 1。",
     disc_ew: "E/W Δv per year",
     disc_f: "推力",
     disc_f_2: "Frequency",

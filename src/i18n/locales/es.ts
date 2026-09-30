@@ -450,6 +450,7 @@ export const es: TMessages = {
     disc_dv: "Δv",
     disc_e: "Excentricidad",
     disc_e_2: "Eccentric anomaly",
+    elliptic_only: "Solo órbitas elípticas: 0 ≤ e < 1.",
     disc_ew: "E/W Δv per year",
     disc_f: "Empuje",
     disc_f_2: "Frequency",

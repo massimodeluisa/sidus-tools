@@ -450,6 +450,7 @@ export const ru: TMessages = {
     disc_dv: "Δv",
     disc_e: "Эксцентриситет",
     disc_e_2: "Eccentric anomaly",
+    elliptic_only: "Только эллиптические орбиты: 0 ≤ e < 1.",
     disc_ew: "E/W Δv per year",
     disc_f: "Тяга",
     disc_f_2: "Frequency",

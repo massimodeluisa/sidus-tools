@@ -449,6 +449,7 @@ export const ko: TMessages = {
     disc_dv: "Δv",
     disc_e: "이심률",
     disc_e_2: "Eccentric anomaly",
+    elliptic_only: "타원 궤도에만 적용: 0 ≤ e < 1.",
     disc_ew: "E/W Δv per year",
     disc_f: "추력",
     disc_f_2: "Frequency",
