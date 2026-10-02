@@ -21,7 +21,8 @@ export const BODIES: Body[] = [
   { id: 'jupiter', name: 'Jupiter', mu: 1.26686534e17, radius: 69_911_000, mass: 1.8982e27, color: '#c4a882', type: 'planet' },
   { id: 'saturn', name: 'Saturn', mu: 3.7931187e16, radius: 58_232_000, mass: 5.6834e26, color: '#d4c4a0', type: 'planet' },
   { id: 'uranus', name: 'Uranus', mu: 5.793939e15, radius: 25_362_000, mass: 8.681e25, color: '#9ec4c8', type: 'planet' },
-  { id: 'neptune', name: 'Neptune', mu: 6.836529e15, radius: 24_622_000, mass: 1.02413e26, color: '#5a7ab0', type: 'planet' },
+  // JPL NEP097 Neptune-primary GM: 6835099.97 ± 9.63 km³/s² (not system GM).
+  { id: 'neptune', name: 'Neptune', mu: 6.83509997e15, radius: 24_622_000, mass: 1.02413e26, color: '#5a7ab0', type: 'planet' },
   // JPL PLU060 Pluto-body GM: 869.3 ± 0.4 km³/s² (not Pluto-system GM).
   { id: 'pluto', name: 'Pluto', mu: 869.3e9, radius: 1_188_300, mass: 1.303e22, color: '#b8a898', type: 'dwarf' },
 ]

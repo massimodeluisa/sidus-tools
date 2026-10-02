@@ -21577,7 +21577,8 @@ var BODIES = [
   { id: "jupiter", name: "Jupiter", mu: 126686534e9, radius: 69911e3, mass: 18982e23, color: "#c4a882", type: "planet" },
   { id: "saturn", name: "Saturn", mu: 37931187e9, radius: 58232e3, mass: 56834e22, color: "#d4c4a0", type: "planet" },
   { id: "uranus", name: "Uranus", mu: 5793939e9, radius: 25362e3, mass: 8681e22, color: "#9ec4c8", type: "planet" },
-  { id: "neptune", name: "Neptune", mu: 6836529e9, radius: 24622e3, mass: 102413e21, color: "#5a7ab0", type: "planet" },
+  // JPL NEP097 Neptune-primary GM: 6835099.97 ± 9.63 km³/s² (not system GM).
+  { id: "neptune", name: "Neptune", mu: 683509997e7, radius: 24622e3, mass: 102413e21, color: "#5a7ab0", type: "planet" },
   // JPL PLU060 Pluto-body GM: 869.3 ± 0.4 km³/s² (not Pluto-system GM).
   { id: "pluto", name: "Pluto", mu: 8693e8, radius: 1188300, mass: 1303e19, color: "#b8a898", type: "dwarf" }
 ];
@@ -22713,7 +22714,9 @@ function normalizeEqualStageCount(nStages) {
   return Number.isSafeInteger(rounded) && rounded >= 1 ? rounded : null;
 }
 function equalStageMassRatio(totalDv, nStages, ispS, g0 = 9.80665) {
-  if (!(totalDv >= 0) || !Number.isSafeInteger(nStages) || nStages < 1 || !(ispS > 0) || !(g0 > 0)) return null;
+  if (!(totalDv >= 0) || !Number.isSafeInteger(nStages) || nStages < 1 || !(ispS > 0) || !(g0 > 0)) {
+    return null;
+  }
   const ve = ispS * g0;
   const dvStage = totalDv / nStages;
   return { dvStage, massRatio: Math.exp(dvStage / ve), ve };
@@ -22995,7 +22998,6 @@ function isentropicNozzle(opts) {
   const Me2 = 2 / gm1 * (pe_pc ** (-gm1 / g) - 1);
   if (!(Me2 > 0)) return null;
   const Me = Math.sqrt(Me2);
-  const term = ((g + 1) / 2) ** (-(g + 1) / (2 * gm1)) * (1 / pe_pc) ** (1 / g) * (1 / Me) * (1 + gm1 / 2 * Me2) ** ((g + 1) / (2 * gm1));
   const areaRatio = 1 / Me * Math.pow(
     (1 + gm1 / 2 * Me2) / ((g + 1) / 2),
     (g + 1) / (2 * gm1)
@@ -23003,8 +23005,7 @@ function isentropicNozzle(opts) {
   if (!(areaRatio > 0) || !Number.isFinite(areaRatio)) return null;
   const cfIdeal = Math.sqrt(
     2 * g * g / gm1 * Math.pow(2 / (g + 1), (g + 1) / gm1) * (1 - pe_pc ** (gm1 / g))
-  ) + (pe_pc === 0 ? 0 : 0);
-  void term;
+  ) + pe_pc * areaRatio;
   return { areaRatio, Me, cfIdeal: Number.isFinite(cfIdeal) ? cfIdeal : 0 };
 }
 function isentropicExitVelocity(gamma, R, Tc, peOverPc) {
