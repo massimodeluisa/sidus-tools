@@ -21572,7 +21572,8 @@ var BODIES = [
   { id: "mercury", name: "Mercury", mu: 22032e9, radius: 2439700, mass: 33011e19, color: "#9a9a9a", type: "planet" },
   { id: "venus", name: "Venus", mu: 324859e9, radius: 6051800, mass: 48675e20, color: "#c9b896", type: "planet" },
   { id: "earth", name: "Earth", mu: EARTH_MU, radius: EARTH_RADIUS, mass: EARTH_MASS, color: "#7a9bb8", type: "planet", soi: 924e6 },
-  { id: "moon", name: "Moon", mu: 49028e8, radius: 1737400, mass: 7342e19, color: "#b0b0b0", type: "moon" },
+  { id: "moon", name: "Moon", mu: 49028e8, radius: 1737400, mass: 73458e18, color: "#b0b0b0", type: "moon" },
+  // JPL DE440 GM / CODATA G (mass uncertainty is dominated by G)
   { id: "mars", name: "Mars", mu: 4282837e7, radius: 3389500, mass: 64171e19, color: "#c47a5a", type: "planet", soi: 577e6 },
   { id: "jupiter", name: "Jupiter", mu: 126686534e9, radius: 69911e3, mass: 18982e23, color: "#c4a882", type: "planet" },
   { id: "saturn", name: "Saturn", mu: 37931187e9, radius: 58232e3, mass: 56834e22, color: "#d4c4a0", type: "planet" },
