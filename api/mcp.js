@@ -21574,9 +21574,12 @@ var BODIES = [
   { id: "earth", name: "Earth", mu: EARTH_MU, radius: EARTH_RADIUS, mass: EARTH_MASS, color: "#7a9bb8", type: "planet", soi: 924e6 },
   { id: "moon", name: "Moon", mu: 49028e8, radius: 1737400, mass: 7342e19, color: "#b0b0b0", type: "moon" },
   { id: "mars", name: "Mars", mu: 4282837e7, radius: 3389500, mass: 64171e19, color: "#c47a5a", type: "planet", soi: 577e6 },
-  { id: "jupiter", name: "Jupiter", mu: 126686534e9, radius: 69911e3, mass: 18982e23, color: "#c4a882", type: "planet" },
-  { id: "saturn", name: "Saturn", mu: 37931187e9, radius: 58232e3, mass: 56834e22, color: "#d4c4a0", type: "planet" },
-  { id: "uranus", name: "Uranus", mu: 5793939e9, radius: 25362e3, mass: 8681e22, color: "#9ec4c8", type: "planet" },
+  { id: "jupiter", name: "Jupiter", mu: 1266865319e8, radius: 69911e3, mass: 18982e23, color: "#c4a882", type: "planet" },
+  // JPL JUP365 primary GM: 126686531.9 ± 0.42 km³/s²
+  { id: "saturn", name: "Saturn", mu: 3793120623e7, radius: 58232e3, mass: 56834e22, color: "#d4c4a0", type: "planet" },
+  // JPL SAT441 primary GM: 37931206.23 ± 0.24 km³/s²
+  { id: "uranus", name: "Uranus", mu: 57939513e8, radius: 25362e3, mass: 8681e22, color: "#9ec4c8", type: "planet" },
+  // JPL URA111 primary GM: 5793951.3 ± 4.4 km³/s²
   { id: "neptune", name: "Neptune", mu: 6836529e9, radius: 24622e3, mass: 102413e21, color: "#5a7ab0", type: "planet" },
   // JPL PLU060 Pluto-body GM: 869.3 ± 0.4 km³/s² (not Pluto-system GM).
   { id: "pluto", name: "Pluto", mu: 8693e8, radius: 1188300, mass: 1303e19, color: "#b8a898", type: "dwarf" }
