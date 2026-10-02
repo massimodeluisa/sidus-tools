@@ -10,6 +10,7 @@ import { CodeExport } from '@/components/shared/CodeExport'
 import {
   DEFAULT_LAUNCH_SITE,
   eciSiToEcefSi,
+  isValidGeodeticObserver,
   lookAnglesFromEci,
   parseTle,
   propagateEci,
@@ -21,6 +22,8 @@ import { resolveUtcParam } from '@/lib/utc-input'
 import { numParam, strParam, useToolSearchParams } from '@/lib/use-tool-search-params'
 
 const SCHEMA = {
+  // Preserve an out-of-range URL value so the page can report it, not silently
+  // clamp it to a different observer location.
   lat: numParam(DEFAULT_LAUNCH_SITE.latDeg),
   lon: numParam(DEFAULT_LAUNCH_SITE.lonDeg),
   h_m: numParam(DEFAULT_LAUNCH_SITE.heightM, { min: 0 }),
@@ -31,6 +34,11 @@ export function LookAnglesTool() {
   const { t } = useTranslation()
   const [p, setP] = useToolSearchParams(SCHEMA)
   const [tle, setTle] = useState(SAMPLE_ISS_TLE)
+  const observer = useMemo(
+    () => ({ latDeg: p.lat, lonDeg: p.lon, heightM: p.h_m }),
+    [p.h_m, p.lat, p.lon],
+  )
+  const observerValid = isValidGeodeticObserver(observer)
 
   const parsed = useMemo(() => parseTle(tle), [tle])
   const atDate = useMemo(() => resolveUtcParam(p.at), [p.at])
@@ -39,12 +47,8 @@ export function LookAnglesTool() {
     if (!parsed.ok) return null
     const st = propagateEci(parsed.satrec, atDate)
     if (!st) return null
-    return lookAnglesFromEci(
-      { latDeg: p.lat, lonDeg: p.lon, heightM: p.h_m },
-      st.r,
-      atDate,
-    )
-  }, [atDate, p.h_m, p.lat, p.lon, parsed])
+    return lookAnglesFromEci(observer, st.r, atDate)
+  }, [atDate, observer, parsed])
 
   const satEcef = useMemo(() => {
     if (!parsed.ok) return null
@@ -73,8 +77,12 @@ export function LookAnglesTool() {
             label={t('fields.site_lat')}
             unit="°"
             type="number"
+            min={-90}
+            max={90}
             step="any"
             value={p.lat}
+            hint={t('fields.observer_latitude_domain')}
+            aria-invalid={!observerValid}
             onChange={(e) => setP({ lat: Number(e.target.value) })}
           />
           <UiField
@@ -112,19 +120,31 @@ export function LookAnglesTool() {
       results={
         !parsed.ok ? (
           <p className="font-mono text-sm text-muted">{parsed.error}</p>
+        ) : !observerValid ? (
+          <p className="font-mono text-sm text-muted" role="alert">
+            {t('fields.observer_latitude_domain')}
+          </p>
         ) : !look ? (
           <p className="font-mono text-sm text-muted">{t('fields.no_look_angles')}</p>
         ) : (
           <div className="sidus-results">
-            <ResultCard
-              label={t('fields.azimuth')}
-              si={look.azimuthRad}
-              category="angle"
-              unitId="deg"
-              unitIds={TOOL_UNIT_SETS.angle}
-              digits={3}
-              accent
-            />
+            {look.azimuthRad === null ? (
+              <ResultCard
+                label={t('fields.azimuth')}
+                value={t('fields.azimuth_undefined')}
+                accent
+              />
+            ) : (
+              <ResultCard
+                label={t('fields.azimuth')}
+                si={look.azimuthRad}
+                category="angle"
+                unitId="deg"
+                unitIds={TOOL_UNIT_SETS.angle}
+                digits={3}
+                accent
+              />
+            )}
             <ResultCard
               label={t('fields.elevation')}
               si={look.elevationRad}
@@ -158,7 +178,7 @@ export function LookAnglesTool() {
         )
       }
       code={
-        look && satEcef ? (
+        observerValid && look && satEcef ? (
           <CodeExport
             formulaId="look-angles"
             values={{

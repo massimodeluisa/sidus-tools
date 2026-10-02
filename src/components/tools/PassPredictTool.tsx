@@ -19,6 +19,7 @@ import {
   eciSiToEcefSi,
   eciSiToGeodetic,
   findNextPass,
+  isValidGeodeticObserver,
   observerEciPosition,
   parseTle,
   propagateEci,
@@ -42,6 +43,8 @@ import { resolveUtcParam } from '@/lib/utc-input'
 import { numParam, strParam, useToolSearchParams } from '@/lib/use-tool-search-params'
 
 const SCHEMA = {
+  // Preserve an out-of-range URL value so the page can report it, not silently
+  // clamp it to a different observer location.
   lat: numParam(DEFAULT_LAUNCH_SITE.latDeg),
   lon: numParam(DEFAULT_LAUNCH_SITE.lonDeg),
   h_m: numParam(DEFAULT_LAUNCH_SITE.heightM, { min: 0 }),
@@ -100,6 +103,11 @@ export function PassPredictTool() {
 
   const parsed = useMemo(() => parseTle(tle), [tle])
   const start = useMemo(() => resolveUtcParam(p.at), [p.at])
+  const observer = useMemo(
+    () => ({ latDeg: p.lat, lonDeg: p.lon, heightM: p.h_m }),
+    [p.h_m, p.lat, p.lon],
+  )
+  const observerValid = isValidGeodeticObserver(observer)
 
   /* Once a found pass's LOS has elapsed, the search re-anchors to LOS + one
      search step so the next window rolls in automatically (see the effect
@@ -114,10 +122,10 @@ export function PassPredictTool() {
   }, [start, rollForwardMs])
 
   const pass = useMemo(() => {
-    if (!parsed.ok) return null
+    if (!parsed.ok || !observerValid) return null
     return findNextPass({
       satrec: parsed.satrec,
-      observer: { latDeg: p.lat, lonDeg: p.lon, heightM: p.h_m },
+      observer,
       start: effectiveStart,
       horizonH: p.hours,
       stepS: SEARCH_STEP_S,
@@ -125,7 +133,7 @@ export function PassPredictTool() {
       minElDeg: p.minEl,
       favorableLightingOnly: p.vis === '1',
     })
-  }, [p.h_m, p.hours, p.lat, p.lon, p.minEl, p.vis, parsed, effectiveStart])
+  }, [p.hours, p.minEl, p.vis, parsed, effectiveStart, observer, observerValid])
 
   useEffect(() => {
     if (!pass) return
@@ -286,18 +294,18 @@ export function PassPredictTool() {
   }, [parsed, instant])
 
   const sez = useMemo(() => {
-    if (!issState) return null
+    if (!issState || !observerValid) return null
     const satEcef = eciSiToEcefSi(issState.r, instant)
-    return topocentricSezSi({ latDeg: p.lat, lonDeg: p.lon, heightM: p.h_m }, satEcef)
-  }, [issState, instant, p.lat, p.lon, p.h_m])
+    return topocentricSezSi(observer, satEcef)
+  }, [issState, instant, observer, observerValid])
 
   const obsR = useMemo(
-    () => observerEciPosition({ latDeg: p.lat, lonDeg: p.lon, heightM: p.h_m }, instant),
-    [p.lat, p.lon, p.h_m, instant],
+    () => (observerValid ? observerEciPosition(observer, instant) : null),
+    [observer, observerValid, instant],
   )
 
   const issMarker = issState ? { r: issState.r, label: t('fields.marker_iss') } : null
-  const obsMarker = { r: obsR, label: t('fields.marker_you') }
+  const obsMarker = obsR ? { r: obsR, label: t('fields.marker_you') } : null
 
   // World-map data: ground tracks + subsolar point, in lat/lon (deg).
   const subsolar = useMemo(() => {
@@ -452,8 +460,12 @@ export function PassPredictTool() {
             label={t('fields.site_lat')}
             unit="°"
             type="number"
+            min={-90}
+            max={90}
             step="any"
             value={p.lat}
+            hint={t('fields.observer_latitude_domain')}
+            aria-invalid={!observerValid}
             onChange={(e) => setP({ lat: Number(e.target.value) })}
           />
           <UiField
@@ -541,6 +553,10 @@ export function PassPredictTool() {
       results={
         !parsed.ok ? (
           <p className="font-mono text-sm text-muted">{parsed.error}</p>
+        ) : !observerValid ? (
+          <p className="font-mono text-sm text-muted" role="alert">
+            {t('fields.observer_latitude_domain')}
+          </p>
         ) : !pass || !localFmt ? (
           <p className="font-mono text-sm text-muted">
             {t('fields.no_pass_above', { el: formatNumber(p.minEl, 1), hours: p.hours })}
@@ -631,12 +647,16 @@ export function PassPredictTool() {
               {p.view === 'map' ? (
                 <GlobeMap
                   satellites={globeSatellites}
-                  observer={{
-                    lat: p.lat,
-                    lon: p.lon,
-                    label: t('fields.marker_you'),
-                    color: '#f5f5f5',
-                  }}
+                  observer={
+                    observerValid
+                      ? {
+                          lat: p.lat,
+                          lon: p.lon,
+                          label: t('fields.marker_you'),
+                          color: '#f5f5f5',
+                        }
+                      : undefined
+                  }
                   subsolar={{ latDeg: subsolar.latDeg, lonDeg: subsolar.lonDeg }}
                   title={t('fields.title_pass_globe')}
                   caption={t('fields.subtitle_pass_globe')}
@@ -664,7 +684,9 @@ export function PassPredictTool() {
                     ...(issMarker
                       ? [{ r: issMarker.r, label: issMarker.label, color: 'rgba(184,165,90,0.95)' }]
                       : []),
-                    { r: obsMarker.r, label: obsMarker.label, color: '#f5f5f5' },
+                    ...(obsMarker
+                      ? [{ r: obsMarker.r, label: obsMarker.label, color: '#f5f5f5' }]
+                      : []),
                   ]}
                   height={340}
                 />
@@ -695,22 +717,24 @@ export function PassPredictTool() {
         ) : null
       }
       code={
-        <CodeExport
-          formulaId="pass-predict"
-          values={{
-            lat: p.lat,
-            lon: p.lon,
-            h_m: p.h_m,
-            minEl: p.minEl,
-            hours: p.hours,
-            at: p.at,
-            tz: zone,
-            south: sez?.southM,
-            east: sez?.eastM,
-            zenith: sez?.zenithM,
-            el_min: (p.minEl * Math.PI) / 180,
-          }}
-        />
+        observerValid ? (
+          <CodeExport
+            formulaId="pass-predict"
+            values={{
+              lat: p.lat,
+              lon: p.lon,
+              h_m: p.h_m,
+              minEl: p.minEl,
+              hours: p.hours,
+              at: p.at,
+              tz: zone,
+              south: sez?.southM,
+              east: sez?.eastM,
+              zenith: sez?.zenithM,
+              el_min: (p.minEl * Math.PI) / 180,
+            }}
+          />
+        ) : null
       }
     />
   )

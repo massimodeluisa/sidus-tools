@@ -41,8 +41,20 @@ export type GeodeticDeg = {
   heightM: number
 }
 
+/** A finite observer on the geodetic latitude domain. Longitude may wrap. */
+export function isValidGeodeticObserver(observer: GeodeticDeg): boolean {
+  return (
+    Number.isFinite(observer.latDeg) &&
+    observer.latDeg >= -90 &&
+    observer.latDeg <= 90 &&
+    Number.isFinite(observer.lonDeg) &&
+    Number.isFinite(observer.heightM)
+  )
+}
+
 export type LookAnglesSi = {
-  azimuthRad: number
+  /** Null when the horizontal line of sight is unresolved at zenith. */
+  azimuthRad: number | null
   elevationRad: number
   rangeM: number
 }
@@ -172,6 +184,8 @@ export function lookAnglesFromEci(
   rM: Vec3,
   date: Date,
 ): LookAnglesSi | null {
+  if (!isValidGeodeticObserver(observer) || !Number.isFinite(date.getTime())) return null
+  if (![...rM].every(Number.isFinite)) return null
   const gmst = gstime(date)
   const obs = {
     longitude: degreesToRadians(observer.lonDeg),
@@ -180,10 +194,47 @@ export function lookAnglesFromEci(
   }
   const satEciKm = { x: rM[0] / 1000, y: rM[1] / 1000, z: rM[2] / 1000 }
   const satEcf = eciToEcf(satEciKm, gmst)
+  const obsEcf = geodeticToEcf(obs)
+  const deltaXKm = satEcf.x - obsEcf.x
+  const deltaYKm = satEcf.y - obsEcf.y
+  const deltaZKm = satEcf.z - obsEcf.z
+  const rangeKm = Math.hypot(deltaXKm, deltaYKm, deltaZKm)
+  const coordinateScaleKm = Math.max(
+    1,
+    Math.abs(satEcf.x),
+    Math.abs(satEcf.y),
+    Math.abs(satEcf.z),
+    Math.abs(obsEcf.x),
+    Math.abs(obsEcf.y),
+    Math.abs(obsEcf.z),
+  )
+  // Several binary64 ulps cover round-off in the ECI↔ECF and geodetic
+  // transforms; this is a numerical singularity guard, not a minimum-range rule.
+  const roundoffFloorKm = 8 * Number.EPSILON * coordinateScaleKm
+  if (
+    ![satEcf.x, satEcf.y, satEcf.z, obsEcf.x, obsEcf.y, obsEcf.z, rangeKm].every(
+      Number.isFinite,
+    ) ||
+    rangeKm <= roundoffFloorKm
+  ) {
+    return null
+  }
   const look = ecfToLookAngles(obs, satEcf)
-  if (!look) return null
+  if (
+    !look ||
+    ![look.azimuth, look.elevation, look.rangeSat].every(Number.isFinite) ||
+    look.rangeSat <= roundoffFloorKm
+  ) {
+    return null
+  }
+  const sez = topocentricSezSi(observer, [satEcf.x * 1000, satEcf.y * 1000, satEcf.z * 1000])
+  if (!sez) return null
+  const horizontalKm = Math.hypot(sez.southM, sez.eastM) / 1000
   return {
-    azimuthRad: look.azimuth,
+    // Azimuth has no physical value at zenith. Use the same scale-aware
+    // binary64 floor as the zero-range guard to avoid exposing atan2(0, 0)'s
+    // arbitrary convention, while preserving every resolvable off-zenith LOS.
+    azimuthRad: horizontalKm <= roundoffFloorKm ? null : look.azimuth,
     elevationRad: look.elevation,
     rangeM: look.rangeSat * 1000,
   }
@@ -202,7 +253,8 @@ export function lookAnglesFromEci(
 export function topocentricSezSi(
   observer: GeodeticDeg,
   satEcefM: Vec3,
-): { southM: number; eastM: number; zenithM: number } {
+): { southM: number; eastM: number; zenithM: number } | null {
+  if (!isValidGeodeticObserver(observer) || ![...satEcefM].every(Number.isFinite)) return null
   const obsEcf = geodeticToEcf({
     longitude: degreesToRadians(observer.lonDeg),
     latitude: degreesToRadians(observer.latDeg),
@@ -227,7 +279,8 @@ export function topocentricSezSi(
 }
 
 /** Observer geodetic (deg, height m) → ECI position (m) at `date`. */
-export function observerEciPosition(observer: GeodeticDeg, date: Date): Vec3 {
+export function observerEciPosition(observer: GeodeticDeg, date: Date): Vec3 | null {
+  if (!isValidGeodeticObserver(observer) || !Number.isFinite(date.getTime())) return null
   const gmst = gstime(date)
   const obsEcf = geodeticToEcf({
     longitude: degreesToRadians(observer.lonDeg),
@@ -516,6 +569,7 @@ export function findNextPass(opts: {
   refineS?: number
   favorableLightingOnly?: boolean
 }): PassWindow | null {
+  if (!isValidGeodeticObserver(opts.observer) || !Number.isFinite(opts.start.getTime())) return null
   const horizonH = opts.horizonH ?? 24
   const stepS = opts.stepS ?? 30
   const minElRad = ((opts.minElDeg ?? 10) * Math.PI) / 180
