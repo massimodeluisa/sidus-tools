@@ -1,6 +1,8 @@
 /** SI gravitational parameters, radii, and unit bases. */
 
+/** WGS 84 geocentric GM, including the mass of Earth's atmosphere. */
 export const EARTH_MU = 3.986004418e14
+/** WGS 84 ellipsoid semi-major axis (equatorial surface reference, not mean radius). */
 export const EARTH_RADIUS = 6_378_137
 export const EARTH_MASS = 5.9722e24
 export const SUN_MU = 1.32712440018e20

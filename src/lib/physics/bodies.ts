@@ -13,9 +13,9 @@ export type Body = {
 
 export const BODIES: Body[] = [
   { id: 'sun', name: 'Sun', mu: SUN_MU, radius: 695_700_000, mass: SOLAR_MASS, color: '#e8d5a3', type: 'star' },
-  { id: 'mercury', name: 'Mercury', mu: 2.2032e13, radius: 2_439_700, mass: 3.3011e23, color: '#9a9a9a', type: 'planet' },
+  { id: 'mercury', name: 'Mercury', mu: 2.2032e13, radius: 2_439_400, mass: 3.3011e23, color: '#9a9a9a', type: 'planet' }, // JPL mean radius: 2439.4 ± 0.1 km
   { id: 'venus', name: 'Venus', mu: 3.24859e14, radius: 6_051_800, mass: 4.8675e24, color: '#c9b896', type: 'planet' },
-  { id: 'earth', name: 'Earth', mu: EARTH_MU, radius: EARTH_RADIUS, mass: EARTH_MASS, color: '#7a9bb8', type: 'planet', soi: 9.24e8 },
+  { id: 'earth', name: 'Earth', mu: EARTH_MU, radius: EARTH_RADIUS, mass: EARTH_MASS, color: '#7a9bb8', type: 'planet', soi: 9.24e8 }, // WGS 84 equatorial reference radius; not Earth's mean radius
   { id: 'moon', name: 'Moon', mu: 4.9028e12, radius: 1_737_400, mass: 7.342e22, color: '#b0b0b0', type: 'moon' },
   { id: 'mars', name: 'Mars', mu: 4.282837e13, radius: 3_389_500, mass: 6.4171e23, color: '#c47a5a', type: 'planet', soi: 5.77e8 },
   { id: 'jupiter', name: 'Jupiter', mu: 1.26686534e17, radius: 69_911_000, mass: 1.8982e27, color: '#c4a882', type: 'planet' },

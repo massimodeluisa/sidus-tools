@@ -112,7 +112,7 @@ export function BodiesTool() {
               accent
             />
             <ResultCard
-              label={t('fields.mean_radius')}
+              label={t('fields.reference_radius')}
               si={body.radius}
               category="length"
               unitId="km"

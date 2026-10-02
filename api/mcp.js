@@ -21569,9 +21569,11 @@ var AU = 149597870700;
 // src/lib/physics/bodies.ts
 var BODIES = [
   { id: "sun", name: "Sun", mu: SUN_MU, radius: 6957e5, mass: SOLAR_MASS, color: "#e8d5a3", type: "star" },
-  { id: "mercury", name: "Mercury", mu: 22032e9, radius: 2439700, mass: 33011e19, color: "#9a9a9a", type: "planet" },
+  { id: "mercury", name: "Mercury", mu: 22032e9, radius: 2439400, mass: 33011e19, color: "#9a9a9a", type: "planet" },
+  // JPL mean radius: 2439.4 ± 0.1 km
   { id: "venus", name: "Venus", mu: 324859e9, radius: 6051800, mass: 48675e20, color: "#c9b896", type: "planet" },
   { id: "earth", name: "Earth", mu: EARTH_MU, radius: EARTH_RADIUS, mass: EARTH_MASS, color: "#7a9bb8", type: "planet", soi: 924e6 },
+  // WGS 84 equatorial reference radius; not Earth's mean radius
   { id: "moon", name: "Moon", mu: 49028e8, radius: 1737400, mass: 7342e19, color: "#b0b0b0", type: "moon" },
   { id: "mars", name: "Mars", mu: 4282837e7, radius: 3389500, mass: 64171e19, color: "#c47a5a", type: "planet", soi: 577e6 },
   { id: "jupiter", name: "Jupiter", mu: 126686534e9, radius: 69911e3, mass: 18982e23, color: "#c4a882", type: "planet" },
