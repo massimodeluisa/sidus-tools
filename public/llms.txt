@@ -139,7 +139,7 @@ SIDUS (Latin *sidus* = constellation) is a non-profit educational project with n
 - [GNSS GDOP](https://sidus.tools/tools/gnss-geometry-gdop): GDOP/PDOP/HDOP/VDOP from 4 LOS vectors.
 - [GNSS ionosphere delay](https://sidus.tools/tools/gnss-ionosphere-klobuchar): Klobuchar-class slant iono delay from TECU and elevation.
 - [GNSS pseudorange](https://sidus.tools/tools/gnss-pseudorange): rho=c*dt + c*bias.
-- [Troposphere delay](https://sidus.tools/tools/gnss-troposphere-delay): Saastamoinen-class delay vs elevation.
+- [Troposphere delay](https://sidus.tools/tools/gnss-troposphere-delay): Positive Saastamoinen (1972) slant-range correction in metres, from elevation and local surface pressure, temperature, and water-vapour partial pressure; calculator domain 5-90deg.
 - [Gravity-gradient torque](https://sidus.tools/tools/gravity-gradient-torque): Educational GG torque magnitude.
 - [Ground track](https://sidus.tools/tools/ground-track): Lat/lon samples of a satellite ground track on an equirectangular map (SGP4 or spherical Kepler).
 - [Ground-track shift / rev](https://sidus.tools/tools/ground-track-shift): Earth-rotation longitude shift per orbit and revs/day (no J2).

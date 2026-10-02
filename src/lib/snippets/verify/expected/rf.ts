@@ -21,6 +21,7 @@ import {
   figureOfMeritGTDb,
   gravityGradientTorque,
   gnssPseudorange,
+  saastamoinenTropoDelay,
   horizonSlantRange,
   antennaBeamwidth,
   j2RaanRate,
@@ -69,8 +70,6 @@ import { num, put, type ExpectedFn } from './shared'
 export const UNVERIFIABLE_RF: Readonly<Record<string, string>> = {
   'gnss-geometry-gdop':
     'snippet computes an ad hoc "spread * horiz" portability proxy (its own comment: "full inv not portable"), not the shipped gnssDopFromUnitVectors matrix-inversion GDOP; the two formulas diverge for every input, not just an edge case.',
-  'gnss-troposphere-delay':
-    'snippet omits the "- tan(z)^2" term shipped saastamoinenTropoDelay subtracts inside the parens, and omits its height/latitude scale factor (exp(-h/7000) * (1+0.1 cos 2*lat)) entirely; the two formulas diverge for every input.',
 }
 
 export const RF_EXPECTED: Record<string, ExpectedFn> = {
@@ -120,6 +119,18 @@ export const RF_EXPECTED: Record<string, ExpectedFn> = {
       ['rho'],
       gnssPseudorange(num(bag, 'tTx'), num(bag, 'tRx'), num(bag, 'bias')),
     )
+    return out
+  },
+
+  'gnss-troposphere-delay': (bag) => {
+    const out: Record<string, number> = {}
+    const d = saastamoinenTropoDelay(
+      num(bag, 'elev'),
+      num(bag, 'pressurePa'),
+      num(bag, 'tK'),
+      num(bag, 'vaporPressurePa'),
+    )
+    if (d != null) put(out, ['d'], d)
     return out
   },
 

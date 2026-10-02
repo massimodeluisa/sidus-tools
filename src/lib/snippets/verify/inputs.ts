@@ -434,6 +434,7 @@ export const SAMPLE: LiveCodeValues = {
  */
 export const SAMPLE_OVERRIDES: Record<string, LiveCodeValues> = {
   'panel-eol-power': { d: 0.005, p0: 200, years: 15 },
+  'gnss-troposphere-delay': { elev: Math.PI / 6, pressurePa: 101325, tK: 288.15, vaporPressurePa: 1100 },
   // Exercise the representable high-exponent tail; the shared bag's wavelength
   // and temperature are unrelated to this tool and miss exp(x) overflow.
   'planck-radiance': { lam: 1e-10, T: 200_000 },

@@ -91,27 +91,28 @@ function invert4(a: number[][]): number[][] | null {
   return inv
 }
 
-/** Saastamoinen-class dry troposphere delay [m] (educational). elev rad, lat rad, height m. */
+/**
+ * Original Saastamoinen (1972) slant range correction [m].
+ * Elevation is radians; surface pressure and water-vapour partial pressure are Pa;
+ * temperature is kelvin. The calculator's practical elevation domain is 5–90°.
+ */
 export function saastamoinenTropoDelay(
   elevRad: number,
-  latRad: number,
-  heightM: number,
-  pHpa = 1013.25,
+  pressurePa = 101325,
   tK = 288.15,
-  eHpa = 11.0,
+  vaporPressurePa = 1100,
 ): number | null {
-  if (!(elevRad > 0.05) || elevRad > Math.PI / 2) return null
-  if (!(heightM >= -500) || heightM > 1e5) return null
+  if (![elevRad, pressurePa, tK, vaporPressurePa].every(Number.isFinite)) return null
+  // Allow a tiny numeric tolerance so serialized 5-degree inputs remain in-domain.
+  if (elevRad < (5 * Math.PI) / 180 - 1e-8 || elevRad > Math.PI / 2) return null
+  if (!(pressurePa > 0) || !(tK > 0) || !(vaporPressurePa >= 0) || vaporPressurePa > pressurePa) {
+    return null
+  }
   const z = Math.PI / 2 - elevRad
-  // Simplified form used in textbooks (meters)
-  const d =
-    (0.002277 / Math.cos(z)) *
-    (pHpa +
-      (1255 / tK + 0.05) * eHpa -
-      Math.tan(z) ** 2)
-  // crude height scaling
-  const scale = Math.exp(-heightM / 7000)
-  const delay = d * scale * (1 + 0.1 * Math.cos(2 * latRad))
+  // Original hPa expression converted to SI pressure: 1.16 hPa = 116 Pa.
+  const delay =
+    (0.00002277 / Math.cos(z)) *
+    (pressurePa + (1255 / tK + 0.05) * vaporPressurePa - 116 * Math.tan(z) ** 2)
   return Number.isFinite(delay) && delay > 0 ? delay : null
 }
 

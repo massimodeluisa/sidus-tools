@@ -11,6 +11,20 @@ export type SourceRef = {
  * Multi-source bibliography for tools. Prefer ≥2 independent references per formula tool.
  */
 export const SOURCES: Record<string, SourceRef> = {
+  'saastamoinen-1972': {
+    id: 'saastamoinen-1972',
+    name: 'Atmospheric Correction for the Troposphere and Stratosphere in Radio Ranging Satellites',
+    org: 'J. Saastamoinen / American Geophysical Union (Wiley)',
+    url: 'https://agupubs.onlinelibrary.wiley.com/doi/10.1029/GM015p0247',
+    note: 'Original 1972 microwave range-correction equation; specifies zenith-distance form, pressure/water-vapour/temperature units, and a positive correction to subtract from measured range.',
+  },
+  'esa-navipedia-tropospheric-delay': {
+    id: 'esa-navipedia-tropospheric-delay',
+    name: 'Tropospheric Delay',
+    org: 'ESA Navipedia / Technical University of Catalonia',
+    url: 'https://gssc.esa.int/navipedia/index.php/Tropospheric_Delay',
+    note: 'GNSS tropospheric delay context, dry/wet components, surface meteorological inputs, and elevation-domain limits for simple mapping functions.',
+  },
   'apollo-11': {
     id: 'apollo-11',
     name: 'Apollo-11 AGC source',

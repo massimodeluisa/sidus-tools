@@ -1242,11 +1242,11 @@ const TOOLS_RAW: ToolMeta[] = [
     id: 'gnss-troposphere-delay',
     category: 'satellite',
     title: "Troposphere delay",
-    description: "Saastamoinen-class delay vs elevation.",
+    description: 'Positive Saastamoinen (1972) slant-range correction in metres, from elevation and local surface pressure, temperature, and water-vapour partial pressure; calculator domain 5–90°.',
     tags: ["satellite","GNSS","geometry"],
     formulaId: 'gnss-troposphere-delay',
     status: 'live' as const,
-    sourceIds: ["vallado", "curtis"],
+    sourceIds: ['saastamoinen-1972', 'esa-navipedia-tropospheric-delay'],
   },
   {
     id: 'free-fall-time',

@@ -198,6 +198,34 @@ try {
   }
   console.log('GOLDEN rv_elements magnitude mode consistent with vis-viva energy equation')
 
+  // Original Saastamoinen (1972) numerical anchor: pressure/vapour in Pa, T in K.
+  const tropo = await client.callTool({
+    name: 'gnss_troposphere_delay',
+    arguments: {
+      elev_deg: 30,
+      pressure_pa: 101325,
+      temperature_k: 288.15,
+      vapor_pressure_pa: 1100,
+    },
+  })
+  const tropoResult = parseResult(tropo.content).json?.result
+  if (!(Math.abs(tropoResult?.delay_m - 4.81917520816242) <= 1e-11)) {
+    throw new Error(`gnss_troposphere_delay golden fail: got ${tropoResult?.delay_m}`)
+  }
+  const tropoBelowDomain = await client.callTool({
+    name: 'gnss_troposphere_delay',
+    arguments: {
+      elev_deg: 4.99,
+      pressure_pa: 101325,
+      temperature_k: 288.15,
+      vapor_pressure_pa: 1100,
+    },
+  })
+  if (!tropoBelowDomain.isError) {
+    throw new Error('gnss_troposphere_delay accepted an elevation below its documented 5 deg domain')
+  }
+  console.log('GOLDEN gnss_troposphere_delay matches the original 1972 equation and enforces 5 deg minimum')
+
   const elapsed = Date.now() - started
   console.log('INVOKED', okCount)
   console.log('ELAPSED_MS', elapsed)

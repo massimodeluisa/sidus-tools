@@ -23137,13 +23137,14 @@ function invert4(a) {
   }
   return inv;
 }
-function saastamoinenTropoDelay(elevRad, latRad, heightM, pHpa = 1013.25, tK = 288.15, eHpa = 11) {
-  if (!(elevRad > 0.05) || elevRad > Math.PI / 2) return null;
-  if (!(heightM >= -500) || heightM > 1e5) return null;
+function saastamoinenTropoDelay(elevRad, pressurePa = 101325, tK = 288.15, vaporPressurePa = 1100) {
+  if (![elevRad, pressurePa, tK, vaporPressurePa].every(Number.isFinite)) return null;
+  if (elevRad < 5 * Math.PI / 180 - 1e-8 || elevRad > Math.PI / 2) return null;
+  if (!(pressurePa > 0) || !(tK > 0) || !(vaporPressurePa >= 0) || vaporPressurePa > pressurePa) {
+    return null;
+  }
   const z = Math.PI / 2 - elevRad;
-  const d = 2277e-6 / Math.cos(z) * (pHpa + (1255 / tK + 0.05) * eHpa - Math.tan(z) ** 2);
-  const scale = Math.exp(-heightM / 7e3);
-  const delay = d * scale * (1 + 0.1 * Math.cos(2 * latRad));
+  const delay = 2277e-8 / Math.cos(z) * (pressurePa + (1255 / tK + 0.05) * vaporPressurePa - 116 * Math.tan(z) ** 2);
   return Number.isFinite(delay) && delay > 0 ? delay : null;
 }
 function klobucharIonoDelayM(elevRad, tecu, fHz = 157542e4) {
@@ -26070,15 +26071,21 @@ var MCP_TOOL_DEFS = [
   },
   {
     name: "gnss_troposphere_delay",
-    description: "Saastamoinen-class tropo delay.",
+    description: "Original Saastamoinen (1972) positive slant-range correction in metres. Inputs: elevation 5\u201390 deg, local surface pressure (Pa), temperature (K), and water-vapour partial pressure (Pa). The 5 deg floor is an operational cutoff near the horizon, not an accuracy guarantee. Illustrative defaults only; subtract the correction from observed range.",
     inputSchema: {
-      elev_deg: number2(),
-      lat_deg: number2(),
-      height_m: number2()
+      elev_deg: number2().min(5).max(90),
+      pressure_pa: number2().positive(),
+      temperature_k: number2().positive(),
+      vapor_pressure_pa: number2().nonnegative()
     },
-    sample: { "elev_deg": 30, "lat_deg": 28.57, "height_m": 10 },
+    sample: { "elev_deg": 30, "pressure_pa": 101325, "temperature_k": 288.15, "vapor_pressure_pa": 1100 },
     run: (args) => {
-      const d = saastamoinenTropoDelay(args.elev_deg * Math.PI / 180, args.lat_deg * Math.PI / 180, args.height_m);
+      const d = saastamoinenTropoDelay(
+        args.elev_deg * Math.PI / 180,
+        args.pressure_pa,
+        args.temperature_k,
+        args.vapor_pressure_pa
+      );
       return d == null ? null : { delay_m: d };
     }
   },

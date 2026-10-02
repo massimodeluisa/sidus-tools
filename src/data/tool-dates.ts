@@ -128,7 +128,7 @@ export const TOOL_DATES: Record<string, ToolDates> = {
   'rain-attenuation-simple': { created: '2026-08-07', updated: '2026-08-07' },
   'ttc-ebno': { created: '2026-08-07', updated: '2026-08-07' },
   'optical-ber-q': { created: '2026-08-07', updated: '2026-08-07' },
-  'gnss-troposphere-delay': { created: '2026-08-07', updated: '2026-08-07' },
+  'gnss-troposphere-delay': { created: '2026-08-07', updated: '2026-09-24' },
   'free-fall-time': { created: '2026-08-07', updated: '2026-08-07' },
   'ballistic-range': { created: '2026-08-07', updated: '2026-08-07' },
   'terminal-velocity': { created: '2026-08-07', updated: '2026-08-07' },

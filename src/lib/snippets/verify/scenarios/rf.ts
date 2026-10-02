@@ -106,6 +106,29 @@ export const RF_SCENARIOS: Record<string, Scenario[]> = {
     },
   ],
 
+  'gnss-troposphere-delay': [
+    {
+      name: 'page-default-30deg',
+      source: 'page defaults: original 1972 equation with local surface pressure, temperature, and vapour pressure',
+      bag: { elev: Math.PI / 6, pressurePa: 101325, tK: 288.15, vaporPressurePa: 1100 },
+    },
+    {
+      name: 'zenith-standard',
+      source: 'zenith-distance zero limit of the sourced Saastamoinen equation',
+      bag: { elev: Math.PI / 2, pressurePa: 101325, tK: 288.15, vaporPressurePa: 1100 },
+    },
+    {
+      name: 'minimum-domain-elevation',
+      source: 'documented 5 degree calculator elevation cutoff',
+      bag: { elev: (5 * Math.PI) / 180, pressurePa: 101325, tK: 288.15, vaporPressurePa: 1100 },
+    },
+    {
+      name: 'alternate-surface-weather',
+      source: 'independent non-default meteorological inputs to check every live parameter',
+      bag: { elev: Math.PI / 4, pressurePa: 90000, tK: 270, vaporPressurePa: 500 },
+    },
+  ],
+
   'gnss-ionosphere-klobuchar': [
     {
       name: 'zenith-typical',

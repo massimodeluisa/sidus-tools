@@ -55,7 +55,7 @@ Gaps below are **not yet** first-class tools (or only partial via plotter/units)
 | `blowdown-tank` | Propellants | Isothermal / isentropic p(V) |
 | `ion-thruster-efficiency` | Electric propulsion | η = T²/(2ṁP) educational |
 | `hall-thruster-isp` | EP | Ve from Vd, η rough |
-| `gnss-troposphere-delay` | GNSS | Simple Saastamoinen-class model |
+| `gnss-troposphere-delay` | GNSS | Original Saastamoinen (1972) slant correction from local surface meteorology |
 | `laser-time-of-flight` | Laser ranging | RTT range from Δt (extends light-time) |
 | `optical-ber-q` | Optical comms | Q-factor / SNR educational (no full coding) |
 | `star-tracker-noise` | Pointing | pixel → σ_θ order of magnitude |
@@ -81,7 +81,7 @@ Gaps below are **not yet** first-class tools (or only partial via plotter/units)
 | `ion-thruster-efficiency` | Electric propulsion | η = T²/(2ṁP) educational |
 | `hall-thruster-isp` | EP | Ve from Vd, η rough |
 | `cold-gas-thrust` | CubeSat prop | ṁ, ve or pe/Ae for cold gas |
-| `gnss-troposphere-delay` | GNSS | Saastamoinen-class simple model |
+| `gnss-troposphere-delay` | GNSS | Original Saastamoinen (1972) slant correction from local surface meteorology |
 | `gnss-ionosphere-klobuchar` | GNSS | Single-frequency educational delay |
 | `laser-time-of-flight` | Laser ranging | RTT range from Δt (extends light-time) |
 | `optical-ber-q` | Optical comms | Q-factor / SNR educational (no full coding) |

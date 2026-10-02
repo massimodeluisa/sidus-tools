@@ -1800,16 +1800,22 @@ return { gamma: g, vswr: v, return_loss_db: rl }
   },
   {
     name: "gnss_troposphere_delay",
-    description: "Saastamoinen-class tropo delay.",
+    description: "Original Saastamoinen (1972) positive slant-range correction in metres. Inputs: elevation 5–90 deg, local surface pressure (Pa), temperature (K), and water-vapour partial pressure (Pa). The 5 deg floor is an operational cutoff near the horizon, not an accuracy guarantee. Illustrative defaults only; subtract the correction from observed range.",
     inputSchema: {
-    elev_deg: z.number(),
-    lat_deg: z.number(),
-    height_m: z.number(),
-  },
-    sample: {"elev_deg":30,"lat_deg":28.57,"height_m":10},
+      elev_deg: z.number().min(5).max(90),
+      pressure_pa: z.number().positive(),
+      temperature_k: z.number().positive(),
+      vapor_pressure_pa: z.number().nonnegative(),
+    },
+    sample: {"elev_deg":30,"pressure_pa":101325,"temperature_k":288.15,"vapor_pressure_pa":1100},
     run: (args) => {
-      const d = saastamoinenTropoDelay((args.elev_deg*Math.PI)/180, (args.lat_deg*Math.PI)/180, args.height_m);
-return d == null ? null : { delay_m: d }
+      const d = saastamoinenTropoDelay(
+        (args.elev_deg * Math.PI) / 180,
+        args.pressure_pa,
+        args.temperature_k,
+        args.vapor_pressure_pa,
+      )
+      return d == null ? null : { delay_m: d }
     },
   },
   {
