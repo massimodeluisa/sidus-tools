@@ -409,6 +409,12 @@ export const TOOL_PRECISION: Record<string, ToolPrecision> = {
     limits: `Isothermal choked orifice educational model. ${IEEE}`,
     referenceHint: 'Compressible orifice order-of-magnitude',
   },
+  'water-loop': {
+    ...ECLSS,
+    errorClass: 'Planning-level per-crew-day rates (BVAD); real loops vary with crew, hardware state and ops by tens of percent.',
+    limits: `Steady-state mass balance; no storage dynamics, Sabatier water return, brine or filter consumables. ${IEEE}`,
+    referenceHint: 'NASA BVAD Rev2 Tables 4-20 / 4-21; ISS UPA/WPA/BPA public summaries',
+  },
   'thermal-loop': {
     ...ECLSS,
     limits: `Q=ṁ cp ΔT only; no two-phase or radiator design. ${IEEE}`,

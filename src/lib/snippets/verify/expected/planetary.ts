@@ -25,6 +25,7 @@ import {
   hyperbolicPeriapsisSpeed,
   leakDepressTime,
   liohDuration,
+  waterLoopBudget,
   paToMmHg,
   pumpCrankFlyby,
   surfaceGravity,
@@ -79,6 +80,33 @@ export const PLANETARY_EXPECTED: Record<string, ExpectedFn> = {
     )
     const out: Record<string, number> = {}
     put(out, ['t'], t)
+    return out
+  },
+
+  'water-loop': (bag) => {
+    const b = waterLoopBudget({
+      potableKg: num(bag, 'potable'),
+      hygieneKg: num(bag, 'hygiene'),
+      flushKg: num(bag, 'flush'),
+      o2Kg: num(bag, 'o2'),
+      urineKg: num(bag, 'urine'),
+      condensateKg: num(bag, 'condensate'),
+      etaUrine: num(bag, 'eta_u'),
+      etaCondensate: num(bag, 'eta_c'),
+      etaHygiene: num(bag, 'eta_h'),
+      crew: num(bag, 'crew'),
+      durationS: num(bag, 'tS'),
+      reserveFrac: num(bag, 'reserve'),
+    })
+    const out: Record<string, number> = {}
+    if (!b) return out
+    put(out, ['elec'], b.electrolysisKg)
+    put(out, ['demand'], b.demandKg)
+    put(out, ['recovered'], b.recoveredKg)
+    put(out, ['makeup'], b.makeupKg)
+    put(out, ['mission'], b.missionKg)
+    put(out, ['openloop'], b.openLoopKg)
+    put(out, ['saved'], b.savedKg)
     return out
   },
 

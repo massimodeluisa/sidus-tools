@@ -84,7 +84,7 @@ import {
   initialBearing,
 } from '../geometry'
 import { getBody } from '../bodies'
-import { metabolicBudget, liohDuration } from '../eclss'
+import { metabolicBudget, liohDuration, waterLoopBudget, WATER_PER_O2_ELECTROLYSIS } from '../eclss'
 import { solarArrayPower, rcsDeltaV, angularDiameter } from '../power'
 import { parseTle, propagateEci } from '../sgp4'
 import { keplerPropagate } from '../kepler'
@@ -1392,6 +1392,24 @@ const eclss: GoldenCase[] = [
         key: 'duration_s',
         expected: (2 * 0.85) / 4e-5,
         got: () => liohDuration(2, 4e-5, 0.85)!.durationS,
+        relTol: 1e-12,
+      },
+    ],
+  },
+  {
+    id: 'ec-water-loop-makeup',
+    domain: 'eclss',
+    name: 'Water loop makeup = demand − recovery (BVAD ISS defaults)',
+    source: 'NASA BVAD Rev2 Tables 4-20 / 4-21; 2 H2O → 2 H2 + O2',
+    checks: [
+      {
+        key: 'makeup_kg_per_crew_day',
+        expected: 2.5 + 0.4 + 0.3 + 0.82 * WATER_PER_O2_ELECTROLYSIS - (0.85 * 1.5 + 2.27),
+        got: () =>
+          waterLoopBudget({
+            potableKg: 2.5, hygieneKg: 0.4, flushKg: 0.3, o2Kg: 0.82, urineKg: 1.2, condensateKg: 2.27,
+            etaUrine: 0.85, etaCondensate: 1, etaHygiene: 0, crew: 1, durationS: 86400, reserveFrac: 0,
+          })!.makeupKg,
         relTol: 1e-12,
       },
     ],
