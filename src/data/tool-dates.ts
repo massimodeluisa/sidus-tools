@@ -41,6 +41,7 @@ export const TOOL_DATES: Record<string, ToolDates> = {
   'lioh-scrubber': { created: '2026-08-07', updated: '2026-08-07' },
   'cabin-leak': { created: '2026-08-07', updated: '2026-08-07' },
   'thermal-loop': { created: '2026-08-07', updated: '2026-08-07' },
+  'water-loop': { created: '2026-10-05', updated: '2026-10-05' },
   'custom-body': { created: '2026-08-07', updated: '2026-08-07' },
   'hyperbolic-c3': { created: '2026-08-07', updated: '2026-08-14' },
   'hohmann-plane': { created: '2026-08-07', updated: '2026-08-14' },
