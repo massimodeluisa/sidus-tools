@@ -35,6 +35,14 @@
   <img src="public/og-default.png" alt="SIDUS: open-source space engineering tools" width="800" />
 </p>
 
+<p align="center">
+  <img src=".github/assets/hohmann.png" alt="Hohmann transfer calculator on sidus.tools" width="800" />
+</p>
+
+<p align="center">
+  <img src=".github/assets/pass-predict.png" alt="Pass predictor on sidus.tools" width="800" />
+</p>
+
 ---
 
 **SIDUS** (*sidus*, Latin: constellation, heavenly body) is a free educational lab for orbital mechanics, propulsion, RF/ops, geometry, and ECLSS — in the browser and for AI agents.
