@@ -1735,7 +1735,7 @@ return { gamma: g, vswr: v, return_loss_db: rl }
   },
   {
     name: "doppler_shift_leo",
-    description: "Radial Doppler shift.",
+    description: "One-way radial Doppler fd = f0*vr/c. vr is positive when the source approaches the observer.",
     inputSchema: {
     f0_hz: z.number(),
     vr_m_s: z.number(),

@@ -8,8 +8,10 @@ export const DSN_TURNAROUND_X = 880 / 749
 export const DSN_TURNAROUND_KA = 3344 / 749
 
 /**
- * Two-way (round-trip) Doppler shift [Hz] for a radial range-rate.
- * First-order: fd2 = 2 f0 vr / c. Not a transponder turnaround model.
+ * Two-way (round-trip) Doppler shift [Hz].
+ * First-order: fd2 = 2 f0 vr / c. Same sign as `dopplerShiftHz`:
+ * vr is positive when the source approaches the observer.
+ * Not a transponder turnaround model.
  */
 export function twoWayDopplerHz(f0: number, vRadial: number, c = C): number | null {
   if (!(f0 > 0) || !Number.isFinite(vRadial) || !(c > 0)) return null
@@ -23,6 +25,16 @@ export function twoWayDopplerHz(f0: number, vRadial: number, c = C): number | nu
 export function rangeRateFromClockOffset(fracFreq: number, c = C): number | null {
   if (!Number.isFinite(fracFreq) || !(c > 0)) return null
   return c * fracFreq
+}
+
+/**
+ * Two-way range-rate error [m/s] from the same fractional offset.
+ * Δρ̇ = c Δf / (2 f), half the one-way clock mapping.
+ */
+export function twoWayRangeRateFromClockOffset(fracFreq: number, c = C): number | null {
+  const oneWay = rangeRateFromClockOffset(fracFreq, c)
+  if (oneWay == null) return null
+  return oneWay / 2
 }
 
 /**

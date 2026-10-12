@@ -698,6 +698,69 @@ export function findNextPass(opts: {
   return null
 }
 
+/**
+ * Passes from `start` across `horizonH`, oldest first, at most `maxCount`.
+ * Each call of `findNextPass` stops at the first window, so the scans abut
+ * instead of repeating the whole horizon.
+ */
+export function findPasses(
+  opts: {
+    satrec: SatRec
+    observer: GeodeticDeg
+    start: Date
+    horizonH?: number
+    stepS?: number
+    minElDeg?: number
+    refineS?: number
+    favorableLightingOnly?: boolean
+    maxCount?: number
+  },
+): PassWindow[] {
+  const maxCount = Math.max(1, Math.floor(opts.maxCount ?? 8))
+  const horizonH = opts.horizonH ?? 24
+  const stepS = opts.stepS ?? 30
+  const endMs = opts.start.getTime() + horizonH * 3600 * 1000
+  const out: PassWindow[] = []
+  let cursor = opts.start
+  while (out.length < maxCount && cursor.getTime() < endMs) {
+    const leftH = (endMs - cursor.getTime()) / 3_600_000
+    if (!(leftH > 0)) break
+    const win = findNextPass({ ...opts, start: cursor, horizonH: leftH })
+    if (!win) break
+    out.push(win)
+    const nextMs = win.los.getTime() + stepS * 1000
+    if (nextMs <= cursor.getTime()) break
+    cursor = new Date(nextMs)
+  }
+  return out
+}
+
+/** Look angles through one pass, including the LOS sample when the step misses it. */
+export function samplePassLookAngles(
+  satrec: SatRec,
+  observer: GeodeticDeg,
+  aos: Date,
+  los: Date,
+  stepS = 5,
+): { date: Date; azimuthRad: number; elevationRad: number }[] {
+  const t0 = aos.getTime()
+  const t1 = los.getTime()
+  if (!(t1 >= t0) || !(stepS > 0)) return []
+  const out: { date: Date; azimuthRad: number; elevationRad: number }[] = []
+  const push = (ms: number) => {
+    const date = new Date(ms)
+    const state = propagateEci(satrec, date)
+    if (!state) return
+    const look = lookAnglesFromEci(observer, state.r, date)
+    if (!look) return
+    out.push({ date, azimuthRad: look.azimuthRad, elevationRad: look.elevationRad })
+  }
+  const stepMs = stepS * 1000
+  for (let t = t0; t < t1; t += stepMs) push(t)
+  push(t1)
+  return out
+}
+
 /** Sample ground track (lat/lon deg) over a time span. */
 export function groundTrack(
   satrec: SatRec,

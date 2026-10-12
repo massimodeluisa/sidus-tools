@@ -73,6 +73,11 @@ export type OrbitScene3DProps = {
    * Optional labeled point markers [m], drawn as a small dot + text label.
    */
   pointMarkers?: ScenePointMarker[]
+  /**
+   * When set, the scene samples these markers on its own clock (about 4 Hz)
+   * so a live satellite does not re-render the parent.
+   */
+  liveMarkers?: () => ScenePointMarker[]
 }
 
 type Cam = { yaw: number; pitch: number; zoom: number }
@@ -288,6 +293,7 @@ export function OrbitScene3D({
   showEscapeCircularRef = true,
   tracks = [],
   pointMarkers = [],
+  liveMarkers,
 }: OrbitScene3DProps) {
   const { t } = useTranslation()
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -296,6 +302,9 @@ export function OrbitScene3D({
   const camRef = useRef(cam)
   camRef.current = cam
   const t0 = useRef(performance.now())
+  const liveMarkersRef = useRef(liveMarkers)
+  liveMarkersRef.current = liveMarkers
+  const liveSampleRef = useRef<{ at: number; markers: ScenePointMarker[] }>({ at: -1e9, markers: [] })
 
   const resolvedArcs = useMemo(() => {
     if (arcs && arcs.length) return arcs
@@ -359,7 +368,22 @@ export function OrbitScene3D({
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
       const camNow = camRef.current
-      const worldScale = (Math.min(w, h) * 0.42) / extent
+      const sampleFn = liveMarkersRef.current
+      let drawnMarkers = pointMarkers
+      if (sampleFn) {
+        const now = performance.now()
+        if (now - liveSampleRef.current.at >= 250) {
+          liveSampleRef.current = { at: now, markers: sampleFn() }
+        }
+        drawnMarkers = liveSampleRef.current.markers
+      }
+      // A live marker can orbit outside the body and the static tracks.
+      let sceneExtent = extent
+      for (const marker of drawnMarkers) {
+        const r = Math.hypot(marker.r[0], marker.r[1], marker.r[2])
+        if (Number.isFinite(r) && r > sceneExtent) sceneExtent = r
+      }
+      const worldScale = (Math.min(w, h) * 0.42) / sceneExtent
 
       ctx.fillStyle = '#050506'
       ctx.fillRect(0, 0, w, h)
@@ -548,8 +572,9 @@ export function OrbitScene3D({
         ctx.setLineDash([])
       }
 
-      // Caller-supplied labeled point markers
-      for (const marker of pointMarkers) {
+      // Caller-supplied labeled point markers. Sampled above so the same
+      // positions set the scene scale. A live sampler replaces pointMarkers.
+      for (const marker of drawnMarkers) {
         const color = marker.color ?? '#f5f5f5'
         ctx.globalAlpha = isOccluded(marker.r[0], marker.r[1], marker.r[2]) ? 0.25 : 1
         const p = project(marker.r[0], marker.r[1], marker.r[2], camNow, w, h, worldScale)

@@ -2098,4 +2098,29 @@ export function getTool(id: string): ToolMeta | undefined {
 /** Retired slugs → live id. ToolDetailPage issues a replace navigate. */
 export const TOOL_REDIRECTS: Record<string, string> = {
   'surface-access': 'surface-g-escape',
+  'satellite-pass': 'pass-predict',
+}
+
+/**
+ * Live tools a mistyped slug might have meant. Token overlap only:
+ * a shared fragment has to be a whole id segment, not a substring.
+ */
+export function suggestTools(slug: string, limit = 5): ToolMeta[] {
+  const query = slug.trim().toLowerCase()
+  if (!query) return []
+  const tokens = query.split(/[^a-z0-9]+/).filter((token) => token.length >= 3)
+  return TOOLS.map((tool) => {
+    const idTokens = tool.id.split('-')
+    let score = 0
+    if (tool.id.includes(query) || query.includes(tool.id)) score += 8
+    for (const token of tokens) {
+      if (idTokens.includes(token)) score += 3
+      if (tool.title.toLowerCase().includes(token)) score += 1
+    }
+    return { tool, score }
+  })
+    .filter((row) => row.score > 0 && row.tool.id !== query)
+    .sort((a, b) => b.score - a.score || a.tool.title.localeCompare(b.tool.title))
+    .slice(0, limit)
+    .map((row) => row.tool)
 }

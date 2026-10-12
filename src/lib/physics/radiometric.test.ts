@@ -9,6 +9,7 @@ import {
   lowThrustEscapeSpiral,
   rangeRateFromClockOffset,
   twoWayDopplerHz,
+  twoWayRangeRateFromClockOffset,
 } from './radiometric'
 import { dopplerShiftHz } from './discovery-wave'
 
@@ -30,6 +31,12 @@ describe('radiometric (DESCANSO / low-thrust escape)', () => {
   it('constant clock offset maps to Δρ̇ = c Δf/f', () => {
     expect(rangeRateFromClockOffset(1e-13)).toBeCloseTo(C * 1e-13, 12)
     expect(rangeRateFromClockOffset(0)).toBe(0)
+  })
+
+  it('two-way clock range-rate is half the one-way mapping', () => {
+    expect(twoWayRangeRateFromClockOffset(1e-13)).toBeCloseTo((C * 1e-13) / 2, 12)
+    expect(twoWayRangeRateFromClockOffset(0)).toBe(0)
+    expect(twoWayRangeRateFromClockOffset(Number.NaN)).toBeNull()
   })
 
   it('Allan white-FM range-rate sigma is √2 c σ_y', () => {
