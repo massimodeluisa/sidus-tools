@@ -13,6 +13,7 @@ const CLASS_KEY: Record<PrecisionClass, string> = {
   'atmosphere-order': 'atmosphere_order',
   'eclss-educational': 'eclss_educational',
   'rf-friis': 'rf_friis',
+  'radial-doppler': 'radial_doppler',
   'empirical-const': 'empirical_const',
   utility: 'utility',
 }

@@ -10,6 +10,7 @@ export type PrecisionClass =
   | 'atmosphere-order'
   | 'eclss-educational'
   | 'rf-friis'
+  | 'radial-doppler'
   | 'empirical-const'
   | 'utility'
 
@@ -198,9 +199,9 @@ export const TOOL_PRECISION: Record<string, ToolPrecision> = {
   'impedance-matching': TWO_BODY,
   'antenna-gain-effective': TWO_BODY,
   'doppler-shift-leo': {
-    modelClass: 'rf-friis',
+    modelClass: 'radial-doppler',
     errorClass:
-      'First-order fd = f0 vr/c. Two-way is 2 fd. Clock error is Δρ̇ = c Δf/f. No transponder turnaround, media, or station model.',
+      'First-order one-way fd = f0·vr/c with vr positive when the source approaches (range rate is the opposite sign). Two-way is 2 fd. One-way clock error is Δρ̇ = c Δf/f; two-way is half. No transponder turnaround, media, or station model.',
     limits: `Topocentric radial Doppler teaching model. ${IEEE}`,
     referenceHint: 'Thornton & Border DESCANSO vol. 1; Vallado Doppler',
   },

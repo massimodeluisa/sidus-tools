@@ -308,6 +308,11 @@ type MarkerFeature = {
 
 type Props = {
   satellites: GlobeSatellite[]
+  /**
+   * Resample satellites that provide `positionAt` on a short interval inside
+   * this view, so a live marker does not require the parent to re-render.
+   */
+  tickLive?: boolean
   observer?: GlobeObserver
   /** Extra surface markers: AOS / peak / now instants, sites, … */
   markers?: GlobeMarker[]
@@ -2635,9 +2640,12 @@ export function GlobeMap(props: Props) {
       }
 
       /* While following, the per-frame loop owns the live position and must
-         not be fought by the caller's slower cadence. */
+         not be fought by the caller's slower cadence. A live tick likewise
+         samples `positionAt` here instead of a parent clock. */
       if (!followActiveRef.current) {
-        const live = sat.livePosition ?? positionOf(sat, splitAt)
+        const sampled =
+          propsRef.current.tickLive && sat.positionAt ? sat.positionAt(new Date()) : null
+        const live = sampled ?? sat.livePosition ?? positionOf(sat, splitAt)
         if (live) {
           livePositionRef.current.set(sat.id, live)
           layer.setPoint(sat.id, parseCssRgba(sat.color), live)
@@ -2671,6 +2679,7 @@ export function GlobeMap(props: Props) {
   }, [
     ready,
     satellites,
+    props.tickLive,
     observer,
     markers,
     syncMarkers,
@@ -2680,6 +2689,35 @@ export function GlobeMap(props: Props) {
     props.identifiedSatelliteId,
     props.swarmTrailOnlySelected,
   ])
+
+  /* Live marker. The parent passes `positionAt` and stays still; this interval
+     moves the dot. Follow already samples every frame, so it keeps that path. */
+  useEffect(() => {
+    if (!ready || !props.tickLive) return
+    const tick = () => {
+      if (followActiveRef.current) return
+      const layer = layerRef.current
+      const map = mapRef.current
+      if (!layer || !map) return
+      const now = new Date()
+      let moved = false
+      for (const sat of propsRef.current.satellites) {
+        if (!sat.positionAt) continue
+        const point = sat.positionAt(now)
+        if (!point) continue
+        livePositionRef.current.set(sat.id, point)
+        layer.setPoint(sat.id, parseCssRgba(sat.color), point)
+        moved = true
+      }
+      if (!moved) return
+      syncMarkers()
+      updateLabelOverlays()
+      map.triggerRepaint()
+    }
+    tick()
+    const id = window.setInterval(tick, 250)
+    return () => window.clearInterval(id)
+  }, [ready, props.tickLive, syncMarkers, updateLabelOverlays])
 
   /* --- Twilight bands -----------------------------------------------------
      Rounded to 0.01 deg (about 2.4 s of the subsolar point's 0.25 deg/min

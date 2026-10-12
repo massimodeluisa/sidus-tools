@@ -341,6 +341,14 @@ const TIPS: Record<string, string> = {
   longitude: 'Geodetic longitude.',
   'height': 'Geodetic height above the ellipsoid/sphere model.',
   'altitude (geo)': 'Height above the body from geodetic conversion.',
+  'display time zone': 'IANA time zone for the displayed clock times. The search itself runs in UTC.',
+  'max el at (local)': 'Local time of maximum elevation on this pass.',
+  'two-way doppler': 'Round-trip Doppler, twice the one-way shift, same sign. Not a transponder turnaround.',
+  'fractional frequency offset δf/f':
+    'Fractional clock offset Δf/f. One-way range-rate error is c·Δf/f. Not the carrier frequency.',
+  'range-rate error': 'One-way range-rate error c·Δf/f. A two-way measurement maps the same offset to half of that.',
+  'range-rate error (one-way)': 'One-way range-rate error from a fractional frequency offset: c·Δf/f.',
+  'range-rate error (two-way)': 'Two-way range-rate error: c·Δf/(2f), half the one-way clock mapping.',
 }
 
 function norm(label: string): string {
@@ -350,36 +358,53 @@ function norm(label: string): string {
     .replace(/\s+/g, ' ')
 }
 
+const tokenRes = new Map<string, RegExp>()
+
+/** Whole token: hyphenated compounds stay one word, so "range" does not hit "range-rate". */
+function containsToken(haystack: string, token: string): boolean {
+  let re = tokenRes.get(token)
+  if (!re) {
+    const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    re = new RegExp(`(?<![a-z0-9-])${escaped}(?![a-z0-9-])`, 'i')
+    tokenRes.set(token, re)
+  }
+  return re.test(haystack)
+}
+
+function matchesToken(text: string, alts: string): boolean {
+  return new RegExp(`(?<![a-z0-9-])(?:${alts})(?![a-z0-9-])`, 'i').test(text)
+}
+
 function genericTip(label: string): string {
   const k = norm(label)
-  if (/δv|Δv|delta\s*v|\bdv\b|Δv|deorbit|hohmann|bielliptic|impulsive/.test(k)) {
+  if (matchesToken(k, 'δv|delta\\s*v|dv|deorbit|hohmann|bielliptic|impulsive')) {
     return 'Impulsive velocity change or Δv-related quantity in the two-body educational model (SI m/s unless labeled otherwise).'
   }
-  if (/altitude|height|apoapsis|periapsis|radius|range|distance|sma|semi-major/.test(k)) {
+  if (matchesToken(k, 'altitude|height|apoapsis|periapsis|radius|range|distance|sma|semi-major')) {
     return 'Length scale in the tool model (altitude above body radius, radius from centre, or path length).'
   }
-  if (/inclination|anomaly|azimuth|elevation|phase|bearing|angle|latitude|longitude|degrees|radians/.test(k)) {
+  if (matchesToken(k, 'inclination|anomaly|azimuth|elevation|phase|bearing|angle|latitude|longitude|degrees|radians')) {
     return 'Angular quantity; convert with the unit control when offered (rad SI internally).'
   }
-  if (/mass|payload|propellant|m₀|m_f|m0|mf|lioh|o₂|co₂|n₂|h₂o/.test(k)) {
+  if (matchesToken(k, 'mass|payload|propellant|m₀|m_f|m0|mf|lioh|o₂|co₂|n₂|h₂o')) {
     return 'Mass-related quantity (kg SI unless the unit badge says otherwise).'
   }
-  if (/isp|impulse|thrust|force|mdot|flow|newton/.test(k)) {
+  if (matchesToken(k, 'isp|impulse|thrust|force|mdot|flow|newton')) {
     return 'Propulsion / force quantity (I_sp in seconds by aerospace convention; force in N; flow in kg/s).'
   }
-  if (/power|heat|watt|flux|solar|array|battery|voltage|load|endurance/.test(k)) {
+  if (matchesToken(k, 'power|heat|watt|flux|solar|array|battery|voltage|load|endurance')) {
     return 'Power, energy, or thermal quantity in the simplified subsystem model.'
   }
-  if (/pressure|density|mach|drag|cd|ballistic|temperature|emiss|absorb/.test(k)) {
+  if (matchesToken(k, 'pressure|density|mach|drag|cd|ballistic|temperature|emiss|absorb')) {
     return 'Atmosphere / aero / thermal environment quantity for the educational model.'
   }
-  if (/period|time|tof|duration|hours|revs|day|light|rtt|aos|los|epoch|utc/.test(k)) {
+  if (matchesToken(k, 'period|time|tof|duration|hours|revs|day|light|rtt|aos|los|epoch|utc')) {
     return 'Time-related quantity (seconds SI unless shown as pretty duration or civil time).'
   }
-  if (/frequency|gain|eirp|fspl|dbi|dbw|link|beam|aperture|wavelength/.test(k)) {
+  if (matchesToken(k, 'frequency|gain|eirp|fspl|dbi|dbw|link|beam|aperture|wavelength')) {
     return 'RF / optical link quantity (frequency in Hz SI; many gains stay in dB).'
   }
-  if (/vector|position|velocity|r eci|ax|ay|az|bx|by|bz|east|north|up/.test(k)) {
+  if (matchesToken(k, 'vector|position|velocity|r eci|ax|ay|az|bx|by|bz|east|north|up')) {
     return 'Vector component or state element in the selected reference frame (SI).'
   }
   return `Educational field “${label}”. See the tool assumptions panel for model class and limits.`
@@ -394,8 +419,7 @@ export function tipForLabel(label: string | undefined | null): string | undefine
   let best: { k: string; v: string } | undefined
   for (const [k, v] of Object.entries(TIPS)) {
     if (k.length < 3) continue
-    if (key === k) return v
-    if (key.includes(k) && (!best || k.length > best.k.length)) best = { k, v }
+    if (containsToken(key, k) && (!best || k.length > best.k.length)) best = { k, v }
   }
   if (best) return best.v
   return genericTip(label)

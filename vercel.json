@@ -9,6 +9,11 @@
   },
   "redirects": [
     {
+      "source": "/tools/satellite-pass",
+      "destination": "/tools/pass-predict",
+      "permanent": true
+    },
+    {
       "source": "/:path*",
       "has": [{ "type": "host", "value": "www.sidus.tools" }],
       "destination": "https://sidus.tools/:path*",

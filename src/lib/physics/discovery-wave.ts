@@ -42,10 +42,50 @@ export function gainFromAperture(ae: number, wavelengthM: number): number | null
   return (4 * Math.PI * ae) / (wavelengthM * wavelengthM)
 }
 
-/** LEO Doppler: fd = f0 * v_radial / c. */
+/**
+ * One-way Doppler shift [Hz]: fd = f0 * vRadial / c.
+ * `vRadial` is positive when the source approaches the observer.
+ * Range rate in tracking software is the opposite sign (positive when receding).
+ */
 export function dopplerShiftHz(f0: number, vRadial: number, c = C): number | null {
   if (!(f0 > 0) || !Number.isFinite(vRadial) || !(c > 0)) return null
   return (f0 * vRadial) / c
+}
+
+/**
+ * Horizon range-rate magnitude [m/s] for a circular overhead pass.
+ * v_orb = sqrt(μ / (R + h)), rdot = v_orb * R / (R + h).
+ * The approaching limb is +rdot under `dopplerShiftHz`; the receding limb is −rdot.
+ */
+export function circularHorizonRangeRate(
+  altitudeM: number,
+  mu = EARTH_MU,
+  bodyRadiusM = EARTH_RADIUS,
+): number | null {
+  if (!(altitudeM > 0) || !(mu > 0) || !(bodyRadiusM > 0)) return null
+  const radius = bodyRadiusM + altitudeM
+  const speed = Math.sqrt(mu / radius)
+  const rdot = speed * (bodyRadiusM / radius)
+  return Number.isFinite(rdot) ? rdot : null
+}
+
+/**
+ * Doppler rate [Hz/s] at overhead closest approach for a circular orbit.
+ * fdot ≈ −f0 * v_orb² / (c * ρ_min), with ρ_min = altitude for a surface observer.
+ * Negative: the received frequency is falling through closest approach.
+ */
+export function overheadDopplerRateHz(
+  f0: number,
+  altitudeM: number,
+  mu = EARTH_MU,
+  bodyRadiusM = EARTH_RADIUS,
+  c = C,
+): number | null {
+  if (!(f0 > 0) || !(altitudeM > 0) || !(mu > 0) || !(bodyRadiusM > 0) || !(c > 0)) return null
+  const radius = bodyRadiusM + altitudeM
+  const speed = Math.sqrt(mu / radius)
+  const rate = (-f0 * speed * speed) / (c * altitudeM)
+  return Number.isFinite(rate) ? rate : null
 }
 
 /** Educational rain attenuation [dB]: k R^α L_eff (ITU-like toy). */

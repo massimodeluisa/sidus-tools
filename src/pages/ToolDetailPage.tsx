@@ -2,7 +2,7 @@ import { useEffect, type ReactNode } from 'react'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ToolRenderer } from '@/components/tools/ToolRenderer'
-import { getTool, TOOL_REDIRECTS } from '@/data/tools'
+import { getTool, suggestTools, TOOL_REDIRECTS } from '@/data/tools'
 import { resolveSources } from '@/data/sources'
 import { Panel } from '@/components/shared/Panel'
 import { SeoHead } from '@/components/site/SeoHead'
@@ -82,9 +82,35 @@ export function ToolDetailPage() {
   }
 
   if (!tool) {
+    const suggestions = suggestTools(id)
     return (
       <div className="sidus-enter page-shell page-y space-y-4">
+        <SeoHead
+          title={`${t('tools.not_found')} · SIDUS`}
+          description={t('tools.not_found')}
+          path={`/tools/${id}`}
+          robots="noindex, follow"
+        />
         <p className="text-muted">{t('tools.not_found')}</p>
+        {suggestions.length > 0 ? (
+          <div className="space-y-2">
+            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-subtle">
+              {t('tools.did_you_mean')}
+            </p>
+            <ul className="space-y-1">
+              {suggestions.map((candidate) => (
+                <li key={candidate.id}>
+                  <Link
+                    to={`/tools/${candidate.id}`}
+                    className="font-mono text-sm text-signal hover:text-fg hover:underline"
+                  >
+                    {candidate.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         <Link
           to="/tools"
           className="font-mono text-[11px] uppercase tracking-[0.14em] text-signal hover:text-fg"
