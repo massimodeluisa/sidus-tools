@@ -1851,7 +1851,7 @@ export const ko: TMessages = {
     horizon_doppler: "지평 도플러 |fd|",
     tip_horizon_doppler: "이 고도와 f0에서 전파 지평의 편도 도플러 크기.",
     doppler_rate_tca: "최근접에서의 도플러 변화율",
-    tip_doppler_rate_tca: "천정 도플러 변화율 fdot ≈ −f0·v²/(c·h). 음수면 최근접에서 주파수가 내려간다.",
+    tip_doppler_rate_tca: "천정 도플러 변화율 fdot ≈ −f0·v²·R/(c·r·h), r = R + h. 음수면 최근접에서 주파수가 내려간다.",
     search_from_now: "지금부터 검색",
     pass_pinned_past: "시작 시각이 과거입니다. 창은 고정한 시각에 남습니다.",
     tle_epoch: "TLE 역기점 {{date}}",

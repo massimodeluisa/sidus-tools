@@ -1852,7 +1852,7 @@ export const de: TMessages = {
     horizon_doppler: "Horizont-Doppler |fd|",
     tip_horizon_doppler: "Betrag des einfachen Dopplers am Funkhorizont für diese Höhe und f0.",
     doppler_rate_tca: "Doppler-Rate bei größter Annäherung",
-    tip_doppler_rate_tca: "Doppler-Rate im Zenit, fdot ≈ −f0·v²/(c·h). Negativ: die Frequenz fällt bei der größten Annäherung.",
+    tip_doppler_rate_tca: "Doppler-Rate im Zenit, fdot ≈ −f0·v²·R/(c·r·h), mit r = R + h. Negativ: die Frequenz fällt bei der größten Annäherung.",
     search_from_now: "Ab jetzt suchen",
     pass_pinned_past: "Dieser Start liegt in der Vergangenheit. Das Fenster bleibt an der gesetzten Zeit.",
     tle_epoch: "TLE-Epoche {{date}}",

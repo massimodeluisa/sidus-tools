@@ -1852,7 +1852,7 @@ export const fr: TMessages = {
     horizon_doppler: "Doppler à l’horizon |fd|",
     tip_horizon_doppler: "Module du Doppler aller simple à l’horizon radio, pour cette altitude et f0.",
     doppler_rate_tca: "Taux de Doppler au plus près",
-    tip_doppler_rate_tca: "Taux de Doppler au zénith, fdot ≈ −f0·v²/(c·h). Négatif : la fréquence baisse au plus près.",
+    tip_doppler_rate_tca: "Taux de Doppler au zénith, fdot ≈ −f0·v²·R/(c·r·h), avec r = R + h. Négatif : la fréquence baisse au plus près.",
     search_from_now: "Chercher à partir de maintenant",
     pass_pinned_past: "Ce début est dans le passé. La fenêtre reste à l’heure choisie.",
     tle_epoch: "Époque TLE {{date}}",

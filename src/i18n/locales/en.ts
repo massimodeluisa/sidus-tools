@@ -1850,7 +1850,7 @@ export const en = {
     horizon_doppler: "Horizon Doppler |fd|",
     tip_horizon_doppler: "Magnitude of the one-way Doppler at the radio horizon for this altitude and f0.",
     doppler_rate_tca: "Doppler rate at closest approach",
-    tip_doppler_rate_tca: "Overhead Doppler rate fdot ≈ −f0·v²/(c·h). Negative means the tone is falling through closest approach.",
+    tip_doppler_rate_tca: "Overhead Doppler rate fdot ≈ −f0·v²·R/(c·r·h), with r = R + h. Negative means the tone is falling through closest approach.",
     search_from_now: "Search from now",
     pass_pinned_past: "This start time is in the past. The window stays where you pinned it.",
     tle_epoch: "TLE epoch {{date}}",

@@ -119,7 +119,8 @@ function downloadText(filename: string, body: string, mime: string) {
   document.body.appendChild(anchor)
   anchor.click()
   anchor.remove()
-  URL.revokeObjectURL(url)
+  // Revoke on the next turn so the browser can start reading the blob.
+  setTimeout(() => URL.revokeObjectURL(url), 0)
 }
 
 /** Full-width font-mono kicker for a PARAMETERS section. */

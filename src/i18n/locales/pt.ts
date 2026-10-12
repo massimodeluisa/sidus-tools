@@ -1851,7 +1851,7 @@ export const pt: TMessages = {
     horizon_doppler: "Doppler no horizonte |fd|",
     tip_horizon_doppler: "Módulo do Doppler de um sentido no horizonte rádio, para esta altitude e f0.",
     doppler_rate_tca: "Taxa de Doppler na maior aproximação",
-    tip_doppler_rate_tca: "Taxa de Doppler no zénite, fdot ≈ −f0·v²/(c·h). Negativa: a frequência desce na maior aproximação.",
+    tip_doppler_rate_tca: "Taxa de Doppler no zénite, fdot ≈ −f0·v²·R/(c·r·h), com r = R + h. Negativa: a frequência desce na maior aproximação.",
     search_from_now: "Procurar a partir de agora",
     pass_pinned_past: "Este início está no passado. A janela fica na hora marcada.",
     tle_epoch: "Época TLE {{date}}",

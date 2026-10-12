@@ -32,13 +32,35 @@ describe('circular horizon Doppler', () => {
     expect(sband).toBeLessThan(56_000)
   })
 
-  it('overhead Doppler rate is negative through closest approach', () => {
-    const rate = overheadDopplerRateHz(145.8e6, altitudeM)
-    expect(rate).not.toBeNull()
-    expect(rate!).toBeLessThan(0)
-    const radius = EARTH_RADIUS + altitudeM
-    const speed = Math.sqrt(EARTH_MU / radius)
-    expect(rate).toBeCloseTo((-145.8e6 * speed * speed) / (C * altitudeM), 6)
+  it('overhead Doppler rate matches a numerical slant-range acceleration at TCA', () => {
+    const f0 = 145.8e6
+    for (const altitude of [altitudeM, 20_000_000]) {
+      const rate = overheadDopplerRateHz(f0, altitude)
+      const accel = slantRangeAccelAtTca(altitude)
+      expect(accel).toBeGreaterThan(0)
+      expect(rate).not.toBeNull()
+      expect(rate!).toBeLessThan(0)
+      // fd = −f0 * rangeRate / c, so the rate at TCA is −f0 * rangeAccel / c.
+      expect(rate).toBeCloseTo((-f0 * accel) / C, 4)
+    }
     expect(overheadDopplerRateHz(0, altitudeM)).toBeNull()
   })
 })
+
+/**
+ * Second time derivative of slant range at an overhead TCA.
+ * Circular satellite, stationary surface observer, sampled and differentiated.
+ * This does not use the closed-form v² R / (r h).
+ */
+function slantRangeAccelAtTca(altitudeM: number): number {
+  const radius = EARTH_RADIUS + altitudeM
+  const speed = Math.sqrt(EARTH_MU / radius)
+  const meanMotion = speed / radius
+  const slant = (t: number) => {
+    const theta = meanMotion * t
+    return Math.hypot(radius * Math.cos(theta) - EARTH_RADIUS, radius * Math.sin(theta))
+  }
+  const second = (dt: number) => (slant(dt) - 2 * slant(0) + slant(-dt)) / (dt * dt)
+  const dt = 1
+  return (4 * second(dt) - second(2 * dt)) / 3
+}

@@ -1852,7 +1852,7 @@ export const ja: TMessages = {
     horizon_doppler: "地平ドップラー |fd|",
     tip_horizon_doppler: "この高度と f0 での、電波地平における片道ドップラーの大きさ。",
     doppler_rate_tca: "最接近でのドップラー変化率",
-    tip_doppler_rate_tca: "天頂のドップラー変化率 fdot ≈ −f0·v²/(c·h)。負なら最接近で周波数が下がっている。",
+    tip_doppler_rate_tca: "天頂のドップラー変化率 fdot ≈ −f0·v²·R/(c·r·h)（r = R + h）。負なら最接近で周波数が下がっている。",
     search_from_now: "今から検索",
     pass_pinned_past: "開始時刻は過去です。窓はその時刻のままです。",
     tle_epoch: "TLE エポック {{date}}",

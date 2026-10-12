@@ -70,8 +70,10 @@ export function circularHorizonRangeRate(
 }
 
 /**
- * Doppler rate [Hz/s] at overhead closest approach for a circular orbit.
- * fdot ≈ −f0 * v_orb² / (c * ρ_min), with ρ_min = altitude for a surface observer.
+ * Doppler rate [Hz/s] at overhead closest approach for a circular orbit
+ * and a stationary surface observer.
+ * Slant-range acceleration at TCA is v_orb² * R / (r * h), with r = R + h,
+ * so fdot = −f0 * v_orb² * R / (c * r * h).
  * Negative: the received frequency is falling through closest approach.
  */
 export function overheadDopplerRateHz(
@@ -84,7 +86,7 @@ export function overheadDopplerRateHz(
   if (!(f0 > 0) || !(altitudeM > 0) || !(mu > 0) || !(bodyRadiusM > 0) || !(c > 0)) return null
   const radius = bodyRadiusM + altitudeM
   const speed = Math.sqrt(mu / radius)
-  const rate = (-f0 * speed * speed) / (c * altitudeM)
+  const rate = (-f0 * speed * speed * bodyRadiusM) / (c * radius * altitudeM)
   return Number.isFinite(rate) ? rate : null
 }
 

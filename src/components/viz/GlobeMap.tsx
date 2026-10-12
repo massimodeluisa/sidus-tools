@@ -1083,6 +1083,8 @@ export function GlobeMap(props: Props) {
         )
         if (at) satScreenRef.current.set(sat.id, at)
         else satScreenRef.current.delete(sat.id)
+      } else if (!point) {
+        satScreenRef.current.delete(sat.id)
       }
       /* The identified satellite keeps its name whatever the tier says: being
          told which one you are pointing at is the whole point of the pick. */
@@ -2651,7 +2653,8 @@ export function GlobeMap(props: Props) {
           layer.setPoint(sat.id, parseCssRgba(sat.color), live)
         } else {
           livePositionRef.current.delete(sat.id)
-          if (!altitudeDataRef.current.has(sat.id)) layer.dropSatellite(sat.id)
+          if (altitudeDataRef.current.has(sat.id)) layer.clearPoint(sat.id)
+          else layer.dropSatellite(sat.id)
         }
       }
     }
@@ -2704,7 +2707,13 @@ export function GlobeMap(props: Props) {
       for (const sat of propsRef.current.satellites) {
         if (!sat.positionAt) continue
         const point = sat.positionAt(now)
-        if (!point) continue
+        if (!point) {
+          if (!livePositionRef.current.delete(sat.id)) continue
+          if (altitudeDataRef.current.has(sat.id)) layer.clearPoint(sat.id)
+          else layer.dropSatellite(sat.id)
+          moved = true
+          continue
+        }
         livePositionRef.current.set(sat.id, point)
         layer.setPoint(sat.id, parseCssRgba(sat.color), point)
         moved = true

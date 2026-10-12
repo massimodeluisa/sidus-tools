@@ -84,6 +84,8 @@ export type AltitudeTrailInput = {
 export type AltitudeLayer = CustomLayerInterface & {
   setTrail(input: AltitudeTrailInput): void
   setPoint(id: string, colorRgba: Rgba, point: GlobeTrackPoint): void
+  /** Drop only the live marker. A stored trail stays. */
+  clearPoint(id: string): void
   dropSatellite(id: string): void
   /**
    * TRAJECTORIES sliders. Width cannot become a thicker GL line (lineWidth is
@@ -117,6 +119,8 @@ type SatelliteState = {
   futureCount: number
   futureDashed: boolean
   hasPoint: boolean
+  /** Next render should stop drawing the live marker without touching the trail. */
+  dropPoint: boolean
   pendingLines: Omit<AltitudeTrailInput, 'id' | 'colorRgba'> | null
   lastLines: Omit<AltitudeTrailInput, 'id' | 'colorRgba'> | null
   pendingPoint: GlobeTrackPoint | null
@@ -178,6 +182,7 @@ function emptySatellite(colorRgba: Rgba): SatelliteState {
     futureCount: 0,
     futureDashed: false,
     hasPoint: false,
+    dropPoint: false,
     pendingLines: null,
     lastLines: null,
     pendingPoint: null,
@@ -364,6 +369,12 @@ export function createAltitudeLayer(options: {
   }
 
   function uploadPending(gl: GlContext, sat: SatelliteState, useMercatorElevationUnits: boolean): void {
+    if (sat.dropPoint) {
+      sat.dropPoint = false
+      sat.pendingPoint = null
+      sat.livePoint = null
+      sat.hasPoint = false
+    }
     if (!sat.pendingLines && !sat.pendingPoint) return
     if (!sat.buffers) {
       sat.buffers = { past: gl.createBuffer()!, future: gl.createBuffer()!, point: gl.createBuffer()! }
@@ -484,8 +495,18 @@ export function createAltitudeLayer(options: {
         satellites.set(id, sat)
       }
       sat.colorRgba = colorRgba
+      sat.dropPoint = false
       sat.pendingPoint = point
       sat.livePoint = point
+      map.triggerRepaint()
+    },
+
+    clearPoint(id) {
+      const sat = satellites.get(id)
+      if (!sat || (!sat.hasPoint && !sat.livePoint && !sat.pendingPoint && !sat.dropPoint)) return
+      sat.pendingPoint = null
+      sat.livePoint = null
+      sat.dropPoint = true
       map.triggerRepaint()
     },
 

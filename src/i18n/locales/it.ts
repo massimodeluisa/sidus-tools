@@ -1852,7 +1852,7 @@ export const it: TMessages = {
     horizon_doppler: "Doppler all’orizzonte |fd|",
     tip_horizon_doppler: "Modulo del Doppler di sola andata all’orizzonte radio, per questa quota e f0.",
     doppler_rate_tca: "Tasso di Doppler al massimo avvicinamento",
-    tip_doppler_rate_tca: "Tasso di Doppler allo zenit, fdot ≈ −f0·v²/(c·h). Negativo: la frequenza scende al passaggio più vicino.",
+    tip_doppler_rate_tca: "Tasso di Doppler allo zenit, fdot ≈ −f0·v²·R/(c·r·h), con r = R + h. Negativo: la frequenza scende al passaggio più vicino.",
     search_from_now: "Cerca da adesso",
     pass_pinned_past: "Questo inizio è nel passato. La finestra resta all’ora fissata.",
     tle_epoch: "Epoca TLE {{date}}",

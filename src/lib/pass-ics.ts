@@ -1,8 +1,8 @@
-/** Escape text for a single ICS property value. */
+/** Escape text for a single ICS property value. CRLF and a lone CR become \\n. */
 function icsText(value: string): string {
   return value
     .replace(/\\/g, '\\\\')
-    .replace(/\n/g, '\\n')
+    .replace(/\r\n?|\n/g, '\\n')
     .replace(/,/g, '\\,')
     .replace(/;/g, '\\;')
 }

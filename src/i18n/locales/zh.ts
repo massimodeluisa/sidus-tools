@@ -1846,7 +1846,7 @@ export const zh: TMessages = {
     horizon_doppler: "地平多普勒 |fd|",
     tip_horizon_doppler: "该高度和 f0 下，无线电地平处单程多普勒的幅度。",
     doppler_rate_tca: "最近接近处的多普勒变化率",
-    tip_doppler_rate_tca: "天顶多普勒变化率 fdot ≈ −f0·v²/(c·h)。为负表示过最近接近点时频率在下降。",
+    tip_doppler_rate_tca: "天顶多普勒变化率 fdot ≈ −f0·v²·R/(c·r·h)，其中 r = R + h。为负表示过最近接近点时频率在下降。",
     search_from_now: "从现在开始搜索",
     pass_pinned_past: "起始时间在过去。窗口停在钉住的时刻。",
     tle_epoch: "TLE 历元 {{date}}",
