@@ -238,6 +238,18 @@ fn main() {
     expect(out).toContain('const mu =')
   })
 
+  it('prints dynamic-pressure results assigned inside branches in C, C++, and JavaScript', () => {
+    const snippet = getSnippets('dynamic-pressure')!
+    const values = { h: 0, v: 300 }
+    const c = renderLiveCode(snippet.code.c!, 'c', values)
+    const cpp = renderLiveCode(snippet.code.cpp!, 'cpp', values)
+    const js = renderLiveCode(snippet.code.javascript!, 'javascript', values)
+
+    expect(c).toContain('printf("isa_temperature_k = %.17g')
+    expect(cpp).toContain('std::printf("isa_temperature_k = %.17g')
+    expect(js).toContain('console.log("isa_temperature_k =", isa_temperature_k)')
+  })
+
   it('does not print function default params as results (units TS)', () => {
     const sn = getSnippets('units')!
     const out = renderLiveCode(sn.code.typescript!, 'typescript', {
