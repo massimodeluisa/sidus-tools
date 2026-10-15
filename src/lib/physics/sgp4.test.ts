@@ -4,6 +4,7 @@ import {
   eciSiToEcefSi,
   eciSiToGeodetic,
   findNextPass,
+  isValidGeodeticObserver,
   isSatSunlitSi,
   lookAnglesFromEci,
   observerEciPosition,
@@ -16,7 +17,7 @@ import {
 } from './sgp4'
 import { ecfToEci, ecfToLookAngles, degreesToRadians, gstime, sgp4, twoline2satrec } from '../vendor/satellite-js-pure'
 import { AU, EARTH_RADIUS } from './constants'
-import { vcross, vnorm, vscale, vsub, vunit } from './vector'
+import { vcross, vnorm, vscale, vsub, vunit, type Vec3 } from './vector'
 
 /**
  * Published SGP4/SDP4 verification vectors and TLEs, copied verbatim from:
@@ -470,6 +471,8 @@ describe('observerEciPosition round-trips through eciSiToGeodetic', () => {
     const date = new Date('2024-01-01T00:00:00.000Z')
 
     const eci = observerEciPosition(observer, date)
+    expect(eci, 'observerEciPosition(valid observer)').toBeTruthy()
+    if (!eci) throw new Error('unreachable: narrowed by expect above')
     const back = eciSiToGeodetic(eci, date)
 
     expect(back, 'eciSiToGeodetic(observerEciPosition(...))').toBeTruthy()
@@ -525,6 +528,8 @@ describe('topocentricSezSi: consistency with vendor ecfToLookAngles', () => {
     const observer = { latDeg: 34, lonDeg: -118, heightM: 100 }
     const satEcefM = eciSiToEcefSi(rM, date)
     const sez = topocentricSezSi(observer, satEcefM)
+    expect(sez, 'topocentricSezSi(valid observer)').toBeTruthy()
+    if (!sez) throw new Error('unreachable: narrowed by expect above')
 
     const rangeM = Math.hypot(sez.southM, sez.eastM, sez.zenithM)
     const el = Math.asin(sez.zenithM / rangeM)
@@ -544,6 +549,108 @@ describe('topocentricSezSi: consistency with vendor ecfToLookAngles', () => {
     expect(Math.abs(az - vendorLook.azimuth)).toBeLessThanOrEqual(1e-9)
     const rangeRel = Math.abs(rangeM - vendorLook.rangeSat * 1000) / (vendorLook.rangeSat * 1000)
     expect(rangeRel).toBeLessThanOrEqual(1e-6)
+  })
+})
+
+describe('observer look-angle input domain and zero-range singularity', () => {
+  const date = new Date('2024-01-01T00:00:00.000Z')
+  const observer = { latDeg: 34, lonDeg: -118, heightM: 100 }
+
+  it('accepts the inclusive geodetic poles and rejects latitudes outside them', () => {
+    expect(isValidGeodeticObserver({ ...observer, latDeg: -90 })).toBe(true)
+    expect(isValidGeodeticObserver({ ...observer, latDeg: 90 })).toBe(true)
+    for (const latDeg of [-90.0001, 90.0001, 100, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(isValidGeodeticObserver({ ...observer, latDeg })).toBe(false)
+      expect(lookAnglesFromEci({ ...observer, latDeg }, [7e6, 0, 0], date)).toBeNull()
+      expect(observerEciPosition({ ...observer, latDeg }, date)).toBeNull()
+      expect(topocentricSezSi({ ...observer, latDeg }, [7e6, 0, 0])).toBeNull()
+    }
+  })
+
+  it('rejects an exact/coincident line of sight and round-off-scale residual', () => {
+    const observerEci = observerEciPosition(observer, date)
+    expect(observerEci).toBeTruthy()
+    if (!observerEci) throw new Error('unreachable: narrowed by expect above')
+
+    const coincident = lookAnglesFromEci(observer, observerEci, date)
+    expect(coincident).toBeNull()
+
+    // A millimetre exceeds the transform's binary64 round-off floor; its
+    // direction is mathematically defined even though such a satellite state
+    // is not a physically possible Earth-orbit case.
+    const nearby: Vec3 = [observerEci[0] + 1e-3, observerEci[1], observerEci[2]]
+    const look = lookAnglesFromEci(observer, nearby, date)
+    expect(look).toBeTruthy()
+    if (!look) throw new Error('unreachable: narrowed by expect above')
+    expect(look.rangeM).toBeGreaterThan(0)
+    expect(Number.isFinite(look.azimuthRad)).toBe(true)
+    expect(Number.isFinite(look.elevationRad)).toBe(true)
+  })
+
+  it('keeps valid ISS look-angle geometry finite at both latitude limits', () => {
+    const tle = parseTle(SAMPLE_ISS_TLE)
+    expect(tle.ok).toBe(true)
+    if (!tle.ok) throw new Error('unreachable: narrowed by expect above')
+    const state = propagateEci(tle.satrec, date)
+    expect(state).toBeTruthy()
+    if (!state) throw new Error('unreachable: narrowed by expect above')
+
+    for (const latDeg of [-90, 90]) {
+      const look = lookAnglesFromEci({ ...observer, latDeg }, state.r, date)
+      expect(look).toBeTruthy()
+      if (!look) throw new Error('unreachable: narrowed by expect above')
+      expect([look.azimuthRad, look.elevationRad, look.rangeM].every(Number.isFinite)).toBe(true)
+    }
+  })
+
+  it('rejects invalid observer coordinates before searching for passes', () => {
+    const tle = parseTle(SAMPLE_ISS_TLE)
+    expect(tle.ok).toBe(true)
+    if (!tle.ok) throw new Error('unreachable: narrowed by expect above')
+    expect(
+      findNextPass({
+        satrec: tle.satrec,
+        observer: { ...observer, latDeg: 100 },
+        start: date,
+        horizonH: 1,
+        stepS: 60,
+      }),
+    ).toBeNull()
+  })
+})
+
+describe('look-angle azimuth at zenith', () => {
+  const date = new Date('2026-01-01T00:00:00.000Z')
+  const observer = { latDeg: 0, lonDeg: 0, heightM: 0 }
+
+  const lookAtEcf = (satEcf: { x: number; y: number; z: number }) => {
+    const satEci = ecfToEci(satEcf, gstime(date))
+    return lookAnglesFromEci(
+      observer,
+      [satEci.x * 1000, satEci.y * 1000, satEci.z * 1000],
+      date,
+    )
+  }
+
+  it('marks exact zenith azimuth undefined instead of returning atan2(0, 0)', () => {
+    const look = lookAtEcf({ x: 7078.137, y: 0, z: 0 })
+
+    expect(look).toBeTruthy()
+    if (!look) throw new Error('unreachable: narrowed by expect above')
+    expect(look.azimuthRad).toBeNull()
+    expect(look.elevationRad).toBeCloseTo(Math.PI / 2, 12)
+    expect(look.rangeM).toBeCloseTo(700_000, 5)
+  })
+
+  it('preserves a resolvable one-metre east bearing immediately off zenith', () => {
+    const look = lookAtEcf({ x: 7078.137, y: 0.001, z: 0 })
+
+    expect(look).toBeTruthy()
+    if (!look) throw new Error('unreachable: narrowed by expect above')
+    expect(look.azimuthRad).not.toBeNull()
+    expect(look.azimuthRad as number).toBeCloseTo(Math.PI / 2, 8)
+    expect(look.elevationRad).toBeCloseTo(Math.PI / 2, 5)
+    expect(look.rangeM).toBeCloseTo(700_000, 5)
   })
 })
 
