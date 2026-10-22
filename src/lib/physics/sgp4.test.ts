@@ -4,12 +4,14 @@ import {
   eciSiToEcefSi,
   eciSiToGeodetic,
   findNextPass,
+  findPasses,
   isSatSunlitSi,
   lookAnglesFromEci,
   observerEciPosition,
   parseTle,
   propagateEci,
   SAMPLE_ISS_TLE,
+  samplePassLookAngles,
   sunEciSi,
   sunElevationRad,
   topocentricSezSi,
@@ -691,5 +693,32 @@ describe('findNextPass: favorable lighting geometry classification', () => {
     expect(sunElevationRad(observer, pass.favorableLightingAt)).toBeLessThan(CIVIL_TWILIGHT_RAD)
     expect(pass.favorableLightingAt.getTime()).toBeGreaterThanOrEqual(pass.aos.getTime())
     expect(pass.favorableLightingAt.getTime()).toBeLessThanOrEqual(pass.los.getTime())
+  })
+})
+
+describe('findPasses', () => {
+  it('returns later windows after the first LOS, each including a LOS look sample', () => {
+    const parsed = parseTle(SAMPLE_ISS_TLE)
+    expect(parsed.ok).toBe(true)
+    if (!parsed.ok) throw new Error('unreachable')
+
+    const observer = { latDeg: 28.5, lonDeg: -80.6, heightM: 3 }
+    const passes = findPasses({
+      satrec: parsed.satrec,
+      observer,
+      start: new Date('2026-08-24T00:00:00Z'),
+      horizonH: 24,
+      minElDeg: 10,
+      stepS: 20,
+      maxCount: 8,
+    })
+    expect(passes.length).toBeGreaterThan(1)
+    expect(passes.length).toBeLessThanOrEqual(8)
+    expect(passes[1]!.aos.getTime()).toBeGreaterThan(passes[0]!.los.getTime())
+
+    const samples = samplePassLookAngles(parsed.satrec, observer, passes[0]!.aos, passes[0]!.los, 30)
+    expect(samples.length).toBeGreaterThan(1)
+    expect(samples[samples.length - 1]!.date.getTime()).toBe(passes[0]!.los.getTime())
+    expect(samplePassLookAngles(parsed.satrec, observer, passes[0]!.los, passes[0]!.aos, 30)).toEqual([])
   })
 })

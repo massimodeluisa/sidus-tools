@@ -263,6 +263,39 @@ export function tleText(record: TleRecord): string {
   return `${record.name}\n${record.line1}\n${record.line2}`
 }
 
+const STORED_TLE_PREFIX = 'sidus.tle.catnr.'
+
+/** Last TLE text saved for a catalogue number, kept beside the CelesTrak response cache. */
+export function readStoredTle(catnr: string): string | null {
+  const key = STORED_TLE_PREFIX + catnr.trim()
+  try {
+    const raw = globalThis.localStorage?.getItem(key)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as { text?: unknown }
+    return typeof parsed.text === 'string' && parsed.text.includes('1 ') ? parsed.text : null
+  } catch {
+    return null
+  }
+}
+
+export function writeStoredTle(catnr: string, text: string): void {
+  try {
+    globalThis.localStorage?.setItem(
+      STORED_TLE_PREFIX + catnr.trim(),
+      JSON.stringify({ text, storedAt: Date.now() }),
+    )
+  } catch {
+    /* Quota or private mode: the in-memory CelesTrak cache still covers this tab. */
+  }
+}
+
+/** Bundled stations.txt record for a NORAD catalogue number, or null. */
+export function bundledStationByCatnr(catnr: string): TleRecord | null {
+  const want = catnr.trim().replace(/^0+/, '')
+  if (!want) return null
+  return snapshotRecords('stations').find((record) => record.catnr.replace(/^0+/, '') === want) ?? null
+}
+
 type CacheEntry = { fetchedAt: number; text: string }
 
 const memoryCache = new Map<string, CacheEntry>()

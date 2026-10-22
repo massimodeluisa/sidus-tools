@@ -12,6 +12,8 @@ type Props = {
   imageAlt?: string
   /** JSON-LD object or array */
   jsonLd?: Record<string, unknown> | Record<string, unknown>[]
+  /** robots meta. Defaults to the indexable policy in index.html. */
+  robots?: string
 }
 
 /**
@@ -27,6 +29,7 @@ export function SeoHead({
   image,
   imageAlt,
   jsonLd,
+  robots = 'index, follow, max-snippet:-1, max-image-preview:large',
 }: Props) {
   useEffect(() => {
     document.title = title
@@ -71,6 +74,7 @@ export function SeoHead({
     const alt = imageAlt ?? title
 
     ensure('description', description)
+    ensure('robots', robots)
     ensure('og:title', title, true)
     ensure('og:description', description, true)
     ensure('og:url', pageUrl.split('#')[0], true)
@@ -108,7 +112,7 @@ export function SeoHead({
       }
       script.textContent = JSON.stringify(jsonLd)
     }
-  }, [title, description, path, search, image, imageAlt, jsonLd])
+  }, [title, description, path, search, image, imageAlt, jsonLd, robots])
 
   return null
 }

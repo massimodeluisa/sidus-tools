@@ -1,6 +1,17 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CELESTRAK_CATALOG_URL, searchCelestrak, tleText } from '@/lib/celestrak'
+import {
+  bundledStationByCatnr,
+  CELESTRAK_CATALOG_URL,
+  readStoredTle,
+  searchCelestrak,
+  tleText,
+  writeStoredTle,
+} from '@/lib/celestrak'
+import { compassOctant, type CompassOctant } from '@/lib/compass'
+import { passToIcs } from '@/lib/pass-ics'
+import { useDebounced } from '@/lib/use-debounced'
+import type { SatRec } from 'satellite.js'
 import { ToolShell } from '@/components/shared/ToolShell'
 import { ParamsGrid } from '@/components/shared/ParamsGrid'
 import { LaunchSitePresets } from '@/components/shared/LaunchSitePresets'
@@ -10,7 +21,8 @@ import { UiSelect } from '@/components/shared/UiSelect'
 import { Chip } from '@/components/shared/Chip'
 import { ResultCard } from '@/components/shared/ResultCard'
 import { CodeExport } from '@/components/shared/CodeExport'
-import { OrbitScene3D } from '@/components/viz/OrbitScene3D'
+import { PassSkyPlot } from '@/components/tools/PassSkyPlot'
+import { OrbitScene3D, type ScenePointMarker } from '@/components/viz/OrbitScene3D'
 import { GlobeMap } from '@/components/viz/GlobeMap'
 import type { GlobeSatellite, GlobeTrackPoint } from '@/components/viz/globe/types'
 import {
@@ -18,19 +30,21 @@ import {
   EARTH_RADIUS,
   eciSiToEcefSi,
   eciSiToGeodetic,
-  findNextPass,
+  findPasses,
+  lookAnglesFromEci,
   observerEciPosition,
   parseTle,
   propagateEci,
   SAMPLE_ISS_TLE,
+  samplePassLookAngles,
   sunEciSi,
   TOOL_UNIT_SETS,
   topocentricSezSi,
+  type GeodeticDeg,
+  type PassWindow,
   type Vec3,
 } from '@/lib/physics'
-import {
-  formatNumber,
-} from '@/lib/physics/format'
+import { formatNumber } from '@/lib/physics/format'
 import {
   browserTimeZone,
   formatCountdown,
@@ -52,16 +66,29 @@ const SCHEMA = {
   mark: strParam('aos', ['now', 'aos', 'peak']),
   view: strParam('map', ['3d', 'map']),
   vis: strParam('0', ['0', '1']),
+  sat: strParam('25544'),
 } as const
 
 const TRAIL_HALF_SPAN_S = 46 * 60
 const TRAIL_STEP_S = 30
 const TRAIL_BUCKET_MS = 30_000
 const SEARCH_STEP_S = 20
-const LIVE_MARKER_INTERVAL_MS = 100
+const SEARCH_DEBOUNCE_MS = 200
+const PASS_LIST_MAX = 8
 /** Looked up when the field is left empty: the satellite this tool opens on. */
 const DEFAULT_CATNR = '25544'
 const TLE_STALE_DAYS = 14
+
+const COMPASS_KEY: Record<CompassOctant, `fields.compass_${CompassOctant}`> = {
+  n: 'fields.compass_n',
+  ne: 'fields.compass_ne',
+  e: 'fields.compass_e',
+  se: 'fields.compass_se',
+  s: 'fields.compass_s',
+  sw: 'fields.compass_sw',
+  w: 'fields.compass_w',
+  nw: 'fields.compass_nw',
+}
 
 /** Live countdown as "H h M min S s", omitting leading zero units. */
 function formatHms(ms: number): string {
@@ -69,6 +96,31 @@ function formatHms(ms: number): string {
   if (c.h > 0) return `${c.h} h ${c.m} min ${c.s} s`
   if (c.m > 0) return `${c.m} min ${c.s} s`
   return `${c.s} s`
+}
+
+function seedTle(catnr: string): string {
+  const stored = readStoredTle(catnr)
+  if (stored && parseTle(stored).ok) return stored
+  const bundled = bundledStationByCatnr(catnr)
+  if (bundled) return tleText(bundled)
+  return SAMPLE_ISS_TLE
+}
+
+function tleEpochMs(satrec: SatRec): number {
+  return (satrec.jdsatepoch - 2440587.5) * 86400000
+}
+
+function downloadText(filename: string, body: string, mime: string) {
+  const blob = new Blob([body], { type: mime })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = filename
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
+  // Revoke on the next turn so the browser can start reading the blob.
+  setTimeout(() => URL.revokeObjectURL(url), 0)
 }
 
 /** Full-width font-mono kicker for a PARAMETERS section. */
@@ -80,77 +132,163 @@ function SectionKicker({ children }: { children: string }) {
   )
 }
 
+/**
+ * Millisecond clock owned by this node. The parent used to setState every
+ * animation frame, which reconciled the map and the 3D scene with it.
+ */
+function LiveClock({ active, zone, locale }: { active: boolean; zone: string; locale: string }) {
+  const { t } = useTranslation()
+  const [ms, setMs] = useState(() => Date.now())
+  useEffect(() => {
+    if (!active) return
+    let raf = 0
+    const tick = () => {
+      setMs(Date.now())
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [active])
+  if (!active) return null
+  const date = new Date(ms)
+  const fmt = formatInZone(date, zone, locale)
+  const frac = String(date.getMilliseconds()).padStart(3, '0')
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className="inline-flex h-5 items-center border border-border-strong bg-surface px-1.5 font-mono text-[9px] uppercase tracking-[0.12em] text-signal">
+        {t('fields.live')}
+      </span>
+      <span className="font-mono text-xs tabular text-muted">
+        {fmt.time}.{frac}
+      </span>
+    </span>
+  )
+}
+
 export function PassPredictTool() {
   const { t, i18n } = useTranslation()
   const [p, setP] = useToolSearchParams(SCHEMA)
-  const [tle, setTle] = useState(SAMPLE_ISS_TLE)
+  const [tle, setTle] = useState(() => seedTle(p.sat || DEFAULT_CATNR))
   const [satQuery, setSatQuery] = useState('')
+  const [tzFilter, setTzFilter] = useState('')
   const [geoError, setGeoError] = useState('')
   const [tleFetchError, setTleFetchError] = useState('')
   const [fetchingTle, setFetchingTle] = useState(false)
   const [nowMs, setNowMs] = useState(() => Date.now())
-  const [liveClockMs, setLiveClockMs] = useState(() => Date.now())
-  const [liveMarkerMs, setLiveMarkerMs] = useState(() => Date.now())
   const [rollForwardMs, setRollForwardMs] = useState<number | null>(null)
+  const [selectedIdx, setSelectedIdx] = useState(0)
+  const tleTouch = useRef(0)
+
+  const dLat = useDebounced(p.lat, SEARCH_DEBOUNCE_MS)
+  const dLon = useDebounced(p.lon, SEARCH_DEBOUNCE_MS)
+  const dH = useDebounced(p.h_m, SEARCH_DEBOUNCE_MS)
+  const dMinEl = useDebounced(p.minEl, SEARCH_DEBOUNCE_MS)
+  const dHours = useDebounced(p.hours, SEARCH_DEBOUNCE_MS)
+  const dAt = useDebounced(p.at, SEARCH_DEBOUNCE_MS)
+  const dTle = useDebounced(tle, SEARCH_DEBOUNCE_MS)
 
   useEffect(() => {
     const id = setInterval(() => setNowMs(Date.now()), 1000)
     return () => clearInterval(id)
   }, [])
 
-  const parsed = useMemo(() => parseTle(tle), [tle])
-  const start = useMemo(() => resolveUtcParam(p.at), [p.at])
+  useEffect(() => {
+    const catnr = (p.sat || DEFAULT_CATNR).trim()
+    const touchAtStart = tleTouch.current
+    let cancelled = false
+    const seeded = seedTle(catnr)
+    if (tleTouch.current === touchAtStart) setTle(seeded)
+    void (async () => {
+      try {
+        const [record] = await searchCelestrak(catnr)
+        if (cancelled || !record || tleTouch.current !== touchAtStart) return
+        const text = tleText(record)
+        writeStoredTle(record.catnr, text)
+        setTle(text)
+      } catch {
+        /* Seeded copy (stored, bundled stations.txt, or the sample) stays. */
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [p.sat])
 
-  /* Once a found pass's LOS has elapsed, the search re-anchors to LOS + one
-     search step so the next window rolls in automatically (see the effect
-     below). Reset whenever the user re-anchors the search explicitly. */
+  const parsedLive = useMemo(() => parseTle(tle), [tle])
+  const parsed = useMemo(() => parseTle(dTle), [dTle])
+  const startLive = useMemo(() => resolveUtcParam(p.at), [p.at])
+  const start = useMemo(() => resolveUtcParam(dAt), [dAt])
+  const startPinned = p.at.trim() !== ''
+
   useEffect(() => {
     setRollForwardMs(null)
   }, [start])
 
   const effectiveStart = useMemo(() => {
-    if (rollForwardMs != null && rollForwardMs > start.getTime()) return new Date(rollForwardMs)
+    if (!startPinned && rollForwardMs != null && rollForwardMs > start.getTime()) {
+      return new Date(rollForwardMs)
+    }
     return start
-  }, [start, rollForwardMs])
+  }, [start, rollForwardMs, startPinned])
 
-  const pass = useMemo(() => {
-    if (!parsed.ok) return null
-    return findNextPass({
+  const searchObserver = useMemo<GeodeticDeg>(
+    () => ({ latDeg: dLat, lonDeg: dLon, heightM: dH }),
+    [dLat, dLon, dH],
+  )
+
+  const passes = useMemo(() => {
+    if (!parsed.ok) return []
+    return findPasses({
       satrec: parsed.satrec,
-      observer: { latDeg: p.lat, lonDeg: p.lon, heightM: p.h_m },
+      observer: searchObserver,
       start: effectiveStart,
-      horizonH: p.hours,
+      horizonH: dHours,
       stepS: SEARCH_STEP_S,
       refineS: 1,
-      minElDeg: p.minEl,
+      minElDeg: dMinEl,
       favorableLightingOnly: p.vis === '1',
+      maxCount: PASS_LIST_MAX,
     })
-  }, [p.h_m, p.hours, p.lat, p.lon, p.minEl, p.vis, parsed, effectiveStart])
+  }, [dHours, dMinEl, p.vis, parsed, effectiveStart, searchObserver])
+
+  const pass: PassWindow | null = passes[Math.min(selectedIdx, Math.max(0, passes.length - 1))] ?? null
 
   useEffect(() => {
-    if (!pass) return
-    if (nowMs >= pass.los.getTime()) {
-      setRollForwardMs(pass.los.getTime() + SEARCH_STEP_S * 1000)
+    setSelectedIdx(0)
+  }, [dLat, dLon, dH, dMinEl, dHours, dAt, p.vis, dTle, rollForwardMs])
+
+  useEffect(() => {
+    if (startPinned || !passes[0]) return
+    if (nowMs >= passes[0].los.getTime()) {
+      setRollForwardMs(passes[0].los.getTime() + SEARCH_STEP_S * 1000)
     }
-  }, [nowMs, pass])
+  }, [nowMs, passes, startPinned])
 
   const zone = p.tz !== '' && isValidTimeZone(p.tz) ? p.tz : browserTimeZone()
 
   const zoneOptions = useMemo(() => {
+    const query = tzFilter.trim().toLowerCase()
     const zones = listTimeZones().filter((z) => z !== 'UTC')
+    const filtered = query ? zones.filter((z) => z.toLowerCase().includes(query)) : zones
+    if (p.tz && p.tz !== 'UTC' && !filtered.includes(p.tz)) filtered.unshift(p.tz)
     return [
       { value: '', label: t('fields.tz_browser', { tz: browserTimeZone() }) },
       { value: 'UTC', label: 'UTC' },
-      ...zones.map((z) => ({ value: z, label: z })),
+      ...filtered.map((z) => ({ value: z, label: z })),
     ]
-  }, [t])
+  }, [t, tzFilter, p.tz])
 
   const staleTleDays = useMemo(() => {
-    if (!parsed.ok) return null
-    const epochMs = (parsed.satrec.jdsatepoch - 2440587.5) * 86400000
-    const ageDays = Math.abs(nowMs - epochMs) / 86400000
+    if (!parsedLive.ok) return null
+    const ageDays = Math.abs(nowMs - tleEpochMs(parsedLive.satrec)) / 86400000
     return ageDays > TLE_STALE_DAYS ? Math.round(ageDays) : null
-  }, [parsed, nowMs])
+  }, [parsedLive, nowMs])
+
+  const tleEpochLabel = useMemo(() => {
+    if (!parsedLive.ok) return ''
+    const fmt = formatInZone(new Date(tleEpochMs(parsedLive.satrec)), 'UTC', i18n.language)
+    return `${fmt.date} ${fmt.time} UTC`
+  }, [parsedLive, i18n.language])
 
   const localFmt = useMemo(() => {
     if (!pass) return null
@@ -161,10 +299,40 @@ export function PassPredictTool() {
     }
   }, [pass, zone, i18n.language])
 
+  const bearings = useMemo(() => {
+    if (!pass || !parsed.ok) return null
+    const at = (date: Date) => {
+      const state = propagateEci(parsed.satrec, date)
+      if (!state) return null
+      return lookAnglesFromEci(searchObserver, state.r, date)
+    }
+    const label = (date: Date) => {
+      const look = at(date)
+      if (!look) return ''
+      const deg = ((look.azimuthRad * 180) / Math.PI + 360) % 360
+      return `${t(COMPASS_KEY[compassOctant(look.azimuthRad)])} ${formatNumber(deg, 0)}°`
+    }
+    return {
+      aos: label(pass.aos),
+      peak: label(pass.maxElAt),
+      los: label(pass.los),
+      aosRad: at(pass.aos)?.azimuthRad ?? null,
+      peakRad: at(pass.maxElAt)?.azimuthRad ?? null,
+      losRad: at(pass.los)?.azimuthRad ?? null,
+    }
+  }, [pass, parsed, searchObserver, t])
+
+  const skySamples = useMemo(() => {
+    if (!pass || !parsed.ok) return []
+    const step = Math.max(2, Math.round(pass.durationS / 120))
+    return samplePassLookAngles(parsed.satrec, searchObserver, pass.aos, pass.los, step)
+  }, [pass, parsed, searchObserver])
+
   const passStarted = pass ? nowMs >= pass.aos.getTime() : false
+  const pinnedPast = Boolean(pass && startPinned && nowMs >= pass.los.getTime())
 
   const headline = useMemo(() => {
-    if (!pass || !localFmt) return ''
+    if (!pass || !localFmt || !bearings) return ''
     const el = `${formatNumber(pass.maxElDeg, 1)}°`
     const vars = {
       date: localFmt.aos.date,
@@ -173,17 +341,16 @@ export function PassPredictTool() {
       tz: localFmt.aos.zoneAbbr,
       el,
       peak: localFmt.peak.time,
+      aosAz: bearings.aos,
+      peakAz: bearings.peak,
+      losAz: bearings.los,
     }
     if (passStarted) return t('fields.pass_headline_now', vars)
     const c = formatCountdown(pass.aos.getTime() - nowMs)
     const countdown = c.h > 0 ? `${c.h} h ${c.m} min` : `${c.m} min`
     return t('fields.pass_headline', { ...vars, countdown })
-  }, [pass, localFmt, passStarted, nowMs, t])
+  }, [pass, localFmt, bearings, passStarted, nowMs, t])
 
-  /* Live AOS/LOS countdown, ticking every 1 s. `pass` rolls forward on its
-     own (see the roll-forward effect above) once its LOS elapses, so this
-     only ever needs to distinguish BEFORE (now < aos) from DURING (aos <= now
-     < los); the post-LOS instant is a single tick that resolves itself. */
   const countdownLine = useMemo(() => {
     if (!pass) return ''
     if (nowMs < pass.aos.getTime()) {
@@ -192,6 +359,7 @@ export function PassPredictTool() {
         los: formatHms(pass.los.getTime() - nowMs),
       })
     }
+    if (nowMs >= pass.los.getTime()) return ''
     return t('fields.count_in_pass', { los: formatHms(pass.los.getTime() - nowMs) })
   }, [pass, nowMs, t])
 
@@ -209,41 +377,7 @@ export function PassPredictTool() {
 
   const rawMark = p.mark === 'now' || p.mark === 'peak' ? p.mark : 'aos'
   const effectiveMark: 'now' | 'aos' | 'peak' = pass ? rawMark : 'now'
-
-  // Live clock (ms precision): runs only while the 'now' marker is active.
-  useEffect(() => {
-    if (effectiveMark !== 'now') return
-    let raf = 0
-    const tick = () => {
-      setLiveClockMs(Date.now())
-      raf = requestAnimationFrame(tick)
-    }
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
-  }, [effectiveMark])
-
-  const liveClockText = useMemo(() => {
-    if (effectiveMark !== 'now') return null
-    const d = new Date(liveClockMs)
-    const fmt = formatInZone(d, zone, i18n.language)
-    const ms = String(d.getMilliseconds()).padStart(3, '0')
-    return `${fmt.time}.${ms}`
-  }, [effectiveMark, liveClockMs, zone, i18n.language])
-
-  /* Marker positions (ISS + observer): refreshed every 100 ms while live; the
-     trail keeps its own coarser 30 s bucket below. */
-  useEffect(() => {
-    if (effectiveMark !== 'now') return
-    setLiveMarkerMs(Date.now())
-    const id = setInterval(() => setLiveMarkerMs(Date.now()), LIVE_MARKER_INTERVAL_MS)
-    return () => clearInterval(id)
-  }, [effectiveMark])
-
-  const instant = useMemo(() => {
-    if (effectiveMark === 'aos' && pass) return pass.aos
-    if (effectiveMark === 'peak' && pass) return pass.maxElAt
-    return new Date(liveMarkerMs)
-  }, [effectiveMark, pass, liveMarkerMs])
+  const satLabel = parsed.ok ? parsed.name.trim() || t('fields.marker_iss') : t('fields.marker_iss')
 
   const trailCenterMs =
     effectiveMark === 'aos' && pass
@@ -251,6 +385,12 @@ export function PassPredictTool() {
       : effectiveMark === 'peak' && pass
         ? pass.maxElAt.getTime()
         : Math.floor(nowMs / TRAIL_BUCKET_MS) * TRAIL_BUCKET_MS
+
+  const trackSplit = useMemo(() => {
+    if (effectiveMark === 'aos' && pass) return pass.aos
+    if (effectiveMark === 'peak' && pass) return pass.maxElAt
+    return new Date(trailCenterMs)
+  }, [effectiveMark, pass, trailCenterMs])
 
   const trailPoints = useMemo(() => {
     if (!parsed.ok) return []
@@ -265,52 +405,50 @@ export function PassPredictTool() {
 
   const trail = useMemo(() => trailPoints.map((pt) => pt.r), [trailPoints])
 
-  /* Direction encoding: already-flown (solid) vs not-yet-flown (dashed) about
-     the marked instant. The two segments share their boundary point so the
-     solid/dashed pieces connect with no visible gap. */
   const flownTrack = useMemo(() => {
-    const idx = trailPoints.findIndex((pt) => pt.tMs > instant.getTime())
+    const split = trackSplit.getTime()
+    const idx = trailPoints.findIndex((pt) => pt.tMs > split)
     const cut = idx === -1 ? trailPoints.length : idx
     return trailPoints.slice(0, cut).map((pt) => pt.r)
-  }, [trailPoints, instant])
+  }, [trailPoints, trackSplit])
 
   const upcomingTrack = useMemo(() => {
-    const idx = trailPoints.findIndex((pt) => pt.tMs > instant.getTime())
+    const split = trackSplit.getTime()
+    const idx = trailPoints.findIndex((pt) => pt.tMs > split)
     if (idx === -1) return []
     return trailPoints.slice(Math.max(0, idx - 1)).map((pt) => pt.r)
-  }, [trailPoints, instant])
+  }, [trailPoints, trackSplit])
 
-  const issState = useMemo(() => {
+  const markedState = useMemo(() => {
+    if (!parsed.ok || effectiveMark === 'now') return null
+    return propagateEci(parsed.satrec, trackSplit)
+  }, [parsed, effectiveMark, trackSplit])
+
+  const sezAt = effectiveMark === 'now' ? new Date(nowMs) : trackSplit
+  const sezState = useMemo(() => {
     if (!parsed.ok) return null
-    return propagateEci(parsed.satrec, instant)
-  }, [parsed, instant])
+    return propagateEci(parsed.satrec, sezAt)
+  }, [parsed, sezAt])
 
   const sez = useMemo(() => {
-    if (!issState) return null
-    const satEcef = eciSiToEcefSi(issState.r, instant)
+    if (!sezState) return null
+    const satEcef = eciSiToEcefSi(sezState.r, sezAt)
     return topocentricSezSi({ latDeg: p.lat, lonDeg: p.lon, heightM: p.h_m }, satEcef)
-  }, [issState, instant, p.lat, p.lon, p.h_m])
+  }, [sezState, sezAt, p.lat, p.lon, p.h_m])
 
-  const obsR = useMemo(
-    () => observerEciPosition({ latDeg: p.lat, lonDeg: p.lon, heightM: p.h_m }, instant),
-    [p.lat, p.lon, p.h_m, instant],
-  )
+  const sunAt =
+    effectiveMark === 'now' ? new Date(Math.floor(nowMs / 60_000) * 60_000) : trackSplit
 
-  const issMarker = issState ? { r: issState.r, label: t('fields.marker_iss') } : null
-  const obsMarker = { r: obsR, label: t('fields.marker_you') }
-
-  // World-map data: ground tracks + subsolar point, in lat/lon (deg).
   const subsolar = useMemo(() => {
-    const g = eciSiToGeodetic(sunEciSi(instant), instant)
+    const g = eciSiToGeodetic(sunEciSi(sunAt), sunAt)
     return g ?? { latDeg: 0, lonDeg: 0, heightM: 0 }
-  }, [instant])
+  }, [sunAt])
 
   const issGeo = useMemo(
-    () => (issState ? eciSiToGeodetic(issState.r, instant) : null),
-    [issState, instant],
+    () => (markedState ? eciSiToGeodetic(markedState.r, trackSplit) : null),
+    [markedState, trackSplit],
   )
 
-  // Globe view: the same propagated trail the 3D view uses, as lon/lat/alt.
   const globeTrack = useMemo(() => {
     const out: GlobeTrackPoint[] = []
     for (const pt of trailPoints) {
@@ -322,8 +460,6 @@ export function PassPredictTool() {
     return out
   }, [trailPoints])
 
-  /* Per-frame provider for the globe's follow chase: propagates at the
-     requested instant instead of interpolating the 30 s trail samples. */
   const globePositionAt = useCallback(
     (date: Date): GlobeTrackPoint | null => {
       if (!parsed.ok) return null
@@ -341,22 +477,46 @@ export function PassPredictTool() {
     return [
       {
         id: 'sat',
-        label: t('fields.marker_iss'),
+        label: satLabel,
         color: 'rgba(184,165,90,0.95)',
         positions: globeTrack,
-        splitAt: instant,
-        livePosition: issGeo
-          ? {
-              lon: issGeo.lonDeg,
-              lat: issGeo.latDeg,
-              altKm: issGeo.heightM / 1000,
-              date: instant,
-            }
-          : undefined,
+        splitAt: trackSplit,
+        livePosition:
+          effectiveMark === 'now' || !issGeo
+            ? undefined
+            : {
+                lon: issGeo.lonDeg,
+                lat: issGeo.latDeg,
+                altKm: issGeo.heightM / 1000,
+                date: trackSplit,
+              },
         positionAt: globePositionAt,
       },
     ]
-  }, [globeTrack, instant, issGeo, globePositionAt, t])
+  }, [globeTrack, trackSplit, issGeo, globePositionAt, satLabel, effectiveMark])
+
+  const liveSceneMarkers = useCallback((): ScenePointMarker[] => {
+    if (!parsed.ok) return []
+    const date = new Date()
+    const st = propagateEci(parsed.satrec, date)
+    const obs = observerEciPosition({ latDeg: p.lat, lonDeg: p.lon, heightM: p.h_m }, date)
+    const markers: ScenePointMarker[] = []
+    if (st) markers.push({ r: st.r, label: satLabel, color: 'rgba(184,165,90,0.95)' })
+    markers.push({ r: obs, label: t('fields.marker_you'), color: '#f5f5f5' })
+    return markers
+  }, [parsed, p.lat, p.lon, p.h_m, satLabel, t])
+
+  const staticMarkers = useMemo<ScenePointMarker[]>(() => {
+    if (!markedState) return []
+    const obs = observerEciPosition(
+      { latDeg: p.lat, lonDeg: p.lon, heightM: p.h_m },
+      trackSplit,
+    )
+    return [
+      { r: markedState.r, label: satLabel, color: 'rgba(184,165,90,0.95)' },
+      { r: obs, label: t('fields.marker_you'), color: '#f5f5f5' },
+    ]
+  }, [markedState, p.lat, p.lon, p.h_m, trackSplit, satLabel, t])
 
   function onUseMyLocation() {
     if (!('geolocation' in navigator)) {
@@ -377,23 +537,52 @@ export function PassPredictTool() {
     )
   }
 
-  /*
-   * The catalogue lookup lives in src/lib/celestrak.ts, which owns the query
-   * grammar, the timeout and the two-hour cache CelesTrak's etiquette asks for.
-   */
   async function onFetchSatTle() {
     setFetchingTle(true)
     setTleFetchError('')
     try {
-      const [record] = await searchCelestrak(satQuery.trim() || DEFAULT_CATNR)
-      if (record) setTle(tleText(record))
-      else setTleFetchError(t('fields.tle_fetch_failed'))
+      const query = satQuery.trim() || p.sat || DEFAULT_CATNR
+      const [record] = await searchCelestrak(query)
+      if (!record) {
+        setTleFetchError(t('fields.tle_fetch_failed'))
+        return
+      }
+      const text = tleText(record)
+      writeStoredTle(record.catnr, text)
+      tleTouch.current += 1
+      setTle(text)
+      if (record.catnr !== p.sat) setP({ sat: record.catnr })
     } catch {
       setTleFetchError(t('fields.tle_fetch_failed'))
     } finally {
       setFetchingTle(false)
     }
   }
+
+  function onExportIcs() {
+    if (!pass || !localFmt || !bearings || !parsed.ok) return
+    const body = passToIcs({
+      uid: `${parsed.name}-${pass.aos.toISOString()}@sidus.tools`,
+      title: t('fields.ics_summary', {
+        name: parsed.name.trim(),
+        el: `${formatNumber(pass.maxElDeg, 1)}°`,
+      }),
+      description: t('fields.ics_body', {
+        aosAz: bearings.aos,
+        aos: `${localFmt.aos.time} ${localFmt.aos.zoneAbbr}`,
+        el: `${formatNumber(pass.maxElDeg, 1)}°`,
+        peakAz: bearings.peak,
+        peak: `${localFmt.peak.time} ${localFmt.peak.zoneAbbr}`,
+        losAz: bearings.los,
+        los: `${localFmt.los.time} ${localFmt.los.zoneAbbr}`,
+      }),
+      start: pass.aos,
+      end: pass.los,
+    })
+    downloadText(`pass-${pass.aos.toISOString().slice(0, 16)}.ics`, body, 'text/calendar')
+  }
+
+  const showResults = parsedLive.ok && parsed.ok && pass && localFmt && bearings
 
   return (
     <ToolShell
@@ -406,12 +595,22 @@ export function PassPredictTool() {
             </span>
             <textarea
               value={tle}
-              onChange={(e) => setTle(e.target.value)}
+              onChange={(e) => {
+                tleTouch.current += 1
+                setTle(e.target.value)
+              }}
               spellCheck={false}
               rows={4}
-              className="w-full resize-y border border-border bg-bg px-3 py-2 font-mono text-xs leading-relaxed text-fg outline-none focus:border-border-strong"
+              className="w-full resize-y border border-border bg-bg px-3 py-2 font-mono text-base leading-relaxed text-fg outline-none focus:border-border-strong"
             />
           </label>
+          {tleEpochLabel ? (
+            <p className="col-span-full font-mono text-[10px] text-subtle">
+              {t('fields.tle_epoch', { date: tleEpochLabel })}
+              {' · '}
+              {t('fields.sat_catnr', { sat: p.sat || DEFAULT_CATNR })}
+            </p>
+          ) : null}
           <div className="col-span-full flex flex-wrap items-center gap-2">
             <input
               type="text"
@@ -419,6 +618,7 @@ export function PassPredictTool() {
               onChange={(e) => setSatQuery(e.target.value)}
               placeholder={t('fields.sat_query_placeholder')}
               spellCheck={false}
+              aria-label={t('fields.tip_sat_query')}
               className="h-9 min-w-[10rem] flex-1 border border-border bg-bg px-2.5 font-mono text-base text-fg outline-none transition-colors placeholder:text-subtle focus:border-border-strong"
             />
             <button
@@ -450,6 +650,7 @@ export function PassPredictTool() {
           <SectionKicker>{t('fields.sec_observer')}</SectionKicker>
           <UiField
             label={t('fields.site_lat')}
+            tip={t('fields.tip_lat')}
             unit="°"
             type="number"
             step="any"
@@ -458,6 +659,7 @@ export function PassPredictTool() {
           />
           <UiField
             label={t('fields.site_lon')}
+            tip={t('fields.tip_lon')}
             unit="°"
             type="number"
             step="any"
@@ -478,6 +680,7 @@ export function PassPredictTool() {
           </div>
           <UiField
             label={t('fields.site_height')}
+            tip={t('fields.tip_height')}
             unit="m"
             type="number"
             min={0}
@@ -489,14 +692,13 @@ export function PassPredictTool() {
             latDeg={p.lat}
             lonDeg={p.lon}
             label={t('fields.observer_presets')}
-            onSelect={(site) =>
-              setP({ lat: site.latDeg, lon: site.lonDeg, h_m: site.heightM })
-            }
+            onSelect={(site) => setP({ lat: site.latDeg, lon: site.lonDeg, h_m: site.heightM })}
           />
 
           <SectionKicker>{t('fields.sec_pass')}</SectionKicker>
           <UiField
             label={t('fields.min_elevation')}
+            tip={t('fields.tip_min_el')}
             unit="°"
             type="number"
             min={0}
@@ -507,6 +709,7 @@ export function PassPredictTool() {
           />
           <UiField
             label={t('fields.search_horizon')}
+            tip={t('fields.tip_horizon')}
             unit="h"
             type="number"
             min={1}
@@ -525,10 +728,32 @@ export function PassPredictTool() {
             label={t('fields.start_utc_iso')}
             value={p.at}
             onChange={(at) => setP({ at })}
-            resolved={start}
+            resolved={startLive}
+          />
+          {startPinned ? (
+            <div className="col-span-full">
+              <button
+                type="button"
+                onClick={() => {
+                  setRollForwardMs(null)
+                  setP({ at: '' })
+                }}
+                className="inline-flex h-9 items-center border border-border-strong bg-bg-elevated px-3 font-mono text-[10px] uppercase tracking-wider text-muted transition-colors hover:text-fg"
+              >
+                {t('fields.search_from_now')}
+              </button>
+            </div>
+          ) : null}
+          <UiField
+            label={t('fields.tz_filter')}
+            tip={t('fields.tip_tz_filter')}
+            value={tzFilter}
+            placeholder={t('fields.tz_filter_placeholder')}
+            onChange={(e) => setTzFilter(e.target.value)}
           />
           <UiSelect
             label={t('fields.display_tz')}
+            tip={t('fields.tip_display_tz')}
             options={zoneOptions}
             value={p.tz}
             onChange={(e) => setP({ tz: e.target.value })}
@@ -539,35 +764,33 @@ export function PassPredictTool() {
         </ParamsGrid>
       }
       results={
-        !parsed.ok ? (
-          <p className="font-mono text-sm text-muted">{parsed.error}</p>
-        ) : !pass || !localFmt ? (
+        !parsedLive.ok ? (
+          <p className="font-mono text-sm text-muted">{parsedLive.error}</p>
+        ) : !showResults ? (
           <p className="font-mono text-sm text-muted">
-            {t('fields.no_pass_above', { el: formatNumber(p.minEl, 1), hours: p.hours })}
+            {t('fields.no_pass_above', { el: formatNumber(dMinEl, 1), hours: dHours })}
           </p>
         ) : (
           <div className="flex min-w-0 flex-col gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <p className="font-mono text-sm text-fg">{headline}</p>
-              {effectiveMark === 'now' && liveClockText ? (
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="inline-flex h-5 items-center border border-border-strong bg-surface px-1.5 font-mono text-[9px] uppercase tracking-[0.12em] text-signal">
-                    {t('fields.live')}
-                  </span>
-                  <span className="font-mono text-xs tabular text-muted">{liveClockText}</span>
-                </span>
-              ) : null}
+              <LiveClock active={effectiveMark === 'now'} zone={zone} locale={i18n.language} />
             </div>
-            <p className="font-mono text-sm text-fg">{countdownLine}</p>
+            {countdownLine ? <p className="font-mono text-sm text-fg">{countdownLine}</p> : null}
+            {pinnedPast ? (
+              <p className="font-mono text-[11px] leading-relaxed text-warn">{t('fields.pass_pinned_past')}</p>
+            ) : null}
             <p className="font-mono text-sm text-muted">{lightingLine}</p>
             <div className="sidus-results">
               <ResultCard
                 label={t('fields.aos_local')}
+                tip={t('fields.tip_aos')}
                 value={`${localFmt.aos.time} ${localFmt.aos.zoneAbbr}`}
                 accent
               />
               <ResultCard
                 label={t('fields.los_local')}
+                tip={t('fields.tip_los')}
                 value={`${localFmt.los.time} ${localFmt.los.zoneAbbr}`}
               />
               <ResultCard
@@ -581,16 +804,21 @@ export function PassPredictTool() {
               />
               <ResultCard
                 label={t('fields.max_el_at_local')}
+                tip={t('fields.tip_max_el_at')}
                 value={`${localFmt.peak.time} ${localFmt.peak.zoneAbbr}`}
               />
               <ResultCard
                 label={t('fields.duration')}
+                tip={t('fields.tip_pass_duration')}
                 si={pass.durationS}
                 category="time"
                 unitId="pretty"
                 unitIds={TOOL_UNIT_SETS.timePretty}
                 digits={4}
               />
+              <ResultCard label={t('fields.az_aos')} tip={t('fields.tip_az')} value={bearings.aos} />
+              <ResultCard label={t('fields.az_peak')} tip={t('fields.tip_az')} value={bearings.peak} />
+              <ResultCard label={t('fields.az_los')} tip={t('fields.tip_az')} value={bearings.los} />
             </div>
             <p className="font-mono text-[10px] text-subtle">
               {t('fields.pass_utc_line', {
@@ -598,6 +826,74 @@ export function PassPredictTool() {
                 los: pass.los.toISOString(),
               })}
             </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={onExportIcs}
+                className="inline-flex h-9 items-center border border-border-strong bg-bg-elevated px-3 font-mono text-[10px] uppercase tracking-wider text-muted transition-colors hover:text-fg"
+              >
+                {t('fields.export_ics')}
+              </button>
+            </div>
+            {passes.length > 1 ? (
+              <div className="min-w-0 overflow-x-auto">
+                <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-subtle">
+                  {t('fields.pass_list')}
+                </p>
+                <table className="w-full min-w-[36rem] border-collapse font-mono text-[11px]">
+                  <thead>
+                    <tr className="text-left text-subtle">
+                      <th className="px-2 py-1 font-normal">{t('fields.aos_local')}</th>
+                      <th className="px-2 py-1 font-normal">{t('fields.los_local')}</th>
+                      <th className="px-2 py-1 font-normal">{t('fields.max_elevation')}</th>
+                      <th className="px-2 py-1 font-normal">{t('fields.duration')}</th>
+                      <th className="px-2 py-1 font-normal">{t('fields.pass_col_lighting')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {passes.map((row, index) => {
+                      const aos = formatInZone(row.aos, zone, i18n.language)
+                      const los = formatInZone(row.los, zone, i18n.language)
+                      const selected = index === Math.min(selectedIdx, passes.length - 1)
+                      return (
+                        <tr key={row.aos.toISOString()} className={selected ? 'bg-bg-elevated text-fg' : 'text-muted'}>
+                          <td className="px-2 py-1" colSpan={5}>
+                            <button
+                              type="button"
+                              aria-pressed={selected}
+                              onClick={() => setSelectedIdx(index)}
+                              className="grid w-full grid-cols-5 text-left"
+                            >
+                              <span>
+                                {aos.time} {aos.zoneAbbr}
+                              </span>
+                              <span>
+                                {los.time} {los.zoneAbbr}
+                              </span>
+                              <span>{formatNumber(row.maxElDeg, 1)}°</span>
+                              <span>{formatHms(row.durationS * 1000)}</span>
+                              <span>
+                                {row.favorableLighting
+                                  ? t('fields.pass_lighting_yes')
+                                  : t('fields.pass_lighting_no')}
+                              </span>
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
+            <PassSkyPlot
+              samples={skySamples}
+              caption={t('fields.sky_track_caption')}
+              north={t('fields.compass_n')}
+              east={t('fields.compass_e')}
+              south={t('fields.compass_s')}
+              west={t('fields.compass_w')}
+            />
           </div>
         )
       }
@@ -630,6 +926,7 @@ export function PassPredictTool() {
             <div className="min-h-0 flex-1">
               {p.view === 'map' ? (
                 <GlobeMap
+                  tickLive={effectiveMark === 'now'}
                   satellites={globeSatellites}
                   observer={{
                     lat: p.lat,
@@ -645,6 +942,7 @@ export function PassPredictTool() {
               ) : (
                 <OrbitScene3D
                   bodyR={EARTH_RADIUS}
+                  liveMarkers={effectiveMark === 'now' ? liveSceneMarkers : undefined}
                   tracks={[
                     ...(flownTrack.length > 1
                       ? [{ points: flownTrack, color: 'rgba(184,165,90,0.95)', width: 1.5 }]
@@ -660,12 +958,7 @@ export function PassPredictTool() {
                         ]
                       : []),
                   ]}
-                  pointMarkers={[
-                    ...(issMarker
-                      ? [{ r: issMarker.r, label: issMarker.label, color: 'rgba(184,165,90,0.95)' }]
-                      : []),
-                    { r: obsMarker.r, label: obsMarker.label, color: '#f5f5f5' },
-                  ]}
+                  pointMarkers={effectiveMark === 'now' ? [] : staticMarkers}
                   height={340}
                 />
               )}
@@ -705,6 +998,7 @@ export function PassPredictTool() {
             hours: p.hours,
             at: p.at,
             tz: zone,
+            sat: p.sat,
             south: sez?.southM,
             east: sez?.eastM,
             zenith: sez?.zenithM,
