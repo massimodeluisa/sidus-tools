@@ -37,6 +37,7 @@ const MAP: Record<string, LazyTool> = {
   'cabin-atmosphere': L(() => import('./CabinAtmosphereTool').then((m) => ({ default: m.CabinAtmosphereTool }))),
   'lioh-scrubber': L(() => import('./LiohScrubberTool').then((m) => ({ default: m.LiohScrubberTool }))),
   'cabin-leak': L(() => import('./CabinLeakTool').then((m) => ({ default: m.CabinLeakTool }))),
+  'water-loop': L(() => import('./WaterLoopTool').then((m) => ({ default: m.WaterLoopTool }))),
   'thermal-loop': L(() => import('./ThermalLoopTool').then((m) => ({ default: m.ThermalLoopTool }))),
   'custom-body': L(() => import('./CustomBodyTool').then((m) => ({ default: m.CustomBodyTool }))),
   'hyperbolic-c3': L(() => import('./HyperbolicC3Tool').then((m) => ({ default: m.HyperbolicC3Tool }))),

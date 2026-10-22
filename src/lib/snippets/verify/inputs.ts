@@ -434,6 +434,8 @@ export const SAMPLE: LiveCodeValues = {
  */
 export const SAMPLE_OVERRIDES: Record<string, LiveCodeValues> = {
   'panel-eol-power': { d: 0.005, p0: 200, years: 15 },
+  // Crew water loop: BVAD Rev2 ISS-column rates (kg/crew-day), UPA 0.85, 4 crew, 180 d.
+  'water-loop': { potable: 2.5, hygiene: 0.4, flush: 0.3, o2: 0.82, urine: 1.2, condensate: 2.27, eta_u: 0.85, eta_c: 1, eta_h: 0, crew: 4, tS: 180 * 86400, reserve: 0.1 },
   // Exercise the representable high-exponent tail; the shared bag's wavelength
   // and temperature are unrelated to this tool and miss exp(x) overflow.
   'planck-radiance': { lam: 1e-10, T: 200_000 },

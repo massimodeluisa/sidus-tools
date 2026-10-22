@@ -73,6 +73,7 @@ export function toolSourcePath(toolId: string): string {
     'cabin-atmosphere': 'src/components/tools/CabinAtmosphereTool.tsx',
     'lioh-scrubber': 'src/components/tools/LiohScrubberTool.tsx',
     'cabin-leak': 'src/components/tools/CabinLeakTool.tsx',
+    'water-loop': 'src/components/tools/WaterLoopTool.tsx',
     'thermal-loop': 'src/components/tools/ThermalLoopTool.tsx',
     'custom-body': 'src/components/tools/CustomBodyTool.tsx',
     'hyperbolic-c3': 'src/components/tools/HyperbolicC3Tool.tsx',
