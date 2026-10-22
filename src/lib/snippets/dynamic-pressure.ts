@@ -48,7 +48,7 @@ const H = h * RE / (RE + h)
 const T11 = T0 - L * 11000
 const p11 = P0 * (T11 / T0) ** (g0 / (L * R))
 const p20 = p11 * Math.exp(-g0 * (20000 - 11000) / (R * T11))
-let isa_temperature_k, isa_pressure_pa
+let isa_temperature_k = 0, isa_pressure_pa = 0
 if (H <= 11000) {
   isa_temperature_k = T0 - L * H
   isa_pressure_pa = P0 * (isa_temperature_k / T0) ** (g0 / (L * R))
@@ -105,8 +105,8 @@ const double H = h * RE / (RE + h);
 const double T11 = T0 - L * 11000.0;
 const double p11 = P0 * pow(T11 / T0, g0 / (L * R));
 const double p20 = p11 * exp(-g0 * (20000.0 - 11000.0) / (R * T11));
-double isa_temperature_k;
-double isa_pressure_pa;
+double isa_temperature_k = 0.0;
+double isa_pressure_pa = 0.0;
 if (H <= 11000.0) {
   isa_temperature_k = T0 - L * H;
   isa_pressure_pa = P0 * pow(isa_temperature_k / T0, g0 / (L * R));
@@ -134,8 +134,8 @@ const double H = h * RE / (RE + h);
 const double T11 = T0 - L * 11000.0;
 const double p11 = P0 * std::pow(T11 / T0, g0 / (L * R));
 const double p20 = p11 * std::exp(-g0 * (20000.0 - 11000.0) / (R * T11));
-double isa_temperature_k;
-double isa_pressure_pa;
+double isa_temperature_k = 0.0;
+double isa_pressure_pa = 0.0;
 if (H <= 11000.0) {
   isa_temperature_k = T0 - L * H;
   isa_pressure_pa = P0 * std::pow(isa_temperature_k / T0, g0 / (L * R));
