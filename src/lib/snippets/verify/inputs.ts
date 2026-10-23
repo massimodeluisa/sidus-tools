@@ -441,6 +441,8 @@ export const SAMPLE_OVERRIDES: Record<string, LiveCodeValues> = {
   'antenna-gain-effective': { G: 1000, lam: 0.1 },
   'cr3bp-jacobi': { mu: 0.01215, x: 0.8, y: 0, vx: 0, vy: 0.1 },
   'angular-diameter': { d: 384_400_000, R: 1_737_400 },
+  // Exercise the no-eclipse branch (arg > 1) in the executable snippet matrix.
+  'eclipse-beta': { h: 400_000, betaRad: (80 * Math.PI) / 180 },
   // Attitude free vars exist in no shared bag: without them the snippet cannot compile.
   'quaternion-euler': { yaw: 0.5, pitch: 0.2, roll: 0.1 },
   // LEO state vector; the shared bag's vx/vy/vz are CW-relative, not orbital.

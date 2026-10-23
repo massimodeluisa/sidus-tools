@@ -5,6 +5,7 @@ import {
   batteryEnergyJ,
   diffractionResolution,
   dragForce,
+  eclipseWithBeta,
   equilibriumTemperature,
   groundTrackShiftPerOrbit,
   rcsDeltaV,
@@ -70,5 +71,24 @@ describe('power / sensors physics', () => {
   it('along-track from ΔM', () => {
     const a = 7000e3
     expect(alongTrackFromDeltaM(a, 0.01)).toBeCloseTo(70e3, -2)
+  })
+
+  it('matches circular beta-angle eclipse geometry inside the principal domain and rejects outside it', () => {
+    const R = 6_378_137
+    const a = R + 400_000
+    const mu = 3.986_004_418e14
+    const period = 2 * Math.PI * Math.sqrt(a ** 3 / mu)
+
+    // NASA SSRI Small Satellite Thermal Analysis, section II.A: circular beta-angle shadow geometry.
+    expect(eclipseWithBeta(a, R, 0, period)).toBeCloseTo(2166.466708, 3)
+    expect(eclipseWithBeta(a, R, (70 * Math.PI) / 180, period)).toBeCloseTo(255.879851, 3)
+    expect(eclipseWithBeta(a, R, (80 * Math.PI) / 180, period)).toBe(0)
+
+    expect(eclipseWithBeta(a, R, Math.PI / 2, period)).toBe(0)
+    expect(eclipseWithBeta(a, R, -Math.PI / 2, period)).toBe(0)
+    expect(eclipseWithBeta(a, R, (90.000001 * Math.PI) / 180, period)).toBeNull()
+    expect(eclipseWithBeta(a, R, (-100 * Math.PI) / 180, period)).toBeNull()
+    expect(eclipseWithBeta(a, R, Number.NaN, period)).toBeNull()
+    expect(eclipseWithBeta(a, R, Number.POSITIVE_INFINITY, period)).toBeNull()
   })
 })
