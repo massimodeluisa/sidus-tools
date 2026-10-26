@@ -98,6 +98,8 @@ export function heoOrbitFromPerigee(opts: {
 /**
  * First-order J2+J3 frozen eccentricity (ω = ±90°):
  * e ≈ −(J3 /(2 J2)) (R / a) sin i
+ * Null when that value is not in (0, 1), or when periapsis a(1−e)
+ * does not lie strictly outside the body radius.
  */
 export function frozenEccentricityJ2J3(
   a: number,
@@ -110,6 +112,8 @@ export function frozenEccentricityJ2J3(
   if (!(Math.abs(j2) > 0)) return null
   const e = -((j3 / (2 * j2)) * (bodyR / a) * Math.sin(iRad))
   if (!Number.isFinite(e) || e <= 0 || e >= 1) return null
+  // A grazing periapsis intersects the body. Do not clamp a or e.
+  if (!(a * (1 - e) > bodyR)) return null
   return e
 }
 

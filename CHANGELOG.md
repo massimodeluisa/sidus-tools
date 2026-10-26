@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 `1.0.0` matches `package.json` and the MCP `serverInfo.version` in `mcp/create-server.ts`. The date below is TODO until the tag is created. This file does not create that tag.
 
+## [Unreleased]
+
+### Added
+
+- Added the crew water loop and resupply calculator.
+
+### Fixed
+
+- Labeled the SGP4 position TEME and stated that UTC is used as UT1.
+- Removed the MATLAB, Julia, and LaTeX Kepler proxies from the SGP4 export.
+- Kept short and long way in Lambert exports and refused a transfer that did not converge.
+- Replaced the GNSS DOP snippet proxy with the diagonal of (H^T H)^-1.
+- Aligned MCP tool arguments with the library and named the frame on SGP4, Lambert, look angles, and GNSS DOP.
+- Stripped TypeScript tuple annotations so snippet exports run on plain JavaScript.
+- Rejected a frozen orbit whose periapsis intersects the body.
+
+### Changed
+
+- Required a formula change to update every language export for that tool.
+- Described frozen orbit as J2+J3 and Molniya as Kepler at critical inclination.
+
 ## [1.0.0] - TODO
 
 ### Added

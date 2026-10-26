@@ -50,7 +50,9 @@ export type LookAnglesSi = {
 /**
  * Default demo TLE: ISS-like elements for offline demos.
  * Epoch is illustrative (not a live CelesTrak pull). Prefer pasting current TLEs.
- * SGP4 output is TEME-class; ECEF/look-angle conversion is an engineering approximation.
+ * SGP4 position and velocity are TEME. Earth-fixed conversion calls gstime on the
+ * UTC date, so UTC is used as UT1 and ΔUT1 is not applied. That rotation is a
+ * PEF/ECF approximation, not ITRF. Polar motion is omitted.
  */
 export const SAMPLE_ISS_TLE = `ISS (ZARYA)
 1 25544U 98067A   26236.43525466  .00008197  00000+0  15348-3 0  9992

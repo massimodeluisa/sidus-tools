@@ -239,6 +239,20 @@ describe('precision metadata coverage', () => {
     expect(missing, `missing precision notes: ${missing.join(', ')}`).toEqual([])
   })
 
+  it('frozen-orbit and molniya notes match the coded model', () => {
+    const frozen = getToolPrecision('frozen-orbit')
+    expect(frozen.modelClass).toBe('j2-j3-frozen')
+    expect(frozen.limits).toContain('J2+J3')
+    expect(frozen.limits).toContain('±90°')
+    expect(frozen.limits).toContain('critical inclination')
+    expect(frozen.limits).not.toContain('First-order J2 secular rates')
+    const molniya = getToolPrecision('molniya-tundra')
+    expect(molniya.modelClass).toBe('heo-critical')
+    expect(molniya.limits).toContain('critical-inclination')
+    expect(molniya.limits).toContain('Kepler')
+    expect(molniya.limits).not.toContain('First-order J2 secular rates')
+  })
+
   it('getToolPrecision always returns limits text', () => {
     for (const t of TOOLS.filter((x) => x.status === 'live')) {
       const p = getToolPrecision(t.id)

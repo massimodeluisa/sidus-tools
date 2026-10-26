@@ -60,6 +60,15 @@ describe('J2/J3 frozen eccentricity', () => {
     expect(eEq).toBeNull()
     expect(ePolar!).toBeGreaterThan(eLow!)
   })
+
+  it('rejects a periapsis that intersects the body', () => {
+    // GitHub #193: a = 5000 km, i = 98 deg used to return e ≈ 0.00148,
+    // with periapsis about 1385 km inside the shipped Earth radius.
+    expect(frozenEccentricityJ2J3(5_000_000, (98 * Math.PI) / 180)).toBeNull()
+    const a = EARTH_RADIUS + 800_000
+    const e = frozenEccentricityJ2J3(a, (98 * Math.PI) / 180)!
+    expect(a * (1 - e)).toBeGreaterThan(EARTH_RADIUS)
+  })
 })
 
 describe('thrust-to-weight', () => {

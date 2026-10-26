@@ -315,7 +315,7 @@ function lit(lang: CodeLang, v: LiveCodeValue): string | null {
     return v ? 'true' : 'false'
   }
   if (typeof v === 'string') {
-    if (lang === 'c' || lang === 'cpp' || lang === 'rust' || lang === 'zig') {
+    if (lang === 'c' || lang === 'cpp' || lang === 'rust' || lang === 'zig' || lang === 'julia') {
       return `"${v.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
     }
     if (lang === 'matlab') return `'${v.replace(/'/g, "''")}'`
@@ -2078,6 +2078,12 @@ export function stripTsTypes(code: string): string {
     /([,\(\s])([A-Za-z_$][\w$]*)\s*:\s*\{[^{}]*\}(\s*\[\s*\])?(?=\s*[=,)])/g,
     '$1$2',
   )
+  // Tuple annotations start with `[`, so the identifier-type rule below never
+  // sees them: `const r_m: [number, number, number] = …`.
+  s = s.replace(
+    /([,\(\s])([A-Za-z_$][\w$]*)\s*:\s*\[[^\]]*\](?=\s*[=,)])/g,
+    '$1$2',
+  )
   // Parameter / variable types: `name: Type` before `=`, `,`, `)`
   // Type class must NOT include `,` or whitespace: those terminate the type.
   s = s.replace(
@@ -2089,6 +2095,8 @@ export function stripTsTypes(code: string): string {
   // Optional `?` on params / props
   s = s.replace(/([,\(]\s*[A-Za-z_$][\w$]*)\?(?=\s*[=,)])/g, '$1')
   s = s.replace(/([A-Za-z_$][\w$]*)\?\s*:/g, '$1:')
+  // Postfix non-null `!`. The `(?!=)` keeps `!=` and `!==` (those bangs are followed by `=`).
+  s = s.replace(/([A-Za-z0-9_\].])!(?!=)/g, '$1')
   return s
 }
 

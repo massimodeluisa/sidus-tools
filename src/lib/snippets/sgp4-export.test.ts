@@ -1,5 +1,9 @@
+import { execFileSync } from 'node:child_process'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { freeVarsNeeded, renderLiveCode } from './live-values'
+import { eciSiToGeodetic, parseTle, propagateEci } from '@/lib/physics/sgp4'
+import { freeVarsNeeded, renderLiveCode, stripTsTypes } from './live-values'
 import { sgp4Snippets } from './sgp4'
 
 const INPUTS = {
@@ -28,4 +32,79 @@ describe('SGP4 code exports', () => {
       expect(unresolved.sort()).toEqual(['at', 'tleLine1', 'tleLine2'])
     },
   )
+
+  /**
+   * Vallado sat 00005 at its epoch. JavaScript and TypeScript call the same
+   * satellite.js surface as `propagateEci`. Python calls python-sgp4, which
+   * stays inside a few centimetres of that state on this vector.
+   */
+  it('javascript and typescript propagation matches propagateEci', () => {
+    const want = physicsAtInputs()
+    for (const lang of ['javascript', 'typescript'] as const) {
+      const out = runExport(lang)
+      expect(distance(numbers(out, 'r_m'), want.r)).toBeLessThan(1e-6)
+      expect(distance(numbers(out, 'v_ms'), want.v)).toBeLessThan(1e-6)
+      expect(numbers(out, 'latDeg')[0]).toBeCloseTo(want.latDeg, 9)
+      expect(numbers(out, 'lonDeg')[0]).toBeCloseTo(want.lonDeg, 9)
+      expect(numbers(out, 'alt_m')[0]).toBeCloseTo(want.altM, 6)
+    }
+  })
+
+  it('python propagation matches propagateEci when python-sgp4 is installed', () => {
+    if (!pythonSgp4()) return
+    const want = physicsAtInputs()
+    const out = runExport('python')
+    expect(distance(numbers(out, 'r_m'), want.r)).toBeLessThan(0.1)
+    expect(distance(numbers(out, 'v_ms'), want.v)).toBeLessThan(1e-4)
+  })
 })
+
+function physicsAtInputs() {
+  const parsed = parseTle(`${INPUTS.tleLine1}\n${INPUTS.tleLine2}`)
+  if (!parsed.ok) throw new Error(parsed.error)
+  const date = new Date(INPUTS.at)
+  const state = propagateEci(parsed.satrec, date)
+  if (!state) throw new Error('propagateEci returned null')
+  const geo = eciSiToGeodetic(state.r, date)
+  if (!geo) throw new Error('eciSiToGeodetic returned null')
+  return { r: state.r, v: state.v, latDeg: geo.latDeg, lonDeg: geo.lonDeg, altM: geo.heightM }
+}
+
+function pythonSgp4(): boolean {
+  try {
+    execFileSync('python3', ['-c', 'from sgp4.api import Satrec, jday'], { stdio: 'ignore' })
+    return true
+  } catch {
+    return false
+  }
+}
+
+function runExport(lang: 'javascript' | 'typescript' | 'python'): string {
+  const source = sgp4Snippets.code[lang]!
+  const body = lang === 'typescript' ? stripTsTypes(source) : source
+  if (lang === 'typescript') expect(body).not.toMatch(/:\s*\[/)
+  const rendered = renderLiveCode(body, lang, INPUTS)
+  const root = process.cwd()
+  mkdirSync(join(root, '.verify-tmp'), { recursive: true })
+  // Not `sgp4.py`: that name makes `import sgp4` load the snippet instead of the package.
+  const dir = mkdtempSync(join(root, '.verify-tmp', 'sgp4-export-'))
+  const file = join(dir, lang === 'python' ? 'propagate.py' : 'propagate.mjs')
+  writeFileSync(file, rendered)
+  try {
+    const cmd = lang === 'python' ? 'python3' : 'node'
+    return execFileSync(cmd, [file], { encoding: 'utf8', cwd: root })
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+}
+
+function numbers(text: string, name: string): number[] {
+  const lines = text.split('\n').filter((line) => line.startsWith(`${name} =`))
+  const line = lines.at(-1)
+  if (!line) throw new Error(`missing printed ${name}`)
+  return [...line.matchAll(/[-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?/g)].map((match) => Number(match[0]))
+}
+
+function distance(got: number[], want: readonly number[]): number {
+  return Math.hypot(got[0]! - want[0]!, got[1]! - want[1]!, got[2]! - want[2]!)
+}

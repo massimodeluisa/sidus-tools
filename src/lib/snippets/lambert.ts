@@ -46,23 +46,37 @@ def lambert(mu, r1, r2, tof, short_way=True):
         dnu = 2*math.pi - dnu
     A = math.sin(dnu) * math.sqrt(r1n * r2n / (1 - cos_dnu))
     z = 0.0
+    converged = False
+    dt = float("nan")
     for _ in range(60):
         C, S = stumpff_C(z), stumpff_S(z)
         y = r1n + r2n + A*(z*S - 1)/math.sqrt(C)
         if A > 0 and y < 0:
             z += 0.1; continue
+        if not (y > 0) or not (C > 0):
+            break
         chi = math.sqrt(y / C)
         dt = (chi**3 * S + A*math.sqrt(y)) / math.sqrt(mu)
         # d(tof)/dz via finite difference
         dz = 1e-4
         Cp, Sp = stumpff_C(z+dz), stumpff_S(z+dz)
         yp = r1n + r2n + A*((z+dz)*Sp - 1)/math.sqrt(Cp)
+        if not (yp > 0) or not (Cp > 0):
+            break
         chip = math.sqrt(yp / Cp)
         dtp = (chip**3 * Sp + A*math.sqrt(yp)) / math.sqrt(mu)
         dtdz = (dtp - dt) / dz
-        z += (tof - dt) / dtdz
-        if abs(tof - dt) < 1e-8:
+        if dtdz == 0.0 or not math.isfinite(dtdz) or not math.isfinite(dt):
             break
+        z += (tof - dt) / dtdz
+        if not math.isfinite(z):
+            break
+        if abs(tof - dt) < 1e-8:
+            converged = True
+            break
+    if not converged or abs(tof - dt) >= 1e-8:
+        nan = float("nan")
+        return [nan, nan, nan], [nan, nan, nan], dnu
     C, S = stumpff_C(z), stumpff_S(z)
     y = r1n + r2n + A*(z*S - 1)/math.sqrt(C)
     f  = 1 - y/r1n
@@ -74,7 +88,8 @@ def lambert(mu, r1, r2, tof, short_way=True):
 
 r1 = [r1_m, 0.0, 0.0]
 r2 = [r2_m * math.cos(ang_rad), r2_m * math.sin(ang_rad), 0.0]
-result = lambert(mu, r1, r2, tof_s)
+short_way = way != "long"
+result = lambert(mu, r1, r2, tof_s, short_way)
 v1_x = result[0][0]
 v1_y = result[0][1]
 v1_z = result[0][2]
@@ -103,18 +118,24 @@ function lambert(mu, r1, r2, tof, shortWay = true) {
   else if (dnu > Math.PI) dnu = 2*Math.PI - dnu
   const A = Math.sin(dnu) * Math.sqrt((r1n*r2n)/(1 - Math.cos(dnu)))
   let z = 0
+  let converged = false
+  let dt = Number.NaN
   for (let i = 0; i < 60; i++) {
     let C = stumpffC(z), S = stumpffS(z)
     let y = r1n + r2n + A*(z*S - 1)/Math.sqrt(C)
     if (A > 0 && y < 0) { z += 0.1; continue }
     const chi = Math.sqrt(y/C)
-    const dt = (chi**3*S + A*Math.sqrt(y)) / Math.sqrt(mu)
+    dt = (chi**3*S + A*Math.sqrt(y)) / Math.sqrt(mu)
     const dz = 1e-4
     const Cp = stumpffC(z+dz), Sp = stumpffS(z+dz)
     const yp = r1n + r2n + A*((z+dz)*Sp - 1)/Math.sqrt(Cp)
     const dtp = (Math.sqrt(yp/Cp)**3*Sp + A*Math.sqrt(yp)) / Math.sqrt(mu)
     z += (tof - dt) / ((dtp - dt)/dz)
-    if (Math.abs(tof - dt) < 1e-8) break
+    if (Math.abs(tof - dt) < 1e-8) { converged = true; break }
+  }
+  if (!converged || !(Math.abs(tof - dt) < 1e-8)) {
+    const nan = Number.NaN
+    return { v1: [nan, nan, nan], v2: [nan, nan, nan], dnu }
   }
   const C = stumpffC(z), S = stumpffS(z)
   const y = r1n + r2n + A*(z*S - 1)/Math.sqrt(C)
@@ -126,7 +147,8 @@ function lambert(mu, r1, r2, tof, shortWay = true) {
 
 const r1 = [r1_m, 0, 0]
 const r2 = [r2_m * Math.cos(ang_rad), r2_m * Math.sin(ang_rad), 0]
-const result = lambert(mu, r1, r2, tof_s)
+const shortWay = way !== 'long'
+const result = lambert(mu, r1, r2, tof_s, shortWay)
 const v1_x = result.v1[0]
 const v1_y = result.v1[1]
 const v1_z = result.v1[2]
@@ -156,18 +178,24 @@ function lambert(mu: number, r1: Vec3, r2: Vec3, tof: number, shortWay = true) {
   else if (dnu > Math.PI) dnu = 2*Math.PI - dnu
   const A = Math.sin(dnu) * Math.sqrt((r1n*r2n)/(1 - Math.cos(dnu)))
   let z = 0
+  let converged = false
+  let dt = Number.NaN
   for (let i = 0; i < 60; i++) {
     let C = stumpffC(z), S = stumpffS(z)
     let y = r1n + r2n + A*(z*S - 1)/Math.sqrt(C)
     if (A > 0 && y < 0) { z += 0.1; continue }
     const chi = Math.sqrt(y/C)
-    const dt = (chi**3*S + A*Math.sqrt(y)) / Math.sqrt(mu)
+    dt = (chi**3*S + A*Math.sqrt(y)) / Math.sqrt(mu)
     const dz = 1e-4
     const Cp = stumpffC(z+dz), Sp = stumpffS(z+dz)
     const yp = r1n + r2n + A*((z+dz)*Sp - 1)/Math.sqrt(Cp)
     const dtp = (Math.sqrt(yp/Cp)**3*Sp + A*Math.sqrt(yp)) / Math.sqrt(mu)
     z += (tof - dt) / ((dtp - dt)/dz)
-    if (Math.abs(tof - dt) < 1e-8) break
+    if (Math.abs(tof - dt) < 1e-8) { converged = true; break }
+  }
+  if (!converged || !(Math.abs(tof - dt) < 1e-8)) {
+    const nan = Number.NaN
+    return { v1: [nan, nan, nan] as Vec3, v2: [nan, nan, nan] as Vec3, dnu }
   }
   const C = stumpffC(z), S = stumpffS(z)
   const y = r1n + r2n + A*(z*S - 1)/Math.sqrt(C)
@@ -179,7 +207,8 @@ function lambert(mu: number, r1: Vec3, r2: Vec3, tof: number, shortWay = true) {
 
 const r1: Vec3 = [r1_m, 0, 0]
 const r2: Vec3 = [r2_m * Math.cos(ang_rad), r2_m * Math.sin(ang_rad), 0]
-const result = lambert(mu, r1, r2, tof_s)
+const shortWay = way !== 'long'
+const result = lambert(mu, r1, r2, tof_s, shortWay)
 const v1_x: number = result.v1[0]
 const v1_y: number = result.v1[1]
 const v1_z: number = result.v1[2]
@@ -196,9 +225,11 @@ const dnu: number = result.dnu`,
 const double r1n = r1_m;
 const double r2n = r2_m;
 const double dnu = ang_rad;
-const double A = sin(dnu) * sqrt(r1n * r2n / (1.0 - cos(dnu)));
+const double dnu_xfer = (way[0] == 'l') ? (6.283185307179586 - dnu) : dnu;
+const double A = sin(dnu_xfer) * sqrt(r1n * r2n / (1.0 - cos(dnu)));
 double z = 0.0;
 double C = 0.5, S = 1.0/6.0;
+int lambert_ok = 0;
 for (int iter = 0; iter < 60; iter++) {
   /* tofz/tofzp/Czp/Szp (not dt/Sp/Cp) so these loop-local scratch names never
    * collide with unrelated UI free vars injected by other tools (e.g. dt, Sp). */
@@ -238,7 +269,7 @@ for (int iter = 0; iter < 60; iter++) {
   tofzp = (chip*chip*chip*Szp + A*sqrt(yp)) / sqrt(mu);
   dtdz = (tofzp - tofz) / dz;
   z += (tof_s - tofz) / dtdz;
-  if (fabs(tof_s - tofz) < 1e-8) break;
+  if (fabs(tof_s - tofz) < 1e-8) { lambert_ok = 1; break; }
 }
 if (z > 1e-8) {
   double s = sqrt(z);
@@ -259,12 +290,12 @@ const double gdot = 1.0 - y/r2n;
 /* r1=(r1n,0,0), r2=(r2n cos dnu, r2n sin dnu, 0) → v1=(r2-f r1)/g */
 const double r1x = r1n, r1y = 0.0, r1z = 0.0;
 const double r2x = r2n * cos(dnu), r2y = r2n * sin(dnu), r2z = 0.0;
-const double v1x = (r2x - f*r1x) / g;
-const double v1y = (r2y - f*r1y) / g;
-const double v1z = (r2z - f*r1z) / g;
-const double v2x = (gdot*r2x - r1x) / g;
-const double v2y = (gdot*r2y - r1y) / g;
-const double v2z = (gdot*r2z - r1z) / g;`,
+const double v1x = lambert_ok ? (r2x - f*r1x) / g : NAN;
+const double v1y = lambert_ok ? (r2y - f*r1y) / g : NAN;
+const double v1z = lambert_ok ? (r2z - f*r1z) / g : NAN;
+const double v2x = lambert_ok ? (gdot*r2x - r1x) / g : NAN;
+const double v2y = lambert_ok ? (gdot*r2y - r1y) / g : NAN;
+const double v2z = lambert_ok ? (gdot*r2z - r1z) / g : NAN;`,
 
     cpp: `// Lambert: educational core: ${ASSUMPTIONS}
 // Free vars: mu, r1_m, r2_m, ang_rad, tof_s. Newton on z (Stumpff C(z)/S(z));
@@ -272,9 +303,11 @@ const double v2z = (gdot*r2z - r1z) / g;`,
 const double r1n = r1_m;
 const double r2n = r2_m;
 const double dnu = ang_rad;
-const double A = std::sin(dnu) * std::sqrt(r1n * r2n / (1.0 - std::cos(dnu)));
+const double dnu_xfer = (way[0] == 'l') ? (6.283185307179586 - dnu) : dnu;
+const double A = std::sin(dnu_xfer) * std::sqrt(r1n * r2n / (1.0 - std::cos(dnu)));
 double z = 0.0;
 double C = 0.5, S = 1.0/6.0;
+int lambert_ok = 0;
 for (int iter = 0; iter < 60; iter++) {
   // tofz/tofzp/Czp/Szp (not dt/Sp/Cp) so these loop-local scratch names never
   // collide with unrelated UI free vars injected by other tools (e.g. dt, Sp).
@@ -314,7 +347,7 @@ for (int iter = 0; iter < 60; iter++) {
   tofzp = (chip*chip*chip*Szp + A*std::sqrt(yp)) / std::sqrt(mu);
   dtdz = (tofzp - tofz) / dz;
   z += (tof_s - tofz) / dtdz;
-  if (std::fabs(tof_s - tofz) < 1e-8) break;
+  if (std::fabs(tof_s - tofz) < 1e-8) { lambert_ok = 1; break; }
 }
 if (z > 1e-8) {
   double s = std::sqrt(z);
@@ -334,12 +367,12 @@ const double g = A * std::sqrt(y / mu);
 const double gdot = 1.0 - y/r2n;
 const double r1x = r1n, r1y = 0.0, r1z = 0.0;
 const double r2x = r2n * std::cos(dnu), r2y = r2n * std::sin(dnu), r2z = 0.0;
-const double v1x = (r2x - f*r1x) / g;
-const double v1y = (r2y - f*r1y) / g;
-const double v1z = (r2z - f*r1z) / g;
-const double v2x = (gdot*r2x - r1x) / g;
-const double v2y = (gdot*r2y - r1y) / g;
-const double v2z = (gdot*r2z - r1z) / g;`,
+const double v1x = lambert_ok ? (r2x - f*r1x) / g : NAN;
+const double v1y = lambert_ok ? (r2y - f*r1y) / g : NAN;
+const double v1z = lambert_ok ? (r2z - f*r1z) / g : NAN;
+const double v2x = lambert_ok ? (gdot*r2x - r1x) / g : NAN;
+const double v2y = lambert_ok ? (gdot*r2y - r1y) / g : NAN;
+const double v2z = lambert_ok ? (gdot*r2z - r1z) / g : NAN;`,
 
     rust: `// Lambert: educational core: ${ASSUMPTIONS}
 // Free vars: mu, r1_m, r2_m, ang_rad, tof_s. Newton on z (Stumpff c(z)/s(z));
@@ -347,8 +380,10 @@ const double v2z = (gdot*r2z - r1z) / g;`,
 let r1n = r1_m;
 let r2n = r2_m;
 let dnu = ang_rad;
-let a_lam = dnu.sin() * (r1n * r2n / (1.0 - dnu.cos())).sqrt();
+let dnu_xfer = if way.as_bytes()[0] == b'l' { 6.283185307179586 - dnu } else { dnu };
+let a_lam = dnu_xfer.sin() * (r1n * r2n / (1.0 - dnu.cos())).sqrt();
 let mut z = 0.0_f64;
+let mut lambert_ok = false;
 let mut c = 0.5_f64;
 let mut s = 1.0_f64 / 6.0;
 for _ in 0..60 {
@@ -395,6 +430,7 @@ for _ in 0..60 {
     let dtdz = (tofzp - tofz) / dz;
     z += (tof_s - tofz) / dtdz;
     if (tof_s - tofz).abs() < 1e-8 {
+        lambert_ok = true;
         break;
     }
 }
@@ -420,12 +456,12 @@ let r1z = 0.0_f64;
 let r2x = r2n * dnu.cos();
 let r2y = r2n * dnu.sin();
 let r2z = 0.0_f64;
-let v1x = (r2x - f*r1x) / g;
-let v1y = (r2y - f*r1y) / g;
-let v1z = (r2z - f*r1z) / g;
-let v2x = (gdot*r2x - r1x) / g;
-let v2y = (gdot*r2y - r1y) / g;
-let v2z = (gdot*r2z - r1z) / g;`,
+let v1x = if lambert_ok { (r2x - f*r1x) / g } else { f64::NAN };
+let v1y = if lambert_ok { (r2y - f*r1y) / g } else { f64::NAN };
+let v1z = if lambert_ok { (r2z - f*r1z) / g } else { f64::NAN };
+let v2x = if lambert_ok { (gdot*r2x - r1x) / g } else { f64::NAN };
+let v2y = if lambert_ok { (gdot*r2y - r1y) / g } else { f64::NAN };
+let v2z = if lambert_ok { (gdot*r2z - r1z) / g } else { f64::NAN };`,
 
     zig: `// Lambert: educational core: ${ASSUMPTIONS}
 // Free vars: mu, r1_m, r2_m, ang_rad, tof_s. Newton on z (Stumpff C(z)/S(z));
@@ -433,8 +469,11 @@ let v2z = (gdot*r2z - r1z) / g;`,
 const r1n = r1_m;
 const r2n = r2_m;
 const dnu = ang_rad;
-const A = std.math.sin(dnu) * std.math.sqrt(r1n * r2n / (1.0 - std.math.cos(dnu)));
+const dnu_xfer = if (way[0] == 'l') 6.283185307179586 - dnu else dnu;
+const A = std.math.sin(dnu_xfer) * std.math.sqrt(r1n * r2n / (1.0 - std.math.cos(dnu)));
 var z: f64 = 0.0;
+// Integer, not bool: the Zig wrapper prints every top-level name with {d}, and Zig 0.17 rejects {d} on bool.
+var lambert_ok: i32 = 0;
 var C: f64 = 0.5;
 var S: f64 = 1.0 / 6.0;
 var iter: usize = 0;
@@ -481,7 +520,10 @@ while (iter < 60) : (iter += 1) {
     const tofzp = (chip * chip * chip * Szp + A * std.math.sqrt(yp)) / std.math.sqrt(mu);
     const dtdz = (tofzp - tofz) / dz;
     z += (tof_s - tofz) / dtdz;
-    if (@abs(tof_s - tofz) < 1e-8) break;
+    if (@abs(tof_s - tofz) < 1e-8) {
+        lambert_ok = 1;
+        break;
+    }
 }
 if (z > 1e-8) {
     const s = std.math.sqrt(z);
@@ -505,12 +547,12 @@ const r1z: f64 = 0.0;
 const r2x = r2n * std.math.cos(dnu);
 const r2y = r2n * std.math.sin(dnu);
 const r2z: f64 = 0.0;
-const v1x = (r2x - f*r1x) / g;
-const v1y = (r2y - f*r1y) / g;
-const v1z = (r2z - f*r1z) / g;
-const v2x = (gdot*r2x - r1x) / g;
-const v2y = (gdot*r2y - r1y) / g;
-const v2z = (gdot*r2z - r1z) / g;`,
+const v1x = if (lambert_ok != 0) (r2x - f*r1x) / g else std.math.nan(f64);
+const v1y = if (lambert_ok != 0) (r2y - f*r1y) / g else std.math.nan(f64);
+const v1z = if (lambert_ok != 0) (r2z - f*r1z) / g else std.math.nan(f64);
+const v2x = if (lambert_ok != 0) (gdot*r2x - r1x) / g else std.math.nan(f64);
+const v2y = if (lambert_ok != 0) (gdot*r2y - r1y) / g else std.math.nan(f64);
+const v2z = if (lambert_ok != 0) (gdot*r2z - r1z) / g else std.math.nan(f64);`,
 
     fortran: `! Lambert: educational core: ${ASSUMPTIONS}
 ! Free vars: mu, r1_m, r2_m, ang_rad, tof_s. Newton on z (Stumpff C(z)/S(z));
@@ -518,8 +560,11 @@ const v2z = (gdot*r2z - r1z) / g;`,
 r1n = r1_m
 r2n = r2_m
 dnu = ang_rad
-A = sin(dnu) * sqrt(r1n * r2n / (1.0d0 - cos(dnu)))
+dnu_xfer = dnu
+if (way(1:1) == 'l') dnu_xfer = 6.283185307179586d0 - dnu
+A = sin(dnu_xfer) * sqrt(r1n * r2n / (1.0d0 - cos(dnu)))
 z = 0.0d0
+lambert_ok = 0.0d0
 C = 0.5d0
 S = 1.0d0/6.0d0
 sq = 0.0d0
@@ -576,7 +621,10 @@ do while (iter < 60.0d0)
   dtdz = (dtp - dt) / dz
   z = z + (tof_s - dt) / dtdz
   iter = iter + 1.0d0
-  if (abs(tof_s - dt) < 1.0d-8) exit
+  if (abs(tof_s - dt) < 1.0d-8) then
+    lambert_ok = 1.0d0
+    exit
+  end if
 end do
 if (z > 1.0d-8) then
   sq = sqrt(z)
@@ -605,7 +653,18 @@ v1y = (r2y - f*r1y) / g
 v1z = (r2z - f*r1z) / g
 v2x = (gdot*r2x - r1x) / g
 v2y = (gdot*r2y - r1y) / g
-v2z = (gdot*r2z - r1z) / g`,
+v2z = (gdot*r2z - r1z) / g
+if (lambert_ok < 0.5d0) then
+  ! gfortran rejects a compile-time 0/0, so the sentinel is a runtime quotient.
+  nan_num = 0.0d0
+  nan_den = 0.0d0
+  v1x = nan_num / nan_den
+  v1y = v1x
+  v1z = v1x
+  v2x = v1x
+  v2y = v1x
+  v2z = v1x
+end if`,
 
     matlab: `% Lambert: ${ASSUMPTIONS}
 % Full universal-z Newton iteration; free vars mu,r1_m,r2_m,ang_rad,tof_s.
@@ -615,9 +674,10 @@ r1 = [r1_m, 0, 0];
 r2 = [r2_m * cos(ang_rad), r2_m * sin(ang_rad), 0];
 r1n = norm(r1); r2n = norm(r2);
 dnu = acos(max(-1, min(1, dot(r1,r2)/(r1n*r2n))));
-if dnu > pi, dnu = 2*pi - dnu; end
+if way(1) == 'l'; dnu = 2*pi - dnu; elseif dnu > pi; dnu = 2*pi - dnu; end
 A = sin(dnu)*sqrt(r1n*r2n/(1-cos(dnu)));
 z = 0;
+lambert_ok = 0;
 for k = 1:60
   if z > 1e-8
     s = sqrt(z); C = (1-cos(s))/z; S = (s-sin(s))/s^3;
@@ -641,7 +701,7 @@ for k = 1:60
   yp = r1n + r2n + A*(zp*Sp-1)/sqrt(Cp);
   chip = sqrt(yp/Cp); dtp = (chip^3*Sp + A*sqrt(yp))/sqrt(mu);
   z = z + (tof_s - dt)/((dtp-dt)/dz);
-  if abs(tof_s-dt) < 1e-8, break; end
+  if abs(tof_s-dt) < 1e-8, lambert_ok = 1; break; end
 end
 if z > 1e-8
   s = sqrt(z); C = (1-cos(s))/z; S = (s-sin(s))/s^3;
@@ -658,7 +718,11 @@ v1_y = v1(2);
 v1_z = v1(3);
 v2_x = v2(1);
 v2_y = v2(2);
-v2_z = v2(3);`,
+v2_z = v2(3);
+if lambert_ok == 0
+  v1_x = NaN; v1_y = NaN; v1_z = NaN;
+  v2_x = NaN; v2_y = NaN; v2_z = NaN;
+end`,
 
     julia: `# Lambert universal-z: ${ASSUMPTIONS}
 using LinearAlgebra
@@ -691,21 +755,43 @@ function lambert(mu, r1, r2, tof; short_way=true)
     end
     A = sin(dnu) * sqrt(r1n * r2n / (1 - cos(dnu)))
     z = 0.0
+    converged = false
+    dt = NaN
     for _ in 1:60
         C, S = stumpff_C(z), stumpff_S(z)
         y = r1n + r2n + A*(z*S - 1)/sqrt(C)
         if A > 0 && y < 0
             z += 0.1; continue
         end
+        if !(y > 0) || !(C > 0)
+            break
+        end
         chi = sqrt(y / C)
         dt = (chi^3 * S + A*sqrt(y)) / sqrt(mu)
         dz = 1e-4
         Cp, Sp = stumpff_C(z+dz), stumpff_S(z+dz)
         yp = r1n + r2n + A*((z+dz)*Sp - 1)/sqrt(Cp)
+        if !(yp > 0) || !(Cp > 0)
+            break
+        end
         chip = sqrt(yp / Cp)
         dtp = (chip^3 * Sp + A*sqrt(yp)) / sqrt(mu)
-        z += (tof - dt) / ((dtp - dt) / dz)
-        abs(tof - dt) < 1e-8 && break
+        slope = (dtp - dt) / dz
+        if slope == 0 || !isfinite(slope) || !isfinite(dt)
+            break
+        end
+        z += (tof - dt) / slope
+        if !isfinite(z)
+            break
+        end
+        if abs(tof - dt) < 1e-8
+            converged = true
+            break
+        end
+    end
+    if !converged || abs(tof - dt) >= 1e-8
+        nanv = [NaN, NaN, NaN]
+        return nanv, nanv, NaN
     end
     C, S = stumpff_C(z), stumpff_S(z)
     y = r1n + r2n + A*(z*S - 1)/sqrt(C)
@@ -719,7 +805,8 @@ end
 
 r1 = [r1_m, 0.0, 0.0]
 r2 = [r2_m * cos(ang_rad), r2_m * sin(ang_rad), 0.0]
-result = lambert(mu, r1, r2, tof_s)
+short_way = way != "long"
+result = lambert(mu, r1, r2, tof_s; short_way=short_way)
 v1_x = result[1][1]
 v1_y = result[1][2]
 v1_z = result[1][3]
@@ -728,7 +815,7 @@ v2_y = result[2][2]
 v2_z = result[2][3]
 dnu = result[3]`,
 
-    latex: `% Lambert (universal z)
+    latex: `% Lambert (universal z). way selects short or long; converged rejects a failed residual.
 \\[
 A=\\sin\\Delta\\nu\\sqrt{\\frac{r_1 r_2}{1-\\cos\\Delta\\nu}},\\quad
 y=r_1+r_2+A\\frac{zS-1}{\\sqrt C},\\quad \\chi=\\sqrt{y/C}

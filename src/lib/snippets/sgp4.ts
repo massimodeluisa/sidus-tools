@@ -1,13 +1,13 @@
 import type { FormulaSnippet } from './types'
 
 const ASSUMPTIONS =
-  'SGP4/SDP4 mean elements (NORAD TLE); TEME-like ECI; WGS-72/84 via satellite.js / sgp4 (MIT). Positions km → convert to m for SI apps.'
+  'SGP4/SDP4 mean elements (NORAD TLE). Position and velocity are TEME, not a generic ECI. gstime uses the UTC date as UT1 (ΔUT1 is not applied). WGS-72/84 via satellite.js / sgp4 (MIT). Positions km, convert to m for SI apps.'
 
 /**
  * Library-backed for Python / JS / TS (satellite.js, python-sgp4).
- * Systems languages (C, C++, Rust, Zig, Fortran) are intentionally omitted
- * for this tool: a Kepler mean-motion proxy is not full SGP4 and must not
- * ship under an SGP4 label.
+ * Systems languages (C, C++, Rust, Zig, Fortran) and the MATLAB / Julia / LaTeX
+ * Kepler mean-motion proxies are omitted: a circular-orbit proxy is not SGP4
+ * and must not inherit a TEME claim.
  */
 export const sgp4Snippets: FormulaSnippet = {
   formulaId: 'sgp4',
@@ -97,29 +97,5 @@ if err != 0:
     raise RuntimeError(f"sgp4 error {err}")
 r_m = [x * 1000 for x in r_km]
 v_ms = [x * 1000 for x in v_kms]`,
-
-    matlab: `% SGP4: use Aerospace Toolbox or a published SGP4 mex
-% [r,v] = sgp4(satrec, tsince);  % km, km/s in TEME
-% Convert: r_m = r*1e3;
-% Educational Kepler proxy from TLE mean motion n_rev_day:
-n = n_rev_day * 2*pi / 86400;  % rad/s
-a = (mu / n^2)^(1/3);          % circular SMA [m]
-v_c = sqrt(mu / a);
-T = 2*pi / n;`,
-
-    julia: `# Kepler mean-element proxy from TLE n: not full SGP4 series
-# free: n_rev_day [rev/day], mu [m³/s²]
-n = n_rev_day * 2π / 86400  # rad/s
-a = cbrt(mu / n^2)          # circular SMA [m]
-v_c = sqrt(mu / a)
-T = 2π / n`,
-
-    latex: `% SGP4 is an analytical mean-element propagator (not closed form).
-% Inputs: TLE mean elements; output TEME position/velocity.
-% Educational Kepler proxy from TLE mean motion $n$ [rev/day]:
-\\[
-  n_{\\mathrm{rad/s}} = n\\frac{2\\pi}{86400},\\quad
-  a = \\Big(\\frac{\\mu}{n_{\\mathrm{rad/s}}^{2}}\\Big)^{1/3}
-\\]`,
   },
 }

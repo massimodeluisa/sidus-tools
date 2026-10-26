@@ -88,6 +88,39 @@ export const RF_SCENARIOS: Record<string, Scenario[]> = {
 
   // —— GNSS / optical ——
 
+  'gnss-geometry-gdop': [
+    {
+      name: 'verifier-bag',
+      source: 'independent four-satellite ENU lines of sight from the shared verification bag',
+      bag: {
+        ux1: 0.5, uy1: 0.5, uz1: 0.7,
+        ux2: -0.3, uy2: 0.4, uz2: 0.86,
+        ux3: 0.2, uy3: -0.6, uz3: 0.77,
+        ux4: -0.4, uy4: -0.2, uz4: 0.89,
+      },
+    },
+    {
+      name: 'page-defaults',
+      source: 'GNSS geometry page defaults: three 120 deg azimuths at equal elevation plus zenith',
+      bag: {
+        ux1: 1, uy1: 0, uz1: 0.5,
+        ux2: -0.5, uy2: 0.866, uz2: 0.5,
+        ux3: -0.5, uy3: -0.866, uz3: 0.5,
+        ux4: 0, uy4: 0, uz4: 1,
+      },
+    },
+    {
+      name: 'regular-tetrahedron',
+      source: 'regular tetrahedron centered on the receiver: H^T H = diag(4/3, 4/3, 4/3, 4)',
+      bag: {
+        ux1: 1, uy1: 1, uz1: 1,
+        ux2: 1, uy2: -1, uz2: -1,
+        ux3: -1, uy3: 1, uz3: -1,
+        ux4: -1, uy4: -1, uz4: 1,
+      },
+    },
+  ],
+
   'gnss-pseudorange': [
     {
       name: 'gnss-mid-orbit-range',

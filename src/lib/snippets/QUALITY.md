@@ -7,6 +7,11 @@ Every tool ships **hand-written, idiomatic** snippets, authored in pure SI,
 for **all** `CodeLang` keys: `c`, `cpp`, `rust`, `zig`, `python`,
 `javascript`, `typescript`, `matlab`, `julia`, `fortran`, `latex`.
 
+When a formula changes, every language body for that tool changes in the
+same edit. A language that cannot honestly implement the formula is omitted
+on purpose, the module says why, and a test locks the omission. An omitted
+language is not a pass. The working rule is CONVENTIONS §4.
+
 Authorship and numeric verification are separate claims. The authorship
 claim above (hand-written, idiomatic, pure SI) holds for every tool and
 every `CodeLang` key. The numeric verification claim, that a snippet's
@@ -83,4 +88,5 @@ outside main (rare; e.g. multi-function units).
 
 1. `npx tsc --noEmit` (or project `npm run type-check`)
 2. Vitest parity / liveValues tests if they cover the id
-3. Optional: `npx tsx scripts/godbolt-matrix.ts --langs=python,javascript,c,rust --filter=<id>` when filter supported; else run matrix and inspect that tool
+3. `npx tsx scripts/verify-snippets.ts --require-all --tools=<formulaId> --langs=c,cpp,rust,zig,python,javascript,typescript,matlab,julia,fortran,latex` for every tool whose formula or export changed. A skip is not a pass.
+4. Optional: `npx tsx scripts/godbolt-matrix.ts --langs=python,javascript,c,rust --filter=<id>` when filter supported; else run matrix and inspect that tool

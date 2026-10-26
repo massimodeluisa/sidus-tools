@@ -314,6 +314,11 @@ const si = 1`),
     expect(stripped).toBe('const pts = []')
   })
 
+  it('stripTsTypes removes a tuple annotation', () => {
+    const stripped = stripTsTypes('const r_m: [number, number, number] = [1, 2, 3]')
+    expect(stripped).toBe('const r_m = [1, 2, 3]')
+  })
+
   it('stripTsTypes fully strips plotter\'s real TS body (arrow-fn param + object-array locals)', () => {
     const body = getSnippets('plotter')!.code.typescript!
     const stripped = stripTsTypes(body)

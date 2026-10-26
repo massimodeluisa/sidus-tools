@@ -20,6 +20,7 @@ import {
   figureOfMeritGT,
   figureOfMeritGTDb,
   gravityGradientTorque,
+  gnssDopFromUnitVectors,
   gnssPseudorange,
   horizonSlantRange,
   antennaBeamwidth,
@@ -67,8 +68,6 @@ import { num, put, type ExpectedFn } from './shared'
  * asserting numbers that shipped physics does not actually produce.
  */
 export const UNVERIFIABLE_RF: Readonly<Record<string, string>> = {
-  'gnss-geometry-gdop':
-    'snippet computes an ad hoc "spread * horiz" portability proxy (its own comment: "full inv not portable"), not the shipped gnssDopFromUnitVectors matrix-inversion GDOP; the two formulas diverge for every input, not just an edge case.',
   'gnss-troposphere-delay':
     'snippet omits the "- tan(z)^2" term shipped saastamoinenTropoDelay subtracts inside the parens, and omits its height/latitude scale factor (exp(-h/7000) * (1+0.1 cos 2*lat)) entirely; the two formulas diverge for every input.',
 }
@@ -493,6 +492,20 @@ export const RF_EXPECTED: Record<string, ExpectedFn> = {
     const raanRate = j2RaanRate(mu, a, e, iRad, EARTH_J2, R)
     const out: Record<string, number> = {}
     if (raanRate != null) put(out, ['T', 't'], raanPeriodS(raanRate))
+    return out
+  },
+
+  'gnss-geometry-gdop': (bag) => {
+    const los = [1, 2, 3, 4].map(
+      (i) => [num(bag, `ux${i}`), num(bag, `uy${i}`), num(bag, `uz${i}`)] as const,
+    )
+    const dop = gnssDopFromUnitVectors(los)
+    const out: Record<string, number> = {}
+    if (!dop) return out
+    put(out, ['gdop'], dop.gdop)
+    put(out, ['pdop'], dop.pdop)
+    put(out, ['hdop'], dop.hdop)
+    put(out, ['vdop'], dop.vdop)
     return out
   },
 

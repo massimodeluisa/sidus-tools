@@ -193,7 +193,8 @@ export const ORBITS_EXPECTED: Record<string, ExpectedFn> = {
     const r2m = num(bag, 'r2_m')
     const r1: Vec3 = [r1m, 0, 0]
     const r2: Vec3 = [r2m * Math.cos(ang), r2m * Math.sin(ang), 0]
-    const sol = lambertSolve(mu, r1, r2, num(bag, 'tof_s'), true)
+    const shortWay = String(bag.way ?? 'short') !== 'long'
+    const sol = lambertSolve(mu, r1, r2, num(bag, 'tof_s'), shortWay)
     if (!sol) throw new Error('lambert: lambertSolve returned null for the verification input bag')
     const out: Record<string, number> = {}
     put(out, ['v1_x', 'v1x'], sol.v1[0])
