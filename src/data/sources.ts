@@ -163,6 +163,20 @@ export const SOURCES: Record<string, SourceRef> = {
     url: 'https://www.space-track.org/',
     note: 'Operational TLE distribution context (account required for live data). SIDUS uses public educational TLE samples only.',
   },
+  'nasa-bvad': {
+    id: 'nasa-bvad',
+    name: 'Life Support Baseline Values and Assumptions Document (NASA/TP-2015-218570 Rev2)',
+    org: 'NASA',
+    url: 'https://ntrs.nasa.gov/citations/20210024855',
+    note: 'Per-crewmember-day water usage and wastewater planning values (Tables 4-20 / 4-21).',
+  },
+  'nasa-iss-water-recovery': {
+    id: 'nasa-iss-water-recovery',
+    name: 'NASA Achieves Water Recovery Milestone on International Space Station',
+    org: 'NASA',
+    url: 'https://www.nasa.gov/missions/station/iss-research/nasa-achieves-water-recovery-milestone-on-international-space-station/',
+    note: 'Public ISS water recovery figures (UPA, WPA, Brine Processor Assembly, ~98% total recovery).',
+  },
   'iss-eclss': {
     id: 'iss-eclss',
     name: 'ISS ECLSS overview literature',

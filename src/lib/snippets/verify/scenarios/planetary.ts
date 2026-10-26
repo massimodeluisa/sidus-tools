@@ -86,6 +86,24 @@ export const PLANETARY_SCENARIOS: Record<string, Scenario[]> = {
     },
   ],
 
+  'water-loop': [
+    {
+      name: 'iss-4crew-180d',
+      source: 'BVAD Rev2 ISS column (Tables 4-20/4-21), UPA 85%, shipped ISS_DAY_O2_KG electrolysis, 4 crew, 180 d, 10% reserve.',
+      bag: { potable: 2.5, hygiene: 0.4, flush: 0.3, o2: 0.82, urine: 1.2, condensate: 2.27, eta_u: 0.85, eta_c: 1, eta_h: 0, crew: 4, tS: 180 * 86400, reserve: 0.1 },
+    },
+    {
+      name: 'open-loop-short-stay',
+      source: 'no recycling (all eta = 0), O2 shipped as gas, 3 crew for 14 d.',
+      bag: { potable: 2.5, hygiene: 0.4, flush: 0.3, o2: 0, urine: 1.2, condensate: 2.27, eta_u: 0, eta_c: 0, eta_h: 0, crew: 3, tS: 14 * 86400, reserve: 0 },
+    },
+    {
+      name: 'synthetic',
+      source: 'adversarial synthetic: distinct non-round rates and efficiencies',
+      bag: { potable: 2.837, hygiene: 1.413, flush: 0.271, o2: 0.913, urine: 1.377, condensate: 2.611, eta_u: 0.937, eta_c: 0.991, eta_h: 0.623, crew: 6, tS: 412.5 * 86400, reserve: 0.17 },
+    },
+  ],
+
   'thermal-loop': [
     {
       name: 'iss-4crew-sensible-heat',

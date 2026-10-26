@@ -320,6 +320,17 @@ const TOOLS_RAW: ToolMeta[] = [
     status: 'live',
   },
   {
+    id: 'water-loop',
+    category: 'crew',
+    title: 'Crew water loop & resupply',
+    description:
+      'Steady-state crew water balance: potable, hygiene and electrolysis demand vs urine / condensate recovery, loop closure and resupply (makeup) mass for a mission: ISS-class BVAD defaults.',
+    tags: ['ECLSS', 'crew', 'water', 'ISS', 'resupply', 'logistics'],
+    formulaId: 'water-loop',
+    sourceIds: ['nasa-bvad', 'nasa-iss-water-recovery', 'nasa-std-3001', 'iss-eclss'],
+    status: 'live',
+  },
+  {
     id: 'cabin-leak',
     category: 'crew',
     title: 'Cabin leak / depress time',

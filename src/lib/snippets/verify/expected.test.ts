@@ -234,6 +234,7 @@ const PLANETARY_WAVE = [
   'thermal-rad',
   'tisserand-parameter',
   'vector-angle',
+  'water-loop',
 ] as const
 
 /** ODC thermal wave (radiator, dawn-dusk SSO, two-phase loop, heat pump, sizing, cold plate, shield). */
