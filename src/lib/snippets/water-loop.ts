@@ -114,16 +114,19 @@ mission = makeup * crew_days
 openloop = demand * crew_days
 saved = openloop - mission`,
 
-    latex: `% Crew water loop: pure SI, rates per crew-day
-\[
-  \dot m_{\mathrm{dem}} = \dot m_{\mathrm{pot}} + \dot m_{\mathrm{hyg}} + \dot m_{\mathrm{fl}}
-  + \frac{2M_{\mathrm{H_2O}}}{M_{\mathrm{O_2}}}\,\dot m_{\mathrm{O_2}}
-\]
-\[
-  \dot m_{\mathrm{rec}} = \eta_u(\dot m_u + \dot m_{\mathrm{fl}}) + \eta_c \dot m_c + \eta_h \dot m_{\mathrm{hyg}}
-\]
-\[
-  m_{\mathrm{mission}} = \max(0,\ \dot m_{\mathrm{dem}} - \dot m_{\mathrm{rec}})\; N_{\mathrm{crew}}\, \frac{t}{86400}\,(1+r)
-\]`,
+    // A template literal would eat the backslashes (\dot, \[, \frac).
+    latex: [
+      '% Crew water loop: pure SI, rates per crew-day',
+      '\\[',
+      '  \\dot{m}_{\\mathrm{dem}} = \\dot{m}_{\\mathrm{pot}} + \\dot{m}_{\\mathrm{hyg}} + \\dot{m}_{\\mathrm{fl}}',
+      '  + \\frac{2M_{\\mathrm{H}_{2}\\mathrm{O}}}{M_{\\mathrm{O}_{2}}}\\,\\dot{m}_{\\mathrm{O}_{2}}',
+      '\\]',
+      '\\[',
+      '  \\dot{m}_{\\mathrm{rec}} = \\eta_{u}(\\dot{m}_{u} + \\dot{m}_{\\mathrm{fl}}) + \\eta_{c}\\dot{m}_{c} + \\eta_{h}\\dot{m}_{\\mathrm{hyg}}',
+      '\\]',
+      '\\[',
+      '  m_{\\mathrm{mission}} = \\max(0,\\,\\dot{m}_{\\mathrm{dem}} - \\dot{m}_{\\mathrm{rec}})\\, N_{\\mathrm{crew}}\\,\\frac{t}{86400}\\,(1+r)',
+      '\\]',
+    ].join('\n'),
   },
 }
