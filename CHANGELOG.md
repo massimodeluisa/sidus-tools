@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Labeled the SGP4 position TEME and stated that UTC is used as UT1.
 - Removed the MATLAB, Julia, and LaTeX Kepler proxies from the SGP4 export.
 - Kept short and long way in Lambert exports and refused a transfer that did not converge.
+- Replaced the GNSS DOP snippet proxy with the diagonal of (H^T H)^-1.
 
 ## [1.0.0] - TODO
 
