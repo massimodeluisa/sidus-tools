@@ -456,7 +456,7 @@ export const SAMPLE_OVERRIDES: Record<string, LiveCodeValues> = {
   // Bielliptic intermediate apoapsis altitude; the shared bag's rb is an absolute radius.
   bielliptic: { hb: 200_000_000 },
   // Lambert terminals/angle/TOF exist in no shared bag: without them the snippet cannot compile.
-  lambert: { r1_m: 6_778_137, r2_m: 6_778_137, ang_rad: Math.PI / 3, tof_s: 1500 },
+  lambert: { r1_m: 6_778_137, r2_m: 6_778_137, ang_rad: Math.PI / 3, tof_s: 1500, way: 'short' },
   // Vallado Ex 2-4 state vector; the shared bag has no rx/ry/rz and its vx/vy/vz are CW-relative.
   'rv-elements': {
     rx: 1_131_340,

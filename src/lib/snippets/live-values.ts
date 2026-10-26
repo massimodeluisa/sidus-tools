@@ -315,7 +315,7 @@ function lit(lang: CodeLang, v: LiveCodeValue): string | null {
     return v ? 'true' : 'false'
   }
   if (typeof v === 'string') {
-    if (lang === 'c' || lang === 'cpp' || lang === 'rust' || lang === 'zig') {
+    if (lang === 'c' || lang === 'cpp' || lang === 'rust' || lang === 'zig' || lang === 'julia') {
       return `"${v.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
     }
     if (lang === 'matlab') return `'${v.replace(/'/g, "''")}'`
