@@ -10,6 +10,8 @@ const CLASS_KEY: Record<PrecisionClass, string> = {
   'two-body-exact': 'two_body_exact',
   'two-body-series': 'two_body_series',
   'j2-secular': 'j2_secular',
+  'j2-j3-frozen': 'j2_j3_frozen',
+  'heo-critical': 'heo_critical',
   'atmosphere-order': 'atmosphere_order',
   'eclss-educational': 'eclss_educational',
   'rf-friis': 'rf_friis',

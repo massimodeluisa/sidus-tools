@@ -26920,7 +26920,7 @@ var MCP_TOOL_DEFS = [
   },
   {
     name: "molniya_tundra",
-    description: "Molniya or Tundra HEO sizing: period, critical i, e, apogee dwell.",
+    description: "Kepler Molniya or Tundra sizing at the J2 critical inclination: period, e, apogee dwell. Not a secular-rate output.",
     inputSchema: {
       kind: _enum(["molniya", "tundra"]).optional(),
       perigee_alt_m: number2(),
@@ -26938,7 +26938,7 @@ var MCP_TOOL_DEFS = [
   },
   {
     name: "frozen_orbit",
-    description: "J2/J3 frozen eccentricity. Null when periapsis a(1-e) is not outside the body.",
+    description: "First-order J2+J3 frozen eccentricity for mean argument of perigee at \xB190\xB0. Null when periapsis a(1-e) is not outside the body.",
     inputSchema: {
       a_m: number2(),
       i_rad: number2()

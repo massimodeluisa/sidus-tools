@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Changed
 
 - Required a formula change to update every language export for that tool.
+- Described frozen orbit as J2+J3 and Molniya as Kepler at critical inclination.
 
 ## [1.0.0] - TODO
 

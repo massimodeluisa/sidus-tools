@@ -200,6 +200,8 @@ export const ko: TMessages = {
         two_body_exact: '닫힌 형식 이체',
         two_body_series: '급수 / SGP4 등급',
         j2_secular: 'J2 세속 평균 변화율',
+        j2_j3_frozen: 'J2+J3 동결 이심률',
+        heo_critical: '임계 경사각의 케플러 HEO',
         atmosphere_order: '대기 자릿수 추정',
         eclss_educational: 'ECLSS 교육용 비율',
         rf_friis: 'RF 자유공간 (Friis)',

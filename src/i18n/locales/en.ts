@@ -197,6 +197,8 @@ export const en = {
         two_body_exact: 'Closed-form two-body',
         two_body_series: 'Series / SGP4-class',
         j2_secular: 'J2 secular mean rates',
+        j2_j3_frozen: 'J2+J3 frozen eccentricity',
+        heo_critical: 'Kepler HEO at critical inclination',
         atmosphere_order: 'Atmosphere order-of-magnitude',
         eclss_educational: 'ECLSS educational rates',
         rf_friis: 'RF free-space (Friis)',

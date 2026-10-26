@@ -1,7 +1,7 @@
 import type { FormulaSnippet } from '../types'
 
 const A =
-  'e ≈ -(J3/(2 J2)) (R/a) sin i. Undefined when periapsis a(1-e) is not strictly outside the body radius. SI.'
+  'e ≈ -(J3/(2 J2)) (R/a) sin i, mean argument of perigee ±90°. First-order J2+J3, small e. Weak near critical inclination. Undefined when periapsis a(1-e) is not strictly outside the body radius. SI.'
 
 export const frozenOrbitSnippets: FormulaSnippet = {
   formulaId: 'frozen-orbit',

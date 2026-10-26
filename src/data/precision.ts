@@ -7,6 +7,8 @@ export type PrecisionClass =
   | 'two-body-exact'
   | 'two-body-series'
   | 'j2-secular'
+  | 'j2-j3-frozen'
+  | 'heo-critical'
   | 'atmosphere-order'
   | 'eclss-educational'
   | 'rf-friis'
@@ -110,8 +112,22 @@ export const TOOL_PRECISION: Record<string, ToolPrecision> = {
   'nyquist-rate': TWO_BODY,
   'data-volume': TWO_BODY,
   'earth-ir-flux': TWO_BODY,
-  'molniya-tundra': J2,
-  'frozen-orbit': J2,
+  'molniya-tundra': {
+    modelClass: 'heo-critical',
+    errorClass:
+      'Two-body ellipse from a fixed period and perigee altitude. Inclination is the J2 critical value.',
+    limits: `Kepler sizing plus the critical-inclination condition. Dwell is the two-body time near apogee. Not a J2+J3 frozen eccentricity. ${IEEE}`,
+    referenceHint:
+      'Two-body period and the critical inclination where the first-order J2 apsidal rate is zero.',
+  },
+  'frozen-orbit': {
+    modelClass: 'j2-j3-frozen',
+    errorClass:
+      'First-order J2+J3 frozen eccentricity. The exact condition is a cubic in e. This page uses the small-eccentricity branch.',
+    limits: `e ≈ -(J3/(2 J2))(R/a) sin i, for mean argument of perigee at ±90°. First-order J2+J3 and small-eccentricity. Weak near the critical inclination, where the J2 apsidal rate vanishes. Periapsis must lie outside the body. ${IEEE}`,
+    referenceHint:
+      'J2+J3 frozen eccentricity, mean argument of perigee ±90°. Not a secular-rate calculator.',
+  },
   'thrust-to-weight': TWO_BODY,
   'planck-radiance': TWO_BODY,
   'eirp-gt': TWO_BODY,

@@ -201,6 +201,8 @@ export const de: TMessages = {
         two_body_exact: 'Geschlossene Zweikörperlösung',
         two_body_series: 'Reihe / SGP4-Klasse',
         j2_secular: 'J2 säkulare mittlere Raten',
+        j2_j3_frozen: 'Eingefrorene Exzentrizität J2+J3',
+        heo_critical: 'Kepler-HEO bei kritischer Inklination',
         atmosphere_order: 'Atmosphäre Größenordnung',
         eclss_educational: 'ECLSS pädagogische Raten',
         rf_friis: 'RF Freiraum (Friis)',

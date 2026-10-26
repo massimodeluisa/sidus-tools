@@ -197,6 +197,8 @@ export const zh: TMessages = {
         two_body_exact: '闭式二体',
         two_body_series: '级数 / SGP4 类',
         j2_secular: 'J2 长期平均速率',
+        j2_j3_frozen: 'J2+J3 冻结偏心率',
+        heo_critical: '临界倾角开普勒大椭圆轨道',
         atmosphere_order: '大气量级估计',
         eclss_educational: 'ECLSS 教育速率',
         rf_friis: '射频自由空间（Friis）',

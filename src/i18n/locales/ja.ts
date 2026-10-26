@@ -201,6 +201,8 @@ export const ja: TMessages = {
         two_body_exact: '閉形式二体',
         two_body_series: '級数 / SGP4 級',
         j2_secular: 'J2 永年平均レート',
+        j2_j3_frozen: 'J2+J3 凍結離心率',
+        heo_critical: '臨界傾斜のケプラー HEO',
         atmosphere_order: '大気オーダー評価',
         eclss_educational: 'ECLSS 教育用レート',
         rf_friis: 'RF 自由空間（Friis）',

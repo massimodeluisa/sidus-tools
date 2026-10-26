@@ -109,6 +109,8 @@ describe('frozen orbit periapsis', () => {
       } else {
         expect(body, lang).toContain('> Rb')
       }
+      expect(body, lang).toContain('±90°')
+      expect(body, lang).toContain('critical inclination')
     }
   })
 

@@ -2622,7 +2622,7 @@ return w == null ? null : { swath_m: w }
   },
   {
     name: "molniya_tundra",
-    description: "Molniya or Tundra HEO sizing: period, critical i, e, apogee dwell.",
+    description: "Kepler Molniya or Tundra sizing at the J2 critical inclination: period, e, apogee dwell. Not a secular-rate output.",
     inputSchema: {
       kind: z.enum(['molniya', 'tundra']).optional(),
       perigee_alt_m: z.number(),
@@ -2640,7 +2640,7 @@ return w == null ? null : { swath_m: w }
   },
   {
     name: "frozen_orbit",
-    description: "J2/J3 frozen eccentricity. Null when periapsis a(1-e) is not outside the body.",
+    description: "First-order J2+J3 frozen eccentricity for mean argument of perigee at ±90°. Null when periapsis a(1-e) is not outside the body.",
     inputSchema: {
       a_m: z.number(),
       i_rad: z.number(),

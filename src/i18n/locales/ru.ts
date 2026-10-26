@@ -201,6 +201,8 @@ export const ru: TMessages = {
         two_body_exact: 'Два тела в замкнутой форме',
         two_body_series: 'Ряды / класс SGP4',
         j2_secular: 'Секулярные средние скорости J2',
+        j2_j3_frozen: 'Замороженный эксцентриситет J2+J3',
+        heo_critical: 'Кеплерова ВЭО при критическом наклонении',
         atmosphere_order: 'Атмосфера порядок величины',
         eclss_educational: 'Образовательные нормы ECLSS',
         rf_friis: 'РЧ свободное пространство (Friis)',

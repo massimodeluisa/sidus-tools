@@ -201,6 +201,8 @@ export const es: TMessages = {
         two_body_exact: 'Dos cuerpos en forma cerrada',
         two_body_series: 'Serie / clase SGP4',
         j2_secular: 'Tasas medias seculares J2',
+        j2_j3_frozen: 'Excentricidad congelada J2+J3',
+        heo_critical: 'HEO kepleriana en inclinación crítica',
         atmosphere_order: 'Atmósfera orden de magnitud',
         eclss_educational: 'Tasas ECLSS educativas',
         rf_friis: 'RF espacio libre (Friis)',
