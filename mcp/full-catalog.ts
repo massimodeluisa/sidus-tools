@@ -6,6 +6,9 @@ import * as z from 'zod/v4'
 import {
   EARTH_MU,
   EARTH_RADIUS,
+  SUN_MU,
+  AU,
+  C,
   BODIES,
   getBody,
   circularOrbitVelocity,
@@ -392,9 +395,11 @@ const res = multiStageDeltaV(st); return res
   },
     sample: {"a_m":6778137,"e":0.001,"i_deg":51.6},
     run: (args) => {
-      const i = (args.i_deg * Math.PI) / 180; const j2 = 1.08262668e-3;
-return { raan_rate_rad_s: j2RaanRate(EARTH_MU, EARTH_RADIUS, j2, args.a_m, args.e, i),
-  argp_rate_rad_s: j2ArgpRate(EARTH_MU, EARTH_RADIUS, j2, args.a_m, args.e, i) }
+      const i = (args.i_deg * Math.PI) / 180
+      return {
+        raan_rate_rad_s: j2RaanRate(EARTH_MU, args.a_m, args.e, i),
+        argp_rate_rad_s: j2ArgpRate(EARTH_MU, args.a_m, args.e, i),
+      }
     },
   },
   {
@@ -539,7 +544,7 @@ if (!masses) return null; return cabinFromMasses(args.volume_m3, args.temp_k, ma
   },
     sample: {"volume_m3":100,"p0_pa":101325,"p_final_pa":70000,"hole_area_m2":0.0001,"temp_k":293.15},
     run: (args) => {
-      const t = leakDepressTime(args.volume_m3, args.p0_pa, args.p_final_pa, args.hole_area_m2, args.temp_k);
+      const t = leakDepressTime(args.volume_m3, args.hole_area_m2, args.p0_pa, args.p_final_pa, args.temp_k);
 return t == null ? null : { t_s: t }
     },
   },
@@ -667,7 +672,7 @@ return { c3_m2_s2: c3, v_p_m_s: vp, e: hyperbolicEccentricity(mu, args.r_m, args
   },
     sample: {"a_m":6778137},
     run: (args) => {
-      return circularEclipseDuration(args.mu ?? EARTH_MU, args.a_m, args.body_radius_m ?? EARTH_RADIUS)
+      return circularEclipseDuration(args.a_m, args.body_radius_m ?? EARTH_RADIUS, args.mu ?? EARTH_MU)
     },
   },
   {
@@ -693,7 +698,7 @@ return { c3_m2_s2: c3, v_p_m_s: vp, e: hyperbolicEccentricity(mu, args.r_m, args
     sample: {"area_m2":10,"mass_kg":500,"cr":1.2,"r_au":1},
     run: (args) => {
       return { force_n: solarRadiationForce(args.area_m2, args.cr, args.r_au),
-  accel_m_s2: solarRadiationAccel(args.area_m2, args.mass_kg, args.cr, args.r_au) }
+  accel_m_s2: solarRadiationAccel(args.mass_kg, args.area_m2, args.cr, args.r_au) }
     },
   },
   {
@@ -732,7 +737,10 @@ return { c3_m2_s2: c3, v_p_m_s: vp, e: hyperbolicEccentricity(mu, args.r_m, args
   },
     sample: {"a_m":6778137,"dv_m_s":1},
     run: (args) => {
-      const da = deltaAFromTangentialDv(args.mu ?? EARTH_MU, args.a_m, args.dv_m_s); return da == null ? null : { da_m: da }
+      const mu = args.mu ?? EARTH_MU
+      const v = circularOrbitVelocity(mu, args.a_m)
+      const da = deltaAFromTangentialDv(args.a_m, v, args.dv_m_s)
+      return da == null ? null : { da_m: da }
     },
   },
   {
@@ -779,10 +787,11 @@ return { c3_m2_s2: c3, v_p_m_s: vp, e: hyperbolicEccentricity(mu, args.r_m, args
   },
     sample: {"a_m":6778137,"delta_a_m":-5000,"phase_gain_deg":10},
     run: (args) => {
-      const n = cwMeanMotion(args.mu ?? EARTH_MU, args.a_m); if (n == null) return null;
-const drift = coellipticDrift(n, args.a_m, args.delta_a_m);
-const t = timeForPhaseGain(drift?.nRel ?? 0, (args.phase_gain_deg * Math.PI) / 180);
-return { ...drift, t_phase_s: t }
+      const mu = args.mu ?? EARTH_MU
+      const drift = coellipticDrift(mu, args.a_m, args.delta_a_m)
+      if (!drift) return null
+      const t = timeForPhaseGain(drift.nRel, (args.phase_gain_deg * Math.PI) / 180)
+      return { ...drift, t_phase_s: t }
     },
   },
   {
@@ -838,8 +847,8 @@ return { ...drift, t_phase_s: t }
   },
     sample: {"altitude_m":400000},
     run: (args) => {
-      const n = meanMotionFromAltitude(args.mu ?? EARTH_MU, args.body_radius_m ?? EARTH_RADIUS, args.altitude_m);
-return n == null ? null : { n_rad_s: n }
+      const res = meanMotionFromAltitude(args.altitude_m, args.mu ?? EARTH_MU, args.body_radius_m ?? EARTH_RADIUS)
+      return res == null ? null : { n_rad_s: res.n }
     },
   },
   {
@@ -853,7 +862,7 @@ return n == null ? null : { n_rad_s: n }
   },
     sample: {"area_m2":5,"eta":0.3,"incidence_deg":0,"r_au":1},
     run: (args) => {
-      const p = solarArrayPower(args.area_m2, args.eta, (args.incidence_deg * Math.PI) / 180, args.r_au);
+      const p = solarArrayPower(args.area_m2, args.eta, args.incidence_deg, args.r_au);
 return p == null ? null : { p_w: p }
     },
   },
@@ -948,7 +957,7 @@ return { beta_kg_m2: beta, dv_per_rev_m_s: dv }
   },
     sample: {"altitude_m":400000},
     run: (args) => {
-      const s = horizonSlantRange(args.body_radius_m ?? EARTH_RADIUS, args.altitude_m); return s == null ? null : { slant_m: s }
+      const s = horizonSlantRange(args.altitude_m, args.body_radius_m ?? EARTH_RADIUS); return s == null ? null : { slant_m: s }
     },
   },
   {
@@ -991,7 +1000,7 @@ return { beta_kg_m2: beta, dv_per_rev_m_s: dv }
   },
     sample: {"diameter_m":6378137,"distance_m":6778137},
     run: (args) => {
-      const a = angularDiameter(args.diameter_m, args.distance_m); return a == null ? null : { angle_rad: a }
+      const a = angularDiameter(args.diameter_m / 2, args.distance_m); return a == null ? null : { angle_rad: a }
     },
   },
   {
@@ -1003,7 +1012,9 @@ return { beta_kg_m2: beta, dv_per_rev_m_s: dv }
   },
     sample: {"wavelength_m":5e-7,"diameter_m":0.3},
     run: (args) => {
-      const r = diffractionResolution(args.wavelength_m, args.diameter_m); return r == null ? null : { theta_rad: r }
+      if (!(args.wavelength_m > 0)) return null
+      const r = diffractionResolution(C / args.wavelength_m, args.diameter_m)
+      return r == null ? null : { theta_rad: r.thetaRad }
     },
   },
   {
@@ -1125,7 +1136,12 @@ return { beta_kg_m2: beta, dv_per_rev_m_s: dv }
   },
     sample: {"a_m":6778137,"beta_deg":20},
     run: (args) => {
-      return eclipseWithBeta(args.mu ?? EARTH_MU, args.a_m, args.body_radius_m ?? EARTH_RADIUS, (args.beta_deg * Math.PI) / 180)
+      const mu = args.mu ?? EARTH_MU
+      const a = args.a_m
+      const bodyR = args.body_radius_m ?? EARTH_RADIUS
+      const period = orbitalPeriod(mu, a)
+      const eclipseS = eclipseWithBeta(a, bodyR, (args.beta_deg * Math.PI) / 180, period)
+      return eclipseS == null ? null : { eclipse_s: eclipseS }
     },
   },
   {
@@ -1217,7 +1233,7 @@ return { beta_kg_m2: beta, dv_per_rev_m_s: dv }
   },
     sample: {"e":0.1,"E_deg":30},
     run: (args) => {
-      const E = (args.E_deg * Math.PI) / 180; const M = meanAnomalyFromE(args.e, E); return M == null ? null : { M_rad: M }
+      const E = (args.E_deg * Math.PI) / 180; const M = meanAnomalyFromE(E, args.e); return M == null ? null : { M_rad: M }
     },
   },
   {
@@ -1230,7 +1246,7 @@ return { beta_kg_m2: beta, dv_per_rev_m_s: dv }
   },
     sample: {"h_m":400000,"rho0_kg_m3":1.225,"H_m":8500},
     run: (args) => {
-      const rho = exponentialDensity(args.rho0_kg_m3, args.h_m, args.H_m); return rho == null ? null : { rho_kg_m3: rho }
+      const rho = exponentialDensity(args.h_m, args.rho0_kg_m3, args.H_m); return rho == null ? null : { rho_kg_m3: rho }
     },
   },
   {
@@ -1429,7 +1445,7 @@ return d == null ? null : { distance_m: d }
   },
     sample: {"r1_m":149600000000,"r2_m":227900000000},
     run: (args) => {
-      return heliocentricHohmann(args.mu_sun ?? 1.3271244e20, args.r1_m, args.r2_m)
+      return heliocentricHohmann(args.r1_m, args.r2_m, args.mu_sun ?? SUN_MU)
     },
   },
   {
@@ -1637,7 +1653,7 @@ return { cstar_m_m_s: cm, cstar_ideal_m_s: ci, eta: cm != null && ci ? cm / ci :
   },
     sample: {"dt_s":0.07,"clock_bias_s":0.000001},
     run: (args) => {
-      return { rho_m: gnssPseudorange(args.dt_s, args.clock_bias_s ?? 0) }
+      return { rho_m: gnssPseudorange(0, args.dt_s, args.clock_bias_s ?? 0) }
     },
   },
   {
@@ -1659,8 +1675,23 @@ return { cstar_m_m_s: cm, cstar_ideal_m_s: ci, eta: cm != null && ci ? cm / ci :
   },
     sample: {"ux1":0.5,"uy1":0.5,"uz1":0.7,"ux2":-0.3,"uy2":0.4,"uz2":0.86,"ux3":0.2,"uy3":-0.6,"uz3":0.77,"ux4":-0.4,"uy4":-0.2,"uz4":0.89},
     run: (args) => {
-      return gnssDopFromUnitVectors([
-      [args.ux1,args.uy1,args.uz1],[args.ux2,args.uy2,args.uz2],[args.ux3,args.uy3,args.uz3],[args.ux4,args.uy4,args.uz4]])
+      const dop = gnssDopFromUnitVectors([
+        [args.ux1, args.uy1, args.uz1],
+        [args.ux2, args.uy2, args.uz2],
+        [args.ux3, args.uy3, args.uz3],
+        [args.ux4, args.uy4, args.uz4],
+      ])
+      if (!dop) return null
+      return {
+        ...dop,
+        convention: {
+          frame: 'local East, North, Up',
+          time_scale: 'none',
+          element_kind: 'not orbital elements',
+          angle_unit: 'dimensionless DOP',
+          validity: 'Each triple is a line of sight in receiver ENU. H rows are the normalized direction plus a clock column of 1. DOP values are square roots of sums of the diagonal of (H^T H)^{-1}. Rank-deficient geometry returns null.',
+        },
+      }
     },
   },
   {
@@ -1772,7 +1803,7 @@ return { gamma: g, vswr: v, return_loss_db: rl }
   },
     sample: {"k":0.01,"rate_mm_h":10,"alpha":1,"path_km":5},
     run: (args) => {
-      const a = rainAttenuationDb(args.k, args.rate_mm_h, args.alpha, args.path_km); return a == null ? null : { atten_db: a }
+      const a = rainAttenuationDb(args.rate_mm_h, args.path_km, args.k, args.alpha); return a == null ? null : { atten_db: a }
     },
   },
   {
@@ -1784,7 +1815,10 @@ return { gamma: g, vswr: v, return_loss_db: rl }
   },
     sample: {"cn0_dbhz":55,"rb_bps":1000000},
     run: (args) => {
-      const e = ebN0FromCn0(args.cn0_dbhz, args.rb_bps); return e == null ? null : { eb_n0_db: e }
+      const cn0Hz = 10 ** (args.cn0_dbhz / 10)
+      const eb = ebN0FromCn0(cn0Hz, args.rb_bps)
+      if (eb == null || !(eb > 0)) return null
+      return { eb_n0_db: 10 * Math.log10(eb) }
     },
   },
   {
@@ -2116,7 +2150,7 @@ return w == null ? null : { swath_m: w }
   },
     sample: {"eta":0.9,"area_m2":100,"mass_kg":10,"flux_w_m2":1361},
     run: (args) => {
-      const a = solarSailAccel(args.eta, args.flux_w_m2 ?? 1361, args.area_m2, args.mass_kg); return a == null ? null : { a_m_s2: a }
+      const a = solarSailAccel(args.flux_w_m2 ?? 1361, args.area_m2, args.mass_kg, args.eta); return a == null ? null : { a_m_s2: a }
     },
   },
   {
@@ -2177,7 +2211,14 @@ return w == null ? null : { swath_m: w }
   },
     sample: {"h_m":400000,"beta_kg_m2":100,"rho_kg_m3":2e-12,"v_m_s":7660,"scale_h_m":50000},
     run: (args) => {
-      const t = orbitLifetimeRough(args.h_m, args.beta_kg_m2, args.rho_kg_m3, args.v_m_s, args.scale_h_m); return t == null ? null : { t_s: t }
+      const t = orbitLifetimeRough(
+        args.rho_kg_m3,
+        args.beta_kg_m2,
+        args.v_m_s,
+        args.scale_h_m ?? 50_000,
+        EARTH_RADIUS + args.h_m,
+      )
+      return t == null ? null : { t_s: t }
     },
   },
   {
@@ -2414,7 +2455,7 @@ return w == null ? null : { swath_m: w }
   },
     sample: {"e":0.1,"E_rad":0.5},
     run: (args) => {
-      const M = meanAnomalyFromE(args.e, args.E_rad); return M == null ? null : { M_rad: M }
+      const M = meanAnomalyFromE(args.E_rad, args.e); return M == null ? null : { M_rad: M }
     },
   },
   {
@@ -2452,7 +2493,7 @@ return w == null ? null : { swath_m: w }
   },
     sample: {"rho0":1.225,"h_m":400000,"H_m":8500},
     run: (args) => {
-      const rho = exponentialDensity(args.rho0, args.h_m, args.H_m); return rho == null ? null : { rho_kg_m3: rho }
+      const rho = exponentialDensity(args.h_m, args.rho0, args.H_m); return rho == null ? null : { rho_kg_m3: rho }
     },
   },
   {
@@ -2539,7 +2580,7 @@ return w == null ? null : { swath_m: w }
   },
     sample: {"r_au":1.5},
     run: (args) => {
-      const f = solarFluxAtDistance(args.r_au, args.s0); return f == null ? null : { flux_w_m2: f }
+      const f = solarFluxAtDistance(args.r_au * AU, args.s0 ?? 1361); return f == null ? null : { flux_w_m2: f }
     },
   },
   {
@@ -2899,6 +2940,16 @@ return w == null ? null : { swath_m: w }
       return {
         v1x: sol.v1[0], v1y: sol.v1[1], v1z: sol.v1[2], v1_m_s: vnorm(sol.v1),
         v2x: sol.v2[0], v2y: sol.v2[1], v2z: sol.v2[2], v2_m_s: vnorm(sol.v2),
+        way,
+        converged: true,
+        dnu_rad: sol.dnu,
+        convention: {
+          frame: 'two-body inertial, r1 on +x, transfer in the xy plane',
+          time_scale: 'TOF is a duration, not a civil time scale',
+          element_kind: 'single-revolution Lambert terminal velocities',
+          angle_unit: 'rad',
+          validity: 'Short way keeps the transfer angle at or below pi. Long way uses the supplement. Null means the iteration did not converge or the TOF residual was rejected.',
+        },
       }
     },
   },
@@ -2957,7 +3008,18 @@ return w == null ? null : { swath_m: w }
       const n = (nRevDay / 86400) * (2 * Math.PI)
       const period = 86400 / nRevDay
       if (!Number.isFinite(n) || n <= 0 || !Number.isFinite(period) || period <= 0) return null
-      return { n_rad_s: n, period_s: period, note: 'Use UI SGP4 tool for full TLE propagation' }
+      return {
+        n_rad_s: n,
+        period_s: period,
+        note: 'Use UI SGP4 tool for full TLE propagation',
+        convention: {
+          frame: 'none',
+          time_scale: 'none',
+          element_kind: 'Kepler circular mean motion from n_rev_day, not SGP4 and not TEME',
+          angle_unit: 'rad',
+          validity: 'The page position and velocity are TEME. This payload is only mean motion n and period.',
+        },
+      }
     },
   },
   {
@@ -2973,7 +3035,18 @@ return w == null ? null : { swath_m: w }
       const el = elevationFromRangeHeight(args.ground_range_m, args.delta_h_m)
       const slant = slantRange(args.ground_range_m, args.delta_h_m)
       if (el == null || slant == null || !Number.isFinite(el) || !Number.isFinite(slant)) return null
-      return { elev_rad: el, slant_m: slant, note: 'Educational; full TLE look-angles in UI' }
+      return {
+        elev_rad: el,
+        slant_m: slant,
+        note: 'Educational; full TLE look-angles in UI',
+        convention: {
+          frame: 'vertical plane of ground range and height difference, not SEZ and not TEME',
+          time_scale: 'none',
+          element_kind: 'elevation from a right triangle',
+          angle_unit: 'rad',
+          validity: 'Azimuth is not computed. The page uses WGS-84 ECEF and compass azimuth in [0, 2pi).',
+        },
+      }
     },
   },
   {
