@@ -8,11 +8,28 @@ import { passPredictSnippets } from './pass-predict'
 import { wrapAsRunnable } from './live-values'
 
 const SYSTEMS_LANGS = ['c', 'cpp', 'rust', 'zig', 'fortran'] as const
+const PROXY_LANGS = ['matlab', 'julia', 'latex'] as const
 
 describe('sgp4 snippet labels', () => {
   it('sgp4 tool omits systems languages from the UI source of truth', () => {
     for (const lang of SYSTEMS_LANGS) {
       expect(sgp4Snippets.code[lang]).toBeUndefined()
+    }
+  })
+
+  it('omits Kepler mean-motion proxies that would inherit the SGP4 TEME claim', () => {
+    for (const lang of PROXY_LANGS) {
+      expect(sgp4Snippets.code[lang]).toBeUndefined()
+    }
+    expect(sgp4Snippets.assumptions).toContain('TEME')
+    expect(sgp4Snippets.assumptions).toContain('UT1')
+    expect(sgp4Snippets.assumptions).not.toContain('TEME-like')
+    for (const lang of ['javascript', 'typescript', 'python'] as const) {
+      const src = sgp4Snippets.code[lang]
+      expect(src).toBeTruthy()
+      expect(src).toContain('TEME')
+      expect(src).toContain('UT1')
+      expect(src).not.toMatch(/n_rev_day/)
     }
   })
 
