@@ -563,7 +563,7 @@ return mdot == null ? null : { mdot_kg_s: mdot }
   },
   {
     name: "water_loop",
-    description: "Crew water balance: demand, recovery, loop closure and resupply mass (kg per crew-day rates; BVAD ISS defaults).",
+    description: "Crew water balance: demand, recovery, loop closure and resupply mass (kg per crew-day rates; BVAD ISS defaults). Omitted reserve is 0.1, the page default.",
     inputSchema: {
     crew: z.number().positive(),
     days: z.number().positive(),
@@ -578,7 +578,7 @@ return mdot == null ? null : { mdot_kg_s: mdot }
     eta_hygiene: z.number().min(0).max(1).optional(),
     reserve: z.number().nonnegative().optional(),
   },
-    sample: {"crew":4,"days":180},
+    sample: {"crew":4,"days":180,"reserve":0.1},
     run: (args) => {
       return waterLoopBudget({
         potableKg: args.potable_kg ?? BVAD_ISS_WATER.potableKg,
@@ -592,7 +592,7 @@ return mdot == null ? null : { mdot_kg_s: mdot }
         etaHygiene: args.eta_hygiene ?? 0,
         crew: args.crew,
         durationS: args.days * 86400,
-        reserveFrac: args.reserve ?? 0,
+        reserveFrac: args.reserve ?? 0.1,
       })
     },
   },
