@@ -17,6 +17,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Aligned MCP tool arguments with the library and named the frame on SGP4, Lambert, look angles, and GNSS DOP.
 - Stripped TypeScript tuple annotations so snippet exports run on plain JavaScript.
 
+### Changed
+
+- Required a formula change to update every language export for that tool.
+
 ## [1.0.0] - TODO
 
 ### Added

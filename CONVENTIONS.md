@@ -67,6 +67,41 @@ Summary:
 - Register in `src/lib/snippets/index.ts` (via wave re-exports or direct import)
 - Library tools declare `deps` with URLs
 
+### Every language moves with the formula
+
+A change to a tool's formula, units, argument order, frame, time scale,
+validity condition, or result names updates **every** language body for that
+`formulaId` in the same change. The set is `CodeLang` in
+`src/lib/snippets/types.ts`.
+
+Do not edit one language and leave the others on the old formula. Do not
+ship a different formula in another language under the same assumptions.
+
+A language that cannot honestly implement the formula is omitted on purpose.
+The module says why, and a test locks the omission. SGP4 is the current
+case: JavaScript, TypeScript, and Python call satellite.js / python-sgp4.
+C, C++, Rust, Zig, Fortran, MATLAB, Julia, and LaTeX are omitted because a
+Kepler mean-motion proxy is not SGP4 and must not inherit a TEME claim.
+
+Before the change is done:
+
+1. Every shipped language for that `formulaId` has a body, or the omission
+   is named by a test.
+2. Run the snippet verifier on each touched tool that has expected values:
+
+```bash
+npx tsx scripts/verify-snippets.ts --require-all \
+  --tools=<formulaId> \
+  --langs=c,cpp,rust,zig,python,javascript,typescript,matlab,julia,fortran,latex
+```
+
+   A `skip-*` is not a pass. `--require-all` fails the run when a shipped
+   language was not executed.
+3. A library-backed snippet the numeric matrix cannot execute (SGP4) has a
+   test that runs the rendered source and compares it to `src/lib/physics`.
+4. LaTeX display math is part of the set. Update it when the governing
+   equation changes. The verifier compiles it when a TeX engine is available.
+
 ---
 
 ## 5. Catalog & data consistency
@@ -96,6 +131,7 @@ When adding or renaming a tool:
 |---------|---------|
 | `npm run type-check` | TypeScript |
 | `npm test` | Vitest (physics, snippets, layout, locale numbers, …) |
+| `npx tsx scripts/verify-snippets.ts --require-all --tools=<id>` | Execute every language export you changed and compare it to physics |
 | `npm run godbolt:matrix` | Optional pure-SI compile smoke (py/js/c) |
 | `npm run godbolt:matrix:all` | Full Godbolt matrix |
 | `npm run mcp:smoke` / `mcp:smoke:http` | MCP smoke |
@@ -105,6 +141,8 @@ When adding or renaming a tool:
 - New physics: add golden / unit tests under `src/lib/physics/*.test.ts` or `golden/`
 - New locale number / liveValues behavior: unit tests
 - Snippet ports: parity / liveValues tests when free-var or wrap changes
+- A formula or export change updates every language body for that tool, then
+  the verifier above (or the SGP4 execution test) is run on those bodies
 - Do not land with failing `type-check` or `npm test`
 
 ---
@@ -161,6 +199,9 @@ After deploy, verify:
 - [ ] New tool → catalog + ToolRenderer + snippets + sitemap + `llms:gen`  
 - [ ] Physics pure SI; no React in `lib/physics`  
 - [ ] Snippets: all langs, no Rust wrapper shims  
+- [ ] Formula or export change: every language body for that tool updated, or an omission locked by a test  
+- [ ] Verifier `--require-all` run on every changed tool that has expected values, all 11 langs  
+- [ ] Library-backed exports (SGP4) executed against `src/lib/physics`  
 - [ ] Docs touched if conventions / public indexes change  
 - [ ] No hard-coded UI copy left in the change set  
 

@@ -33,7 +33,7 @@ React 19 + Vite + TypeScript + Tailwind v4 · react-router · i18next · pure SI
 2. New i18n key → update **all** locale files (EN first).
 3. Shared UI only in `components/shared/`: tools use `ToolShell` + field/result components.
 4. Pure physics in `lib/physics/`: no React.
-5. Snippets: idiomatic all langs; no Rust free-function shims (`abs_f`, …).
+5. Snippets: idiomatic all langs. A formula change updates every language body for that tool in the same change (CONVENTIONS §4). No Rust free-function shims (`abs_f`, …).
 6. Theme tokens only: no raw hex in components.
 7. After catalog/URL changes: `public/sitemap.xml` + `npm run llms:gen`.
 8. Keep tests green: `npm run type-check` && `npm test`.

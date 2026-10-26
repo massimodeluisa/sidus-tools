@@ -59,6 +59,9 @@ npm run dev
 ```bash
 npm run type-check
 npm test
+# formula or export change: every language for that tool (CONVENTIONS §4)
+npx tsx scripts/verify-snippets.ts --require-all --tools=<formulaId> \
+  --langs=c,cpp,rust,zig,python,javascript,typescript,matlab,julia,fortran,latex
 # optional for snippet / systems-lang work:
 npm run godbolt:matrix
 ```
