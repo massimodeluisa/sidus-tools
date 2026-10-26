@@ -27,8 +27,31 @@ function program(lang: CodeLang, bag: typeof BAD): string {
 function capture(cmd: string, args: string[], cwd: string): string {
   const run = spawnSync(cmd, args, { cwd, encoding: 'utf8', timeout: 120_000 })
   const out = `${run.stdout ?? ''}\n${run.stderr ?? ''}`
-  if (run.status !== 0) throw new Error(`${cmd} exited ${run.status}\n${out}`)
+  if (run.status !== 0) {
+    const why = run.error ? ` ${run.error.message}` : ''
+    const sig = run.signal ? ` signal ${run.signal}` : ''
+    throw new Error(`${cmd} exited ${run.status}${sig}${why}\n${out}`)
+  }
   return out
+}
+
+/** Runner for each language. test.yml has no zig, octave, julia, or gfortran; snippets.yml is that compile gate. */
+const COMPILER: Partial<Record<CodeLang, string>> = {
+  c: 'cc',
+  cpp: 'c++',
+  rust: 'rustc',
+  zig: 'zig',
+  python: 'python3',
+  javascript: 'node',
+  typescript: 'node',
+  matlab: 'octave',
+  julia: 'julia',
+  fortran: 'gfortran',
+}
+
+function compilerMissing(cmd: string): boolean {
+  const run = spawnSync(cmd, ['--version'], { stdio: 'ignore' })
+  return (run.error as NodeJS.ErrnoException | undefined)?.code === 'ENOENT'
 }
 
 function readE(output: string): number {
@@ -116,10 +139,18 @@ describe('frozen orbit periapsis', () => {
 
   it('every executable export matches the helper, including the refusal', () => {
     const want = frozenEccentricityJ2J3(OK.a, OK.inc)!
+    const ran: CodeLang[] = []
     for (const { id: lang } of CODE_LANGS) {
       if (lang === 'latex') continue
+      const cmd = COMPILER[lang]
+      if (!cmd || compilerMissing(cmd)) continue
+      ran.push(lang)
       expect(runExport(lang, OK), lang).toBeCloseTo(want, 8)
       expect(Number.isFinite(runExport(lang, BAD)), lang).toBe(false)
+    }
+    // The GitHub test image has these. A skip of every language must not look like a pass.
+    for (const lang of ['c', 'cpp', 'rust', 'python', 'javascript', 'typescript'] as const) {
+      expect(ran, lang).toContain(lang)
     }
   }, 180_000)
 })

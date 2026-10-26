@@ -66,11 +66,22 @@ function evalPython(body: string, los: Los): Dop {
   }
 }
 
-function expectDop(got: Dop, want: Dop) {
-  expect(got.gdop).toBeCloseTo(want.gdop, 9)
-  expect(got.pdop).toBeCloseTo(want.pdop, 9)
-  expect(got.hdop).toBeCloseTo(want.hdop, 9)
-  expect(got.vdop).toBeCloseTo(want.vdop, 9)
+function expectDop(got: Dop, want: Dop, relTol?: number) {
+  for (const key of ['gdop', 'pdop', 'hdop', 'vdop'] as const) {
+    if (relTol === undefined) {
+      expect(got[key], key).toBeCloseTo(want[key], 9)
+      continue
+    }
+    /**
+     * Digit counts in toBeCloseTo are absolute. Verifier-bag GDOP is ~484, so
+     * digits 9 only allows 5e-10. Linux libm and macOS libm differ by ~1e-8
+     * there (~2e-11 relative), inside the snippet verifier's 1e-9 relative gate.
+     */
+    const wantN = want[key]
+    const diff = Math.abs(got[key] - wantN)
+    const ok = Math.abs(wantN) < 1e-12 ? diff <= 1e-12 : diff / Math.abs(wantN) <= relTol
+    expect(ok, `${key}: ${got[key]} vs ${wantN}`).toBe(true)
+  }
 }
 
 function expectNonFinite(got: Dop) {
@@ -119,9 +130,9 @@ describe('GNSS DOP exports (#61)', () => {
   it('python matches the physics function when python3 is installed', () => {
     if (!pythonReady()) return
     const body = gnssGeometryGdopSnippets.code.python!
-    expectDop(evalPython(body, PAGE_DEFAULTS), page!)
-    expectDop(evalPython(body, VERIFIER_BAG), bag!)
-    expectDop(evalPython(body, TETRAHEDRON), tetra!)
+    expectDop(evalPython(body, PAGE_DEFAULTS), page!, 1e-9)
+    expectDop(evalPython(body, VERIFIER_BAG), bag!, 1e-9)
+    expectDop(evalPython(body, TETRAHEDRON), tetra!, 1e-9)
     expectNonFinite(evalPython(body, REPEATED))
   })
 })
