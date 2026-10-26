@@ -23566,6 +23566,7 @@ function frozenEccentricityJ2J3(a, iRad, j22 = EARTH_J2, j32 = EARTH_J3, bodyR =
   if (!(Math.abs(j22) > 0)) return null;
   const e = -(j32 / (2 * j22) * (bodyR / a) * Math.sin(iRad));
   if (!Number.isFinite(e) || e <= 0 || e >= 1) return null;
+  if (!(a * (1 - e) > bodyR)) return null;
   return e;
 }
 function thrustToWeight(force, mass, g0 = G0) {
@@ -26937,7 +26938,7 @@ var MCP_TOOL_DEFS = [
   },
   {
     name: "frozen_orbit",
-    description: "J2/J3 frozen eccentricity.",
+    description: "J2/J3 frozen eccentricity. Null when periapsis a(1-e) is not outside the body.",
     inputSchema: {
       a_m: number2(),
       i_rad: number2()

@@ -2640,7 +2640,7 @@ return w == null ? null : { swath_m: w }
   },
   {
     name: "frozen_orbit",
-    description: "J2/J3 frozen eccentricity.",
+    description: "J2/J3 frozen eccentricity. Null when periapsis a(1-e) is not outside the body.",
     inputSchema: {
       a_m: z.number(),
       i_rad: z.number(),
