@@ -23,6 +23,18 @@ const translatedNotes = {
 }
 
 describe('SGP4 limitation note translations', () => {
+  it('states TEME, UTC as UT1, and that the Earth-fixed frame is not ITRF', () => {
+    const note = en.fields.note_sgp4_tle
+    expect(note).toContain('TEME')
+    expect(note).toContain('not a generic ECI')
+    expect(note).toContain('UTC as UT1')
+    expect(note).toContain('ΔUT1 is not applied')
+    expect(note).toContain('not ITRF')
+    expect(en.fields.r_eci).toBe('r TEME')
+    expect(en.fields.title_sgp4_trail).not.toContain('ECI')
+    expect(en.fields.subtitle_sgp4_trail.startsWith('TEME ·')).toBe(true)
+  })
+
   it.each(Object.entries(translatedNotes))(
     '%s translates the note and retains the scientific acronyms',
     (_locale, note) => {
@@ -30,6 +42,10 @@ describe('SGP4 limitation note translations', () => {
       expect(note).toContain('TLE')
       expect(note).toContain('TEME')
       expect(note).toContain('EOP')
+      expect(note).toContain('UT1')
+      expect(note).toContain('ΔUT1')
+      expect(note).toContain('ITRF')
+      expect(note).toContain('PEF')
     },
   )
 })

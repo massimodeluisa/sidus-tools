@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 `1.0.0` matches `package.json` and the MCP `serverInfo.version` in `mcp/create-server.ts`. The date below is TODO until the tag is created. This file does not create that tag.
 
+## [Unreleased]
+
+### Fixed
+
+- Labeled the SGP4 position TEME and stated that UTC is used as UT1.
+
 ## [1.0.0] - TODO
 
 ### Added
