@@ -334,3 +334,110 @@ export function atmosphereFlags(atm: CabinAtmosphere): string[] {
   if (flags.length === 0) flags.push('flag_within_bands')
   return flags
 }
+
+/**
+ * Water mass electrolyzed per kg of O₂ generated: 2 H₂O → 2 H₂ + O₂ [kg/kg] (≈ 1.126).
+ * The H₂ leaves the water loop unless a Sabatier reactor returns some of it as water.
+ */
+export const WATER_PER_O2_ELECTROLYSIS = (2 * M_H2O) / M_O2
+
+/**
+ * ISS-column steady-state defaults [kg per crewmember-day], NASA/TP-2015-218570 Rev2
+ * (Life Support BVAD, Feb 2022) Tables 4-20 / 4-21. Educational planning values.
+ */
+export const BVAD_ISS_WATER = {
+  /** Drinking 2.00 + food rehydration 0.50 (Table 4-20, from NASA HIDH 2014) */
+  potableKg: 2.5,
+  /** Personal hygiene (Table 4-20) */
+  hygieneKg: 0.4,
+  /** Urinal flush (Tables 4-20 / 4-21) */
+  flushKg: 0.3,
+  /** Urine (Table 4-21) */
+  urineKg: 1.2,
+  /** Crew latent humidity condensate (Table 4-21) */
+  condensateKg: 2.27,
+} as const
+
+/** US-segment UPA distillate recovery from urine ≈ 85% (BVAD Rev2 §4.3.3, Carter et al. 2016). */
+export const ISS_UPA_RECOVERY = 0.85
+
+export type WaterLoopInputs = {
+  /** Potable water consumed (drink + food rehydration) [kg/crew-day] */
+  potableKg: number
+  /** Hygiene water [kg/crew-day] */
+  hygieneKg: number
+  /** Urinal flush water [kg/crew-day] */
+  flushKg: number
+  /** O₂ made by water electrolysis [kg/crew-day]; 0 when O₂ is shipped as gas */
+  o2Kg: number
+  /** Urine water produced [kg/crew-day] */
+  urineKg: number
+  /** Humidity condensate collected (respiration + perspiration) [kg/crew-day] */
+  condensateKg: number
+  /** Recovery fractions 0…1 for urine (+flush), condensate, hygiene greywater */
+  etaUrine: number
+  etaCondensate: number
+  etaHygiene: number
+  crew: number
+  /** Mission duration [s] */
+  durationS: number
+  /** Reserve margin on shipped water (0.1 = +10%) */
+  reserveFrac: number
+}
+
+export type WaterLoopBudget = {
+  /** Total water drawn from the loop [kg/crew-day] incl. electrolysis feed */
+  demandKg: number
+  /** Electrolysis feed water [kg/crew-day] */
+  electrolysisKg: number
+  /** Water returned by processors [kg/crew-day] */
+  recoveredKg: number
+  /** Net water that must be supplied [kg/crew-day] (0 if the loop is in surplus) */
+  makeupKg: number
+  /** Recovered water exceeding demand [kg/crew-day] */
+  surplusKg: number
+  /** Loop closure = min(1, recovered / demand) */
+  closure: number
+  /** Supplied water for the whole mission incl. reserve [kg] */
+  missionKg: number
+  /** Same mission with no recycling, incl. reserve [kg] */
+  openLoopKg: number
+  /** Supply mass avoided by recycling [kg] */
+  savedKg: number
+}
+
+/**
+ * Steady-state crew water balance and resupply (makeup) mass.
+ * demand    = potable + hygiene + flush + o2·(2 M_H₂O / M_O₂)
+ * recovered = η_u (urine + flush) + η_c condensate + η_h hygiene
+ * makeup    = max(0, demand − recovered); mission = makeup · crew · days · (1 + reserve)
+ */
+export function waterLoopBudget(i: WaterLoopInputs): WaterLoopBudget | null {
+  const masses = [i.potableKg, i.hygieneKg, i.flushKg, i.o2Kg, i.urineKg, i.condensateKg]
+  const etas = [i.etaUrine, i.etaCondensate, i.etaHygiene]
+  if (![...masses, ...etas, i.crew, i.durationS, i.reserveFrac].every(Number.isFinite)) return null
+  if (masses.some((m) => m < 0) || etas.some((e) => e < 0 || e > 1)) return null
+  if (!(i.crew > 0) || !(i.durationS > 0) || i.reserveFrac < 0) return null
+  const electrolysisKg = i.o2Kg * WATER_PER_O2_ELECTROLYSIS
+  const demandKg = i.potableKg + i.hygieneKg + i.flushKg + electrolysisKg
+  if (!(demandKg > 0)) return null
+  const recoveredKg =
+    i.etaUrine * (i.urineKg + i.flushKg) +
+    i.etaCondensate * i.condensateKg +
+    i.etaHygiene * i.hygieneKg
+  const makeupKg = Math.max(0, demandKg - recoveredKg)
+  const crewDays = i.crew * (i.durationS / 86400) * (1 + i.reserveFrac)
+  const missionKg = makeupKg * crewDays
+  const openLoopKg = demandKg * crewDays
+  return {
+    demandKg,
+    electrolysisKg,
+    recoveredKg,
+    makeupKg,
+    surplusKg: Math.max(0, recoveredKg - demandKg),
+    closure: Math.min(1, recoveredKg / demandKg),
+    missionKg,
+    openLoopKg,
+    savedKg: openLoopKg - missionKg,
+  }
+}

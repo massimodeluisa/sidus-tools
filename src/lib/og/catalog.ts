@@ -155,6 +155,11 @@ export const TOOL_OG: Record<string, ToolOgMeta> = {
     accent: '#a65d5d',
     blurb: 'Depressurization estimate',
   },
+  'water-loop': {
+    formula: 'm = max(0, ṁ_dem − ṁ_rec) · N · t',
+    accent: '#5d8aa6',
+    blurb: 'Crew water loop resupply',
+  },
   'thermal-loop': {
     formula: 'Q̇ = ṁ c_p ΔT',
     accent: '#b8a55a',

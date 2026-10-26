@@ -27,6 +27,7 @@ import { phasingSnippets } from './phasing'
 import { metabolicSnippets } from './metabolic-load'
 import { cabinAtmosphereSnippets } from './cabin-atmosphere'
 import { liohSnippets } from './lioh-scrubber'
+import { waterLoopSnippets } from './water-loop'
 import { cabinLeakSnippets } from './cabin-leak'
 import { thermalLoopSnippets } from './thermal-loop'
 import {
@@ -215,6 +216,7 @@ const MAP: Record<string, FormulaSnippet> = {
   [metabolicSnippets.formulaId]: metabolicSnippets,
   [cabinAtmosphereSnippets.formulaId]: cabinAtmosphereSnippets,
   [liohSnippets.formulaId]: liohSnippets,
+  [waterLoopSnippets.formulaId]: waterLoopSnippets,
   [cabinLeakSnippets.formulaId]: cabinLeakSnippets,
   [thermalLoopSnippets.formulaId]: thermalLoopSnippets,
   [customBodySnippets.formulaId]: customBodySnippets,
