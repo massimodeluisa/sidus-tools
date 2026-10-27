@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { numParam, strParam } from './use-tool-search-params'
+import { numParam, strParam, constrainStored } from './use-tool-search-params'
 
 describe('param readers treat bogus literals as absent', () => {
   /**
@@ -36,5 +36,34 @@ describe('param readers treat bogus literals as absent', () => {
      * the allow-list would still be the thing that decides.
      */
     expect(strParam('none', ['none', 'sun']).parse('none')).toBe('none')
+  })
+})
+
+describe('constrainStored', () => {
+  it('clamps numbers per declared bounds', () => {
+    const p = numParam(400, { min: 0 })
+    expect(constrainStored(p, -100)).toBe(0)
+    expect(constrainStored(p, 10)).toBe(10)
+    expect(constrainStored(p, NaN)).toBe(400)
+    expect(constrainStored(p, Infinity)).toBe(400)
+  })
+
+  it('clamps to both bounds', () => {
+    const p = numParam(5, { min: 1, max: 20 })
+    expect(constrainStored(p, 100)).toBe(20)
+    expect(constrainStored(p, 0)).toBe(1)
+    expect(constrainStored(p, 15)).toBe(15)
+    expect(constrainStored(p, 1)).toBe(1)
+    expect(constrainStored(p, 20)).toBe(20)
+  })
+
+  it('leaves unbounded numbers alone', () => {
+    const p = numParam(400)
+    expect(constrainStored(p, -12.5)).toBe(-12.5)
+  })
+
+  it('leaves string fields unchanged', () => {
+    const s = strParam('x')
+    expect(constrainStored(s, 'y')).toBe('y')
   })
 })

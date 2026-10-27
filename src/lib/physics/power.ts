@@ -5,7 +5,9 @@ export const SOLAR_CONSTANT_1AU = 1361
 
 /**
  * Solar array electrical power:
- * P = S₀ η A cosθ (1 AU / r)²   (θ = sun incidence from normal; cosθ≥0)
+ * P = S₀ η A cosθ (1 AU / r)²
+ * θ is sun incidence from the array normal, only in [0, 90] deg.
+ * 90° is edge-on and returns zero power.
  */
 export function solarArrayPower(
   areaM2: number,
@@ -15,8 +17,10 @@ export function solarArrayPower(
   s0 = SOLAR_CONSTANT_1AU,
 ): number | null {
   if (!(areaM2 > 0) || !(eta > 0) || !(eta <= 1) || !(rAu > 0)) return null
+  if (!Number.isFinite(incidenceDeg) || incidenceDeg < 0 || incidenceDeg > 90) return null
+  if (incidenceDeg >= 90) return 0
   const c = Math.cos((incidenceDeg * Math.PI) / 180)
-  if (c <= 0) return 0
+  if (!(c > 0)) return 0
   return (s0 * eta * areaM2 * c) / (rAu * rAu)
 }
 
@@ -159,6 +163,22 @@ export function semiMajorFromPeriod(mu: number, periodS: number): number | null 
 }
 
 /**
+ * Exterior semi-major axis from period: null when the circular radius falls
+ * inside the selected body (a < R − 1e-3 m); otherwise the same inversion.
+ */
+export function exteriorSemiMajorFromPeriod(
+  mu: number,
+  periodS: number,
+  bodyRadiusM: number,
+): number | null {
+  if (!(mu > 0) || !(periodS > 0) || !(bodyRadiusM > 0)) return null
+  const a = semiMajorFromPeriod(mu, periodS)
+  if (a == null) return null
+  if (a < bodyRadiusM - 1e-3) return null
+  return a
+}
+
+/**
  * Ground-track longitude shift per orbit (Earth, no J2):
  * ΔL ≈ −ω_earth · T  [rad east negative for prograde]
  */
@@ -176,6 +196,7 @@ export function groundTrackShiftPerOrbit(
  * Simple β-angle eclipse fraction correction (circular):
  * f ≈ (1/π) acos( √(1−(R/a)²) / cos β ) for |β| small enough; if cosβ small eclipse shortens.
  * Educational: eclipse duration ≈ T/π · acos( √(h(h+2R))/( (R+h) cosβ ) ) when argument in range.
+ * β must lie within ±π/2 rad; null outside that domain or for a non-finite β.
  */
 export function eclipseWithBeta(
   a: number,
@@ -183,6 +204,7 @@ export function eclipseWithBeta(
   betaRad: number,
   periodS: number,
 ): number | null {
+  if (!Number.isFinite(betaRad) || Math.abs(betaRad) > Math.PI / 2) return null
   if (!(a > bodyR) || !(periodS > 0)) return null
   const cosb = Math.cos(betaRad)
   if (Math.abs(cosb) < 1e-6) return 0 // high beta → no eclipse often

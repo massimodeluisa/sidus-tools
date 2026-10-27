@@ -14,6 +14,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- Rejected out-of-range inputs for Kepler, GNSS delay, look angles, solar sail, battery depth of discharge, umbra, Hill radius, Edelbaum, GEO drift, and circular-orbit perigee rate.
+- Made exports follow the selected mode for elements, the rocket equation, circularize, plane change, and repeating ground track.
+- Used expm1 and log1p for a tiny delta-v and a near-unity mass ratio.
+- Corrected Neptune GM, Mercury radius, the launch-site boost, porkchop sampling, and pass Doppler.
+- Named the GNSS delay models, porkchop epoch, and flyby MCP sketch, and translated the battery and solar-array labels.
 - Labeled the SGP4 position TEME and stated that UTC is used as UT1.
 - Removed the MATLAB, Julia, and LaTeX Kepler proxies from the SGP4 export.
 - Kept short and long way in Lambert exports and refused a transfer that did not converge.
@@ -21,6 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Aligned MCP tool arguments with the library and named the frame on SGP4, Lambert, look angles, and GNSS DOP.
 - Stripped TypeScript tuple annotations so snippet exports run on plain JavaScript.
 - Rejected a frozen orbit whose periapsis intersects the body.
+- Made snippet exports compile and run under the verifier toolchains.
 
 ### Changed
 

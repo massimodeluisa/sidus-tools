@@ -106,7 +106,7 @@ export const TOOL_OG: Record<string, ToolOgMeta> = {
     blurb: 'Central body constants',
   },
   'launch-azimuth': {
-    formula: 'cos i = cos φ · sin β   ·   v_rot = ω R cos φ',
+    formula: 'cos i = cos φ · sin β   ·   v_rot = ω (R+h) cos φ',
     accent: '#c4a882',
     blurb: 'Range azimuth & Earth boost',
   },
@@ -228,7 +228,7 @@ export const TOOL_OG: Record<string, ToolOgMeta> = {
   'geo-orbit': {
     formula: 'a³ = μ T² / (4π²)',
     accent: '#7a9bb8',
-    blurb: 'Synchronous / GEO radius',
+    blurb: 'Synchronous circular radius',
   },
   'delta-a-burn': {
     formula: 'Δa ≈ 2 a Δv / v',
@@ -478,9 +478,9 @@ export const TOOL_OG: Record<string, ToolOgMeta> = {
     blurb: "Optical Q-factor sketch",
   },
   'gnss-troposphere-delay': {
-    formula: "d_trop ≈ 0.002277 sec z (P + …)  ·  Saastamoinen",
+    formula: "d = 0.002277 sec z [p + (1255/T + 0.05)e - 1.16 tan^2 z]",
     accent: '#a8c5a0',
-    blurb: "Tropospheric delay",
+    blurb: "Saastamoinen 1972 range correction",
   },
   'free-fall-time': {
     formula: "t = √(2h/g) · v = √(2gh)",
@@ -583,9 +583,9 @@ export const TOOL_OG: Record<string, ToolOgMeta> = {
     blurb: "Relativistic clock rate",
   },
   'gnss-ionosphere-klobuchar': {
-    formula: "d_iono ∝ TEC / f² · m(el)",
+    formula: "d = (40.3 TEC / f^2) F, F = 1 + 16(0.53 - E)^3",
     accent: '#c47a5a',
-    blurb: "Klobuchar-class iono delay",
+    blurb: "Supplied-VTEC GPS obliquity delay",
   },
   'optical-gsd': {
     formula: "GSD ≈ h · IFOV",
@@ -613,14 +613,14 @@ export const TOOL_OG: Record<string, ToolOgMeta> = {
     blurb: "CR3BP Jacobi constant",
   },
   'orbit-lifetime-rough': {
-    formula: "t ≈ H β / (ρ v)",
+    formula: "t = H β / (ρ v a)",
     accent: '#c47a5a',
-    blurb: "Rough LEO drag lifetime",
+    blurb: "Local drag timescale, density frozen",
   },
   'geo-drift-rate': {
     formula: "λ̇ ∝ −(a − a_GEO)/a_GEO",
     accent: '#7a9bb8',
-    blurb: "GEO longitude drift rate",
+    blurb: "Linear drift within 10% of GEO",
   },
   'stefan-boltzmann': {
     formula: "P = ε σ A T⁴",

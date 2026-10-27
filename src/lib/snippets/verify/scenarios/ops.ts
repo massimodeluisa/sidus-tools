@@ -122,7 +122,7 @@ export const OPS_SCENARIOS: Record<string, Scenario[]> = {
   'solar-array': [
     {
       name: 'normal-incidence-1au',
-      source: 'well-known solar constant 1361 W/m² at 1 AU; representative ~30% efficient triple-junction cell at normal incidence',
+      source: 'illustrative user-selected efficiency η=0.3 at normal incidence; solar constant 1361 W/m² at 1 AU. Not a named triple-junction cell.',
       bag: { A: 1, eta: 0.3, ang: 0, r_au: 1 },
     },
     {

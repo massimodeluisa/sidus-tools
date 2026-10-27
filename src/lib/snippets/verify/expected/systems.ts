@@ -35,11 +35,10 @@ import {
   metabolicBudget,
   mixtureRatio,
   multiStageDeltaV,
-  propellantMass,
+  propellantForDeltaV,
   rcsDeltaV,
   respiratoryQuotient,
   rocketDeltaV,
-  rocketMassInitial,
   solarSailAccel,
   suttonGravesHeatFlux,
   tankPropellantMass,
@@ -87,6 +86,16 @@ export const SYSTEMS_EXPECTED: Record<string, ExpectedFn> = {
     const out: Record<string, number> = {}
     put(out, ['g0'], G0)
     put(out, ['ve'], exhaustVelocity(isp))
+    if (bag.mode === 'm0') {
+      const mf = num(bag, 'mf')
+      const dv = num(bag, 'dv_si', 'dv')
+      const solved = propellantForDeltaV(isp, dv, mf, G0)
+      if (!solved) return out
+      put(out, ['dv'], dv)
+      put(out, ['prop'], solved.prop)
+      put(out, ['m0_solved'], solved.m0)
+      return out
+    }
     put(out, ['dv'], rocketDeltaV(isp, num(bag, 'm0'), num(bag, 'mf')))
     return out
   },
@@ -153,25 +162,28 @@ export const SYSTEMS_EXPECTED: Record<string, ExpectedFn> = {
   // ─── Propulsion (category === 'propulsion') ────────────────────────────────
 
   'multi-stage': (bag) => {
-    const isp1 = num(bag, 'isp1')
-    const isp2 = num(bag, 'isp2')
-    const isp3 = num(bag, 'isp3')
-    const m01 = num(bag, 'm01')
-    const mf1 = num(bag, 'mf1')
-    const m02 = num(bag, 'm02')
-    const mf2 = num(bag, 'mf2')
-    const m03 = num(bag, 'm03')
-    const mf3 = num(bag, 'mf3')
+    // Only the first n stages are active, exactly as the UI and every code
+    // export gate them; inactive stage inputs are never read. When `stages` is
+    // omitted from a bag, all three stages are assumed (legacy behavior).
+    const raw = bag.stages
+    const n =
+      typeof raw === 'number' && Number.isFinite(raw)
+        ? Math.min(3, Math.max(1, Math.floor(raw)))
+        : 3
     const out: Record<string, number> = {}
-    const res = multiStageDeltaV([
-      { ve: exhaustVelocity(isp1), m0: m01, mf: mf1 },
-      { ve: exhaustVelocity(isp2), m0: m02, mf: mf2 },
-      { ve: exhaustVelocity(isp3), m0: m03, mf: mf3 },
-    ])
+    const active: { ve: number; m0: number; mf: number }[] = []
+    for (let i = 1; i <= n; i++) {
+      active.push({
+        ve: exhaustVelocity(num(bag, `isp${i}`)),
+        m0: num(bag, `m0${i}`),
+        mf: num(bag, `mf${i}`),
+      })
+    }
+    const res = multiStageDeltaV(active)
     if (!res) return out
     put(out, ['dv1'], res.dv[0])
-    put(out, ['dv2'], res.dv[1])
-    put(out, ['dv3'], res.dv[2])
+    put(out, ['dv2'], res.dv[1] ?? 0)
+    put(out, ['dv3'], res.dv[2] ?? 0)
     put(out, ['dv_total'], res.dvTotal)
     return out
   },
@@ -182,9 +194,10 @@ export const SYSTEMS_EXPECTED: Record<string, ExpectedFn> = {
     const isp = num(bag, 'isp')
     const g0 = num(bag, 'g0')
     const out: Record<string, number> = {}
-    const m0 = rocketMassInitial(isp, dv, mf, g0)
-    put(out, ['m0'], m0)
-    put(out, ['prop'], propellantMass(m0, mf))
+    const solved = propellantForDeltaV(isp, dv, mf, g0)
+    if (!solved) return out
+    put(out, ['m0'], solved.m0)
+    put(out, ['prop'], solved.prop)
     return out
   },
 

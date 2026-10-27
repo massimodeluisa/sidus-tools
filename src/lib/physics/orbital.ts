@@ -54,8 +54,25 @@ export function biellipticTransfer(mu: number, r1: number, r2: number, rb: numbe
   return { dv1, dv2, dv3, dvTotal: dv1 + dv2 + dv3, tof, a1, a2 }
 }
 
+/**
+ * Included plane-change angle in `[0, π]`.
+ * Full turns wrap, and the long way around folds back, so the chord
+ * `2 v sin(θ/2)` stays a nonnegative magnitude.
+ */
+export function principalPlaneChangeRad(deltaIRad: number): number {
+  if (!Number.isFinite(deltaIRad)) return NaN
+  const twoPi = 2 * Math.PI
+  let angle = Math.abs(deltaIRad) % twoPi
+  if (angle > Math.PI) angle = twoPi - angle
+  return angle
+}
+
+/** Pure impulsive plane change. `v` is a speed magnitude (finite and nonnegative). */
 export function planeChangeDeltaV(v: number, deltaIRad: number): number {
-  return 2 * v * Math.sin(Math.abs(deltaIRad) / 2)
+  if (!Number.isFinite(v) || v < 0) return NaN
+  const theta = principalPlaneChangeRad(deltaIRad)
+  if (!Number.isFinite(theta)) return NaN
+  return 2 * v * Math.sin(theta / 2)
 }
 
 /**
@@ -70,7 +87,7 @@ export function multiStageDeltaV(
   let total = 0
   for (const s of stages) {
     if (!(s.ve > 0) || !(s.m0 > s.mf) || !(s.mf > 0)) return null
-    const d = s.ve * Math.log(s.m0 / s.mf)
+    const d = s.ve * lnMassRatio(s.m0, s.mf)
     dv.push(d)
     total += d
   }
@@ -99,10 +116,20 @@ export function specificEnergy(mu: number, a: number): number {
   return -mu / (2 * a)
 }
 
+/**
+ * ln(m0/mf). Ratios inside (0.999999, 1.000001) use log1p((m0-mf)/mf),
+ * the stable form of log1p(m0/mf - 1). Wider ratios stay on log(m0/mf).
+ */
+export function lnMassRatio(m0: number, mf: number): number {
+  const ratio = m0 / mf
+  if (ratio < 1.000001 && ratio > 0.999999) return Math.log1p((m0 - mf) / mf)
+  return Math.log(ratio)
+}
+
 /** Tsiolkovsky rocket equation: Δv = Isp · g0 · ln(m0/mf). */
 export function rocketDeltaV(ispS: number, m0: number, mf: number, g0 = 9.80665): number {
   if (!(ispS > 0) || !(m0 > 0) || !(mf > 0) || m0 <= mf) return NaN
-  return ispS * g0 * Math.log(m0 / mf)
+  return ispS * g0 * lnMassRatio(m0, mf)
 }
 
 /** Exhaust velocity from Isp: ve = Isp · g0. */

@@ -13,7 +13,7 @@ export type Body = {
 
 export const BODIES: Body[] = [
   { id: 'sun', name: 'Sun', mu: SUN_MU, radius: 695_700_000, mass: SOLAR_MASS, color: '#e8d5a3', type: 'star' },
-  { id: 'mercury', name: 'Mercury', mu: 2.2032e13, radius: 2_439_700, mass: 3.3011e23, color: '#9a9a9a', type: 'planet' },
+  { id: 'mercury', name: 'Mercury', mu: 2.2032e13, radius: 2_439_400, mass: 3.3011e23, color: '#9a9a9a', type: 'planet' }, // JPL mean radius 2439.4 km
   { id: 'venus', name: 'Venus', mu: 3.24859e14, radius: 6_051_800, mass: 4.8675e24, color: '#c9b896', type: 'planet' },
   { id: 'earth', name: 'Earth', mu: EARTH_MU, radius: EARTH_RADIUS, mass: EARTH_MASS, color: '#7a9bb8', type: 'planet', soi: 9.24e8 },
   { id: 'moon', name: 'Moon', mu: 4.9028e12, radius: 1_737_400, mass: 7.3458e22, color: '#b0b0b0', type: 'moon' }, // JPL DE440 GM / CODATA G (mass uncertainty is dominated by G)
@@ -21,7 +21,7 @@ export const BODIES: Body[] = [
   { id: 'jupiter', name: 'Jupiter', mu: 1.266865319e17, radius: 69_911_000, mass: 1.8982e27, color: '#c4a882', type: 'planet' }, // JPL JUP365 primary GM: 126686531.9 ± 0.42 km³/s²
   { id: 'saturn', name: 'Saturn', mu: 3.793120623e16, radius: 58_232_000, mass: 5.6834e26, color: '#d4c4a0', type: 'planet' }, // JPL SAT441 primary GM: 37931206.23 ± 0.24 km³/s²
   { id: 'uranus', name: 'Uranus', mu: 5.7939513e15, radius: 25_362_000, mass: 8.681e25, color: '#9ec4c8', type: 'planet' }, // JPL URA111 primary GM: 5793951.3 ± 4.4 km³/s²
-  { id: 'neptune', name: 'Neptune', mu: 6.836529e15, radius: 24_622_000, mass: 1.02413e26, color: '#5a7ab0', type: 'planet' },
+  { id: 'neptune', name: 'Neptune', mu: 6.83509997e15, radius: 24_622_000, mass: 1.02413e26, color: '#5a7ab0', type: 'planet' }, // JPL NEP097 primary GM 6835099.97 km^3/s^2
   // JPL PLU060 Pluto-body GM: 869.3 ± 0.4 km³/s² (not Pluto-system GM).
   { id: 'pluto', name: 'Pluto', mu: 869.3e9, radius: 1_188_300, mass: 1.303e22, color: '#b8a898', type: 'dwarf' },
 ]

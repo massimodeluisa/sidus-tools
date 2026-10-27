@@ -6,7 +6,7 @@ import { BodySelect } from '@/components/shared/BodySelect'
 import { UiUnitField } from '@/components/shared/UiUnitField'
 import { ResultCard } from '@/components/shared/ResultCard'
 import { CodeExport } from '@/components/shared/CodeExport'
-import { BODIES, eclipseWithBeta, getBody, meanMotionFromAltitude, TOOL_UNIT_SETS, toSi } from '@/lib/physics'
+import { BODIES, eclipseWithBeta, fromSi, getBody, meanMotionFromAltitude, TOOL_UNIT_SETS, toSi } from '@/lib/physics'
 import { numParam, strParam, useToolSearchParams } from '@/lib/use-tool-search-params'
 
 const SCHEMA = {
@@ -23,6 +23,8 @@ export function EclipseBetaTool() {
   const body = getBody(p.body)
   const h = toSi(p.h, p.hu)
   const betaRad = toSi(p.beta, p.betaU)
+  const betaMin = fromSi(-Math.PI / 2, p.betaU)
+  const betaMax = fromSi(Math.PI / 2, p.betaU)
   const res = useMemo(() => {
     const m = meanMotionFromAltitude(h, body.mu, body.radius)
     if (!m) return null
@@ -34,7 +36,7 @@ export function EclipseBetaTool() {
       parameters={<ParamsGrid>
         <BodySelect value={p.body} onChange={(body) => setP({ body })} />
         <UiUnitField label={t('fields.altitude')} category="length" unitIds={TOOL_UNIT_SETS.altitude} unitId={p.hu} value={p.h} min={0} onValueChange={(h) => setP({ h })} onUnitChange={(hu, h) => setP({ hu, h })} />
-        <UiUnitField label={t('fields.beta_angle')} category="angle" unitIds={TOOL_UNIT_SETS.angle} unitId={p.betaU} value={p.beta} onValueChange={(beta) => setP({ beta })} onUnitChange={(betaU, beta) => setP({ betaU, beta })} hint={t('fields.sun_elev_hint')} />
+        <UiUnitField label={t('fields.beta_angle')} category="angle" unitIds={TOOL_UNIT_SETS.angle} unitId={p.betaU} value={p.beta} min={betaMin} max={betaMax} onValueChange={(beta) => setP({ beta })} onUnitChange={(betaU, beta) => setP({ betaU, beta })} hint={t('fields.sun_elev_hint')} />
       </ParamsGrid>}
       results={res && res.te != null && res.frac != null ? <div className="sidus-results">
         <ResultCard label={t('fields.eclipse_duration')} si={res.te} category="time" unitId="pretty" unitIds={TOOL_UNIT_SETS.timePretty} digits={4} accent />

@@ -46,17 +46,19 @@ export function heliocentricHohmann(
 }
 
 /**
- * Ideal phase angle at departure for coplanar Hohmann (lead angle of outer body) [rad].
- * φ = π (1 − ((r1+r2)/(2 r2))^{3/2}) for transfer outerward (Curtis/Vallado class).
+ * Ideal phase angle at departure for coplanar Hohmann (lead of the target) [rad].
+ * Unwrapped φ = π (1 − ((r1+r2)/(2 r2))^{3/2}) (Curtis/Vallado class).
+ * Returned in the signed principal range [-π, π). Positive means the target leads.
+ * Inward transfers are the same angle modulo 2π; Δv is unchanged.
  */
 export function hohmannPhaseAngle(r1M: number, r2M: number): number | null {
   if (!(r1M > 0) || !(r2M > 0) || r1M === r2M) return null
   const aT = 0.5 * (r1M + r2M)
-  // Mean motion of destination
   // Lead angle of target: π − n2 * TOF with TOF = π √(aT³/μ) → φ = π (1 − (aT/r2)^{3/2})
   const ratio = aT / r2M
-  const phi = Math.PI * (1 - ratio ** 1.5)
-  return phi
+  const unwrapped = Math.PI * (1 - ratio ** 1.5)
+  const twoPi = 2 * Math.PI
+  return unwrapped - twoPi * Math.floor((unwrapped + Math.PI) / twoPi)
 }
 
 /**

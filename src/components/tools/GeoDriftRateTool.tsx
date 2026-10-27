@@ -37,7 +37,7 @@ export function GeoDriftRateTool() {
     <ToolShell
       parameters={
         <ParamsGrid>
-          <UiUnitField label={t('fields.disc_a_2')} category="length" unitIds={TOOL_UNIT_SETS.length} unitId={p.au} value={p.a} min={0} onValueChange={(a)=>setP({a})} onUnitChange={(au,a)=>setP({au,a})} />
+          <UiUnitField label={t('fields.disc_a_2')} category="length" unitIds={TOOL_UNIT_SETS.length} unitId={p.au} value={p.a} min={0} hint={t('fields.hint_geo_near')} onValueChange={(a)=>setP({a})} onUnitChange={(au,a)=>setP({au,a})} />
           <UiUnitField label={t('fields.ageo')} category="length" unitIds={TOOL_UNIT_SETS.length} unitId={p.aGeou} value={p.aGeo} min={0} onValueChange={(aGeo)=>setP({aGeo})} onUnitChange={(aGeou,aGeo)=>setP({aGeou,aGeo})} />
           <UiField label={t('fields.ngeo')} type="number" min={1e-12}  step="any" value={p.nGeo} onChange={(e)=>setP({nGeo:Number(e.target.value)})} />
         </ParamsGrid>
@@ -52,10 +52,12 @@ export function GeoDriftRateTool() {
         )
       }
       code={
-        <CodeExport
-          formulaId="geo-drift-rate"
-          values={{ ...p, a: toSi(p.a, p.au), aGeo: toSi(p.aGeo, p.aGeou) }}
-        />
+        res == null ? undefined : (
+          <CodeExport
+            formulaId="geo-drift-rate"
+            values={{ ...p, a: toSi(p.a, p.au), aGeo: toSi(p.aGeo, p.aGeou) }}
+          />
+        )
       }
     />
   )

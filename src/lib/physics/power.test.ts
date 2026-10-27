@@ -5,9 +5,12 @@ import {
   batteryEnergyJ,
   diffractionResolution,
   dragForce,
+  eclipseWithBeta,
   equilibriumTemperature,
+  exteriorSemiMajorFromPeriod,
   groundTrackShiftPerOrbit,
   rcsDeltaV,
+  semiMajorFromPeriod,
   solarArrayPower,
   thermalRadiatedPower,
   wheelMomentum,
@@ -18,7 +21,17 @@ describe('power / sensors physics', () => {
   it('solar array peaks at normal incidence', () => {
     const p0 = solarArrayPower(10, 0.3, 0, 1)!
     const p60 = solarArrayPower(10, 0.3, 60, 1)!
+    expect(p0).toBeCloseTo(4083, 6)
+    expect(p60).toBeCloseTo(2041.5, 6)
     expect(p0).toBeGreaterThan(p60)
+  })
+
+  it('keeps solar-array incidence inside [0, 90] degrees', () => {
+    expect(solarArrayPower(10, 0.3, 90, 1)).toBe(0)
+    expect(solarArrayPower(10, 0.3, 300, 1)).toBeNull()
+    expect(solarArrayPower(10, 0.3, 360, 1)).toBeNull()
+    expect(solarArrayPower(10, 0.3, Number.POSITIVE_INFINITY, 1)).toBeNull()
+    expect(solarArrayPower(10, 0.3, -1, 1)).toBeNull()
   })
 
   it('battery energy scales with C and V', () => {
@@ -70,5 +83,62 @@ describe('power / sensors physics', () => {
   it('along-track from ΔM', () => {
     const a = 7000e3
     expect(alongTrackFromDeltaM(a, 0.01)).toBeCloseTo(70e3, -2)
+  })
+})
+
+describe('period match / exterior semi-major axis', () => {
+  it('returns null when the circular radius is inside the body', () => {
+    expect(exteriorSemiMajorFromPeriod(EARTH_MU, 60, EARTH_RADIUS)).toBeNull()
+  })
+
+  it('returns the surface circular semi-major axis at the surface period', () => {
+    const T = 2 * Math.PI * Math.sqrt(EARTH_RADIUS ** 3 / EARTH_MU)
+    const a = exteriorSemiMajorFromPeriod(EARTH_MU, T, EARTH_RADIUS)!
+    expect(Number.isFinite(a)).toBe(true)
+    expect(Math.abs(a - EARTH_RADIUS)).toBeLessThan(1e-3)
+  })
+
+  it('returns a semi-major axis above the surface for an exterior period', () => {
+    const a = exteriorSemiMajorFromPeriod(EARTH_MU, 5400, EARTH_RADIUS)!
+    expect(a).toBeGreaterThan(EARTH_RADIUS)
+  })
+
+  it('semi-major inversion still returns the inside-body radius', () => {
+    const a = semiMajorFromPeriod(EARTH_MU, 60)!
+    expect(a).not.toBeNull()
+    expect(a).toBeLessThan(EARTH_RADIUS)
+  })
+})
+
+describe('eclipse vs beta angle domain', () => {
+  const R = 6_378_137
+  const a = R + 400_000
+  const mu = 3.986_004_418e14
+  const period = 2 * Math.PI * Math.sqrt(a ** 3 / mu)
+  const deg = Math.PI / 180
+
+  it('rejects a beta angle beyond +90°', () => {
+    expect(eclipseWithBeta(a, R, 100 * deg, period)).toBeNull()
+  })
+
+  it('returns no eclipse at 80°', () => {
+    expect(eclipseWithBeta(a, R, 80 * deg, period)).toBe(0)
+  })
+
+  it('accepts ±90° as edge-on with no eclipse', () => {
+    expect(eclipseWithBeta(a, R, 90 * deg, period)).toBe(0)
+    expect(eclipseWithBeta(a, R, -90 * deg, period)).toBe(0)
+  })
+
+  it('returns a finite eclipse shorter than the period at 0°', () => {
+    const te = eclipseWithBeta(a, R, 0, period)!
+    expect(Number.isFinite(te)).toBe(true)
+    expect(te).toBeGreaterThan(0)
+    expect(te).toBeLessThan(period)
+  })
+
+  it('rejects non-finite beta angles', () => {
+    expect(eclipseWithBeta(a, R, Number.NaN, period)).toBeNull()
+    expect(eclipseWithBeta(a, R, Number.POSITIVE_INFINITY, period)).toBeNull()
   })
 })

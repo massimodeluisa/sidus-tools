@@ -25,6 +25,10 @@ const SCHEMA = {
   lam: numParam(0.00000155,{min:1e-9}),
   R: numParam(1000,{min:0}),
   Ru: strParam('km', TOOL_UNIT_SETS.length),
+  rt: numParam(0.1,{min:0}),
+  rtu: strParam('m', TOOL_UNIT_SETS.length),
+  rr: numParam(0.25,{min:0}),
+  rru: strParam('m', TOOL_UNIT_SETS.length),
   L: numParam(2,{min:1}),
 } as const
 
@@ -33,7 +37,7 @@ export function LaserLinkBudgetTool() {
   const [p, setP] = useToolSearchParams(SCHEMA)
   const res = useMemo(() => {
     const R=toSi(p.R,p.Ru)
-    return opticalLinkReceivedPower({ptW:p.pt,etaT:p.etaT,etaR:p.etaR,gt:p.gt,gr:p.gr,wavelengthM:p.lam,rangeM:R,lossLin:p.L})
+    return opticalLinkReceivedPower({ptW:p.pt,etaT:p.etaT,etaR:p.etaR,gt:p.gt,gr:p.gr,wavelengthM:p.lam,rangeM:R,lossLin:p.L,txRadiusM:toSi(p.rt,p.rtu),rxRadiusM:toSi(p.rr,p.rru)})
   }, [p])
 
   return (
@@ -47,23 +51,26 @@ export function LaserLinkBudgetTool() {
           <UiField label={t('fields.disc_gr')} type="number" min={1}  step="any" value={p.gr} onChange={(e)=>setP({gr:Number(e.target.value)})} />
           <UiField label={t('fields.lam')} type="number" min={1e-9}  step="any" value={p.lam} onChange={(e)=>setP({lam:Number(e.target.value)})} />
           <UiUnitField label={t('fields.disc_r')} category="length" unitIds={TOOL_UNIT_SETS.length} unitId={p.Ru} value={p.R} min={0} onValueChange={(R)=>setP({R})} onUnitChange={(Ru,R)=>setP({Ru,R})} />
+          <UiUnitField label={t('fields.disc_rt')} category="length" unitIds={TOOL_UNIT_SETS.length} unitId={p.rtu} value={p.rt} min={0} onValueChange={(rt)=>setP({rt})} onUnitChange={(rtu,rt)=>setP({rtu,rt})} />
+          <UiUnitField label={t('fields.disc_rr')} category="length" unitIds={TOOL_UNIT_SETS.length} unitId={p.rru} value={p.rr} min={0} onValueChange={(rr)=>setP({rr})} onUnitChange={(rru,rr)=>setP({rru,rr})} />
           <UiField label={t('fields.disc_l')} type="number" min={1}  step="any" value={p.L} onChange={(e)=>setP({L:Number(e.target.value)})} />
         </ParamsGrid>
       }
       results={
-        res == null || (typeof res === 'number' && !Number.isFinite(res)) ? (
-          <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
-        ) : (
-          <div className="sidus-results">
+        <div className="sidus-results">
+          {res == null || (typeof res === 'number' && !Number.isFinite(res)) ? (
+            <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
+          ) : (
             <ResultCard label={t('fields.disc_pr')} value={formatNumber(res,6)} unit="W" accent />
-          </div>
-        )
+          )}
+          <p className="mt-2 text-xs leading-relaxed text-muted">{t('fields.disc_far_field')}</p>
+        </div>
       }
       code={
         res == null ? undefined : (
           <CodeExport
             formulaId="laser-link-budget"
-            values={{ ...p, R: toSi(p.R, p.Ru) }}
+            values={{ ...p, R: toSi(p.R, p.Ru), rt: toSi(p.rt, p.rtu), rr: toSi(p.rr, p.rru) }}
           />
         )
       }

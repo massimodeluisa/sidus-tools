@@ -66,6 +66,9 @@ export function SolarPressureTool() {
             label={t('fields.c_r_reflectivity')}
             type="number"
             value={p.Cr}
+            min={0}
+            max={2}
+            step="any"
             onChange={(e) => setP({ Cr: Number(e.target.value) })}
             hint={t('fields.hint_cr_absorb_mirror')}
           />

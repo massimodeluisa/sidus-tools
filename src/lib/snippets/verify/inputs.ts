@@ -433,6 +433,10 @@ export const SAMPLE: LiveCodeValues = {
  * scales (CR3BP μ is mass ratio ≠ Earth GM; panel d is degradation ≠ distance).
  */
 export const SAMPLE_OVERRIDES: Record<string, LiveCodeValues> = {
+  // Rocket export reads solve mode and the SI target Δv even in the forward scenarios.
+  'rocket-equation': { mode: 'dv', dv_si: 9000 },
+  // Circularize export reads the selected apsis; existing scenarios stay at apoapsis.
+  circularize: { at: 'apo' },
   'panel-eol-power': { d: 0.005, p0: 200, years: 15 },
   // Crew water loop: BVAD Rev2 ISS-column rates (kg/crew-day), UPA 0.85, 4 crew, 180 d.
   'water-loop': { potable: 2.5, hygiene: 0.4, flush: 0.3, o2: 0.82, urine: 1.2, condensate: 2.27, eta_u: 0.85, eta_c: 1, eta_h: 0, crew: 4, tS: 180 * 86400, reserve: 0.1 },
@@ -467,6 +471,14 @@ export const SAMPLE_OVERRIDES: Record<string, LiveCodeValues> = {
     vx: -5643.05,
     vy: 4303.33,
     vz: 2428.79,
+    // Forward scenarios stay on rv2el. The inverse branch still has to compile,
+    // so the dead names are real values and `ang` is a string (`ang[0]`).
+    mode: 'rv2el',
+    ang: 'r',
+    a_km: 0,
+    raan_deg: 0,
+    argp_deg: 0,
+    nu_deg: 0,
   },
   // Deorbit needs h (starting circular altitude) > hp (target perigee); the shared bag's h/hp
   // are sized for other tools (tropo-safe altitude / transfer-ellipse perigee) and invert that.
@@ -488,6 +500,12 @@ export const SAMPLE_OVERRIDES: Record<string, LiveCodeValues> = {
   'schweighart-sedwick': { inc: 51.6 * (Math.PI / 180), Rb: 6_378_137 },
   // Shared bag's beta=0 (a phase-angle default elsewhere) fails this tool's ballistic-coefficient>0 check.
   'orbit-lifetime-rough': { beta: 100 },
+  // Shared `a` is a LEO radius. The linear drift formula is only valid near GEO.
+  'geo-drift-rate': { a: 42_264_170, aGeo: 42_164_170, nGeo: 7.292115e-5 },
+  // Shared `d` is a short length, so it sits inside the Sun. Umbra needs separated spheres.
+  'umbra-length': { d: 149_597_870_700, Rs: 696_000_000, Rb: 6_378_137 },
+  // Shared `k` is a tiny coefficient. This tool's k is a positive integer revolution count.
+  'repeating-ground-track': { k: 15, days: 1 },
   // System noise temperature exists in no shared bag.
   'eirp-gt': { P: 10, G: 1000, Tsys: 290 },
   // Miss distance / covariance sigmas / hard-body radius exist in no shared bag.
@@ -538,6 +556,10 @@ export const SAMPLE_OVERRIDES: Record<string, LiveCodeValues> = {
   'dsn-array-gain': { n: 4 },
   'allan-range-rate': { sy: 1e-13 },
   'low-thrust-escape': { mu: 3.986004418e14, r: 6_778_137 },
+  // Shared bag uses p as semi-latus rectum, e as eccentricity, and T as an
+  // unrelated temperature. This tool's free vars are surface pressure (Pa),
+  // temperature (K), and vapour partial pressure (Pa).
+  'gnss-troposphere-delay': { elev: (30 * Math.PI) / 180, p: 101_325, T: 288.15, e: 1_100 },
 }
 
 /** Live-input bag for a tool: shared SAMPLE merged with its per-tool override. */

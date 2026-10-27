@@ -3,8 +3,9 @@
 /**
  * Inertial launch azimuth β from north (rad) to reach inclination i from latitude φ.
  * cos i = cos φ · sin β  ⇒  β = arcsin( cos i / cos φ )
- * Valid when |φ| ≤ |i| (and |cos i / cos φ| ≤ 1).
- * Returns both prograde (+β from N toward E) solutions as azimuths in [0, 2π).
+ * Valid for |φ| < 90° (the pole has no unique azimuth), i in [0, π], and
+ * |cos i / cos φ| ≤ 1 (equivalently |φ| ≤ i ≤ π − |φ|).
+ * Returns both solutions as azimuths in [0, 2π).
  */
 export function launchAzimuth(latRad: number, iRad: number): {
   azimuthRad: number
@@ -12,10 +13,15 @@ export function launchAzimuth(latRad: number, iRad: number): {
   complementaryRad: number
   complementaryDeg: number
 } | null {
+  if (!Number.isFinite(latRad) || !Number.isFinite(iRad)) return null
+  const halfPi = Math.PI / 2
+  if (Math.abs(latRad) >= halfPi) return null
+  if (iRad < 0 || iRad > Math.PI) return null
   const c = Math.cos(iRad) / Math.cos(latRad)
   if (!Number.isFinite(c) || Math.abs(c) > 1 + 1e-12) return null
-  const cl = Math.min(1, Math.max(-1, c))
-  const beta = Math.asin(cl) // from north toward east for ascending
+  // Snap ulp-level boundary ratios so |φ| = i and i = π − |φ| coincide exactly.
+  const snapped = Math.abs(c) >= 1 - 1e-12 ? Math.sign(c) : c
+  const beta = Math.asin(snapped) // from north toward east for ascending
   // Two solutions: β and π − β (ascending vs other node-ish family)
   const a1 = beta
   const a2 = Math.PI - beta
@@ -39,7 +45,10 @@ export function minInclinationFromLat(latRad: number): number {
   return Math.abs(latRad)
 }
 
-/** Earth rotation boost along local east at latitude φ, altitude h: v = ω (R+h) cos φ */
+/**
+ * Eastward co-rotation speed at geocentric latitude and radius: v = ω · radiusM · cos φ.
+ * Launch boost uses the launch-site radius (body radius + pad altitude), not an orbital radius.
+ */
 export const EARTH_OMEGA = 7.292115e-5 // rad/s
 
 export function earthRotationBoost(

@@ -63,10 +63,13 @@ export function SolarArrayTool() {
           />
           <UiUnitField
             label={t('fields.sun_incidence_from_normal')}
+            tip={t('fields.note_solar_array')}
             category="angle"
             unitIds={TOOL_UNIT_SETS.angle}
             unitId={p.anu}
             value={p.ang}
+            min={0}
+            max={fromSi(toSi(90, 'deg'), p.anu)}
             onValueChange={(ang) => setP({ ang })}
             onUnitChange={(anu, ang) => setP({ anu, ang })}
           />

@@ -42,7 +42,8 @@ export type GeodeticDeg = {
 }
 
 export type LookAnglesSi = {
-  azimuthRad: number
+  /** Null at exact zenith, where the horizontal line of sight is zero. */
+  azimuthRad: number | null
   elevationRad: number
   rangeM: number
 }
@@ -67,6 +68,41 @@ function hasValidTleChecksum(line: string): boolean {
     else if (ch === '-') sum += 1
   }
   return sum % 10 === Number(line[68])
+}
+
+/**
+ * Read a fixed-column TLE angular field (1-based inclusive columns), trim it,
+ * and return its numeric value; null when the field holds no number.
+ */
+function tleAngleValue(line: string, startCol: number, endCol: number): number | null {
+  const field = line.slice(startCol - 1, endCol).trim()
+  if (!/^\d*\.?\d+$/.test(field)) return null
+  const value = Number(field)
+  return Number.isFinite(value) ? value : null
+}
+
+/**
+ * Line-2 orbital fields must sit inside the documented ranges: inclination
+ * [0, 180] deg, RAAN [0, 360] deg, eccentricity [0, 1), argument of perigee
+ * [0, 360] deg, mean anomaly [0, 360] deg, mean motion (0, 20] rev/day.
+ * Checksum-valid lines with out-of-range element values are invalid.
+ */
+function hasValidTleOrbitalFields(line: string): boolean {
+  const inclination = tleAngleValue(line, 9, 16)
+  if (inclination === null || inclination < 0 || inclination > 180) return false
+  const raan = tleAngleValue(line, 18, 25)
+  if (raan === null || raan < 0 || raan > 360) return false
+  const eccentricityField = line.slice(26, 33)
+  if (!/^\d{7}$/.test(eccentricityField)) return false
+  const eccentricity = Number(eccentricityField) / 1e7
+  if (eccentricity < 0 || eccentricity >= 1) return false
+  const argp = tleAngleValue(line, 35, 42)
+  if (argp === null || argp < 0 || argp > 360) return false
+  const meanAnomaly = tleAngleValue(line, 44, 51)
+  if (meanAnomaly === null || meanAnomaly < 0 || meanAnomaly > 360) return false
+  const meanMotion = tleAngleValue(line, 53, 63)
+  if (meanMotion === null || meanMotion <= 0 || meanMotion > 20) return false
+  return true
 }
 
 /** Parse 2- or 3-line TLE text (optional name line). */
@@ -101,6 +137,9 @@ export function parseTle(text: string): TleParseResult {
     return { ok: false, error: 'Invalid TLE (checksum or format).' }
   }
   if (!hasValidTleChecksum(l2)) {
+    return { ok: false, error: 'Invalid TLE (checksum or format).' }
+  }
+  if (!hasValidTleOrbitalFields(l2)) {
     return { ok: false, error: 'Invalid TLE (checksum or format).' }
   }
 
@@ -166,14 +205,35 @@ export function eciSiToGeodetic(rM: Vec3, date: Date): GeodeticDeg | null {
 }
 
 /**
+ * A geodetic latitude is usable only when finite and inside [-90, 90] deg.
+ * Outside that range the trigonometric longitude aliasing would silently
+ * describe a different site, so callers reject it instead of clamping.
+ */
+function hasValidLatDeg(latDeg: number): boolean {
+  return Number.isFinite(latDeg) && latDeg >= -90 && latDeg <= 90
+}
+
+/**
+ * Below this range the topocentric direction is numerical noise.
+ * Subtracting two Earth-radius ECEF vectors that name the same site leaves
+ * a residual around 1e-9 m, and satellite.js then returns a finite atan2
+ * bearing. 1 mm is above that residual and far below a physical pass range.
+ */
+const MIN_LOOK_RANGE_M = 1e-3
+
+/**
  * Topocentric look angles from an observer (geodetic deg, height m)
  * to a satellite ECI state (m) at `date`.
+ * Returns null when the line of sight is shorter than `MIN_LOOK_RANGE_M`.
+ * `azimuthRad` is null at exact zenith (`asin` is π/2 only when both
+ * horizontal SEZ components are zero); elevation and range stay defined.
  */
 export function lookAnglesFromEci(
   observer: GeodeticDeg,
   rM: Vec3,
   date: Date,
 ): LookAnglesSi | null {
+  if (!hasValidLatDeg(observer.latDeg)) return null
   const gmst = gstime(date)
   const obs = {
     longitude: degreesToRadians(observer.lonDeg),
@@ -184,10 +244,17 @@ export function lookAnglesFromEci(
   const satEcf = eciToEcf(satEciKm, gmst)
   const look = ecfToLookAngles(obs, satEcf)
   if (!look) return null
+  const rangeM = look.rangeSat * 1000
+  if (!Number.isFinite(rangeM) || rangeM < MIN_LOOK_RANGE_M) return null
+  if (!Number.isFinite(look.elevation)) return null
+  if (look.elevation === Math.PI / 2) {
+    return { azimuthRad: null, elevationRad: look.elevation, rangeM }
+  }
+  if (!Number.isFinite(look.azimuth)) return null
   return {
     azimuthRad: look.azimuth,
     elevationRad: look.elevation,
-    rangeM: look.rangeSat * 1000,
+    rangeM,
   }
 }
 
@@ -307,6 +374,16 @@ export type PassWindow = {
   maxElDeg: number
   maxElAt: Date
   durationS: number
+  /**
+   * False when the search started above the mask and no rising crossing was
+   * found. `aos` is then the search start, not AOS, and `durationS` is NaN.
+   */
+  aosIsRise: boolean
+  /**
+   * False when the satellite is still above the mask and no setting crossing
+   * was found. `los` is then the search horizon, not LOS, and `durationS` is NaN.
+   */
+  losIsSet: boolean
   /** True when a sample meets the coarse lighting-geometry test, not photometric visibility. */
   favorableLighting: boolean
   /** First sampled time meeting the lighting test, or null if none does. */
@@ -464,6 +541,8 @@ function refinePassWindow(
     maxElDeg: (maxEl * 180) / Math.PI,
     maxElAt: new Date(maxElAtMs),
     durationS: (losMs - aosMs) / 1000,
+    aosIsRise: true,
+    losIsSet: true,
   }
 }
 
@@ -496,10 +575,18 @@ function classifyPassLightingGeometry(
  * Coarse next-pass search: sample elevation every `stepS` for `horizonH` hours.
  * Returns first AOS→LOS window above `minElDeg` (default 10°).
  *
- * With `refineS` set, AOS/LOS are bisected down to `refineS` resolution on
- * the coarse-scan bracket, and the peak is refined by sampling its two
- * neighboring `stepS` intervals at `refineS` resolution. Omit `refineS` for
- * the original quantized-to-`stepS` behavior.
+ * A window that opens already above the mask is not given AOS at the search
+ * start. The rise is the mask crossing found by stepping backward (at most
+ * one day). A pass still above the mask at the horizon is not given LOS at
+ * that cutoff. The set is the mask crossing found by stepping forward the
+ * same way. Crossings may lie outside the requested window. If a crossing
+ * is not found, `aosIsRise` or `losIsSet` is false and `durationS` is NaN
+ * so the window end is not reported as a full pass.
+ *
+ * With `refineS` set, known AOS/LOS crossings are bisected down to `refineS`
+ * resolution on the coarse-scan bracket, and the peak is refined by sampling
+ * its two neighboring `stepS` intervals at `refineS` resolution. Omit
+ * `refineS` for the original quantized-to-`stepS` behavior.
  *
  * Every returned window carries a sampled lighting-geometry result
  * (`favorableLighting` / `favorableLightingAt`). It checks a coarse
@@ -518,6 +605,7 @@ export function findNextPass(opts: {
   refineS?: number
   favorableLightingOnly?: boolean
 }): PassWindow | null {
+  if (!hasValidLatDeg(opts.observer.latDeg)) return null
   const horizonH = opts.horizonH ?? 24
   const stepS = opts.stepS ?? 30
   const minElRad = ((opts.minElDeg ?? 10) * Math.PI) / 180
@@ -529,6 +617,7 @@ export function findNextPass(opts: {
   let inPass = false
   let aosMs: number | null = null
   let aosBelowMs: number | null = null
+  let aosIsRise = true
   let maxEl = -Infinity
   let maxElAtMs: number | null = null
   let prevMs = t0
@@ -537,6 +626,41 @@ export function findNextPass(opts: {
   let prevPrevMs: number | null = t0 - stepMs
   let prevPrevEl: number | null = elevationAt(prevPrevMs)
   let lastMs = t0
+  /** One day of the same step. A LEO pass fits; a still-open arc does not become a fake edge. */
+  const edgeSearchMs = 24 * 3600 * 1000
+
+  /**
+   * Step from a sample already on the above-mask side until the mask is
+   * crossed or `edgeSearchMs` runs out. `direction` -1 seeks the rise, +1 the set.
+   */
+  const findMaskEdge = (
+    fromMs: number,
+    direction: -1 | 1,
+  ): { belowMs: number; aboveMs: number; maxEl: number; maxElAtMs: number } | null => {
+    if (!(stepMs > 0)) return null
+    const limit = fromMs + direction * edgeSearchMs
+    let aboveMs = fromMs
+    let cursor = fromMs
+    let edgeMaxEl = elevationAt(fromMs) ?? -Infinity
+    let edgeMaxAtMs = fromMs
+    const maxSteps = Math.ceil(edgeSearchMs / stepMs)
+    for (let n = 0; n < maxSteps; n++) {
+      const next = cursor + direction * stepMs
+      if (direction < 0 ? next < limit : next > limit) return null
+      const el = elevationAt(next)
+      if (el !== null && el >= minElRad) {
+        if (el > edgeMaxEl) {
+          edgeMaxEl = el
+          edgeMaxAtMs = next
+        }
+        aboveMs = next
+        cursor = next
+        continue
+      }
+      return { belowMs: next, aboveMs, maxEl: edgeMaxEl, maxElAtMs: edgeMaxAtMs }
+    }
+    return null
+  }
 
   const buildWindow = (
     curAosMs: number,
@@ -545,9 +669,12 @@ export function findNextPass(opts: {
     curMaxElAtMs: number,
     losMs: number,
     losAboveMs: number | null,
+    riseKnown: boolean,
+    setKnown: boolean,
   ): PassWindow => {
-    const core: PassWindowCore =
-      opts.refineS !== undefined
+    const bothEdges = riseKnown && setKnown && losAboveMs !== null
+    const core: PassWindowCore = bothEdges
+      ? opts.refineS !== undefined
         ? refinePassWindow(opts.satrec, opts.observer, minElRad, stepS, opts.refineS, {
             aosMs: curAosMs,
             aosBelowMs: curAosBelowMs,
@@ -562,7 +689,18 @@ export function findNextPass(opts: {
             maxElDeg: (curMaxEl * 180) / Math.PI,
             maxElAt: new Date(curMaxElAtMs),
             durationS: (losMs - curAosMs) / 1000,
+            aosIsRise: true,
+            losIsSet: true,
           }
+      : {
+          aos: new Date(curAosMs),
+          los: new Date(losMs),
+          maxElDeg: (curMaxEl * 180) / Math.PI,
+          maxElAt: new Date(curMaxElAtMs),
+          durationS: Number.NaN,
+          aosIsRise: riseKnown,
+          losIsSet: setKnown && losAboveMs !== null,
+        }
     const { favorableLighting, favorableLightingAt } = classifyPassLightingGeometry(
       opts.satrec,
       opts.observer,
@@ -599,6 +737,8 @@ export function findNextPass(opts: {
       peak.maxElAtMs,
       losBracket.belowMs,
       losBracket.aboveMs,
+      true,
+      true,
     )
   }
 
@@ -615,10 +755,28 @@ export function findNextPass(opts: {
 
     if (!inPass && el >= minElRad) {
       inPass = true
-      aosMs = t
-      aosBelowMs = prevMs
       maxEl = el
       maxElAtMs = t
+      if (prevEl !== null && prevEl < minElRad) {
+        aosMs = t
+        aosBelowMs = prevMs
+        aosIsRise = true
+      } else {
+        const rise = findMaskEdge(t, -1)
+        if (rise) {
+          aosMs = rise.aboveMs
+          aosBelowMs = rise.belowMs
+          aosIsRise = true
+          if (rise.maxEl > maxEl) {
+            maxEl = rise.maxEl
+            maxElAtMs = rise.maxElAtMs
+          }
+        } else {
+          aosMs = t
+          aosBelowMs = null
+          aosIsRise = false
+        }
+      }
     } else if (inPass) {
       if (el > maxEl) {
         maxEl = el
@@ -627,14 +785,24 @@ export function findNextPass(opts: {
       if (el < minElRad) {
         const losAboveMs = prevMs
         const losMs = t
-        if (aosMs !== null && aosBelowMs !== null && maxElAtMs !== null) {
-          const win = buildWindow(aosMs, aosBelowMs, maxEl, maxElAtMs, losMs, losAboveMs)
+        if (aosMs !== null && maxElAtMs !== null && (aosIsRise ? aosBelowMs !== null : true)) {
+          const win = buildWindow(
+            aosMs,
+            aosBelowMs ?? aosMs,
+            maxEl,
+            maxElAtMs,
+            losMs,
+            losAboveMs,
+            aosIsRise,
+            true,
+          )
           if (!opts.favorableLightingOnly || win.favorableLighting) return win
           // Keep scanning when this pass has no favorable lighting sample.
         }
         inPass = false
         aosMs = null
         aosBelowMs = null
+        aosIsRise = true
         maxEl = -Infinity
         maxElAtMs = null
       }
@@ -691,9 +859,31 @@ export function findNextPass(opts: {
     if (win && (!opts.favorableLightingOnly || win.favorableLighting)) return win
   }
 
-  // Pass still open at horizon end
-  if (inPass && aosMs !== null && aosBelowMs !== null && maxElAtMs !== null) {
-    const win = buildWindow(aosMs, aosBelowMs, maxEl, maxElAtMs, lastMs, null)
+  // Still above the mask at the horizon. The horizon time is not LOS.
+  if (inPass && aosMs !== null && maxElAtMs !== null) {
+    let losMs = lastMs
+    let losAboveMs: number | null = null
+    let losIsSet = false
+    const setting = findMaskEdge(lastMs, 1)
+    if (setting) {
+      losMs = setting.belowMs
+      losAboveMs = setting.aboveMs
+      losIsSet = true
+      if (setting.maxEl > maxEl) {
+        maxEl = setting.maxEl
+        maxElAtMs = setting.maxElAtMs
+      }
+    }
+    const win = buildWindow(
+      aosMs,
+      aosBelowMs ?? aosMs,
+      maxEl,
+      maxElAtMs,
+      losMs,
+      losAboveMs,
+      aosIsRise,
+      losIsSet,
+    )
     if (!opts.favorableLightingOnly || win.favorableLighting) return win
     return null
   }
@@ -744,11 +934,11 @@ export function samplePassLookAngles(
   aos: Date,
   los: Date,
   stepS = 5,
-): { date: Date; azimuthRad: number; elevationRad: number }[] {
+): { date: Date; azimuthRad: number | null; elevationRad: number }[] {
   const t0 = aos.getTime()
   const t1 = los.getTime()
   if (!(t1 >= t0) || !(stepS > 0)) return []
-  const out: { date: Date; azimuthRad: number; elevationRad: number }[] = []
+  const out: { date: Date; azimuthRad: number | null; elevationRad: number }[] = []
   const push = (ms: number) => {
     const date = new Date(ms)
     const state = propagateEci(satrec, date)

@@ -20,7 +20,7 @@ export const BOLTZMANN_K = 1.380649e-23
 export const MARS_SMA_M = 1.523679 * AU
 export const EARTH_HELIO_L0 = (100.46435 * Math.PI) / 180
 export const MARS_HELIO_L0 = (355.45332 * Math.PI) / 180
-/** J2000.0 TT ≈ 2000-01-01 12:00:00 UTC (educational epoch). */
+/** 2000-01-01 12:00:00 UTC, which is 64.184 s after J2000.0 TT. Educational epoch. */
 export const J2000_UNIX_S = 946_728_000
 
 export type HeoClass = 'molniya' | 'tundra'
@@ -250,32 +250,100 @@ export type PorkchopCell = {
   v1: Vec3
 }
 
+const UTC_DAY = /^(\d{4})-(\d{2})-(\d{2})$/
+
+/**
+ * Unix seconds at UTC midnight of a real YYYY-MM-DD.
+ * Impossible calendar dates (for example 2026-02-30) return null and are not normalized.
+ */
+export function parseUtcDayStart(isoDate: string): number | null {
+  const match = UTC_DAY.exec(isoDate)
+  if (!match) return null
+  const year = Number(match[1])
+  const month = Number(match[2])
+  const day = Number(match[3])
+  const ms = Date.parse(`${isoDate}T00:00:00Z`)
+  if (!Number.isFinite(ms)) return null
+  const date = new Date(ms)
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() + 1 !== month ||
+    date.getUTCDate() !== day
+  ) {
+    return null
+  }
+  return ms / 1000
+}
+
+/**
+ * Samples `lo + k·step` inside [min(start, end), max(start, end)].
+ * Reversed bounds are swapped. A span shorter than `step` yields the lower bound only.
+ * Equal bounds yield that single sample. A non-positive step yields none.
+ */
+export function samplesInsideInterval(start: number, end: number, step: number): number[] {
+  if (!(step > 0) || !Number.isFinite(start) || !Number.isFinite(end)) return []
+  const lo = Math.min(start, end)
+  const hi = Math.max(start, end)
+  const count = Math.floor((hi - lo) / step + 1e-12) + 1
+  const samples: number[] = []
+  for (let i = 0; i < count; i++) {
+    const x = lo + i * step
+    if (x > hi + step * 1e-9) break
+    samples.push(x)
+  }
+  return samples
+}
+
+function indexSamples(start: number, count: number, step: number): number[] {
+  if (!(count >= 1) || !(step > 0) || !Number.isFinite(start)) return []
+  const out: number[] = []
+  for (let i = 0; i < count; i++) out.push(start + i * step)
+  return out
+}
+
+/** Both converged single-rev Lambert arcs (short way, then long way). Null roots are dropped. */
+function porkchopArcs(tDep: number, tArr: number, mu = SUN_MU): PorkchopCell[] {
+  const tof = tArr - tDep
+  if (!(tof > 0)) return []
+  const earth = heliocentricCircularState(AU, EARTH_HELIO_L0, tDep, mu)
+  const mars = heliocentricCircularState(MARS_SMA_M, MARS_HELIO_L0, tArr, mu)
+  if (!earth || !mars) return []
+  const arcs: PorkchopCell[] = []
+  for (const shortWay of [true, false]) {
+    const sol = lambertSolve(mu, earth.r, mars.r, tof, shortWay)
+    if (!sol) continue
+    const dvDep = vnorm(vsub(sol.v1, earth.v))
+    const dvArr = vnorm(vsub(sol.v2, mars.v))
+    if (!Number.isFinite(dvDep) || !Number.isFinite(dvArr)) continue
+    arcs.push({
+      tDep,
+      tArr,
+      tof,
+      c3: dvDep * dvDep,
+      dvDep,
+      dvArr,
+      dvTot: dvDep + dvArr,
+      v1: sol.v1,
+    })
+  }
+  return arcs
+}
+
+function lowestDv(arcs: PorkchopCell[]): PorkchopCell | null {
+  if (arcs.length === 0) return null
+  let best = arcs[0]!
+  for (const arc of arcs) {
+    if (arc.dvTot < best.dvTot) best = arc
+  }
+  return best
+}
+
 export function porkchopTransfer(
   tDep: number,
   tArr: number,
   mu = SUN_MU,
 ): PorkchopCell | null {
-  const tof = tArr - tDep
-  if (!(tof > 0)) return null
-  const earth = heliocentricCircularState(AU, EARTH_HELIO_L0, tDep, mu)
-  const mars = heliocentricCircularState(MARS_SMA_M, MARS_HELIO_L0, tArr, mu)
-  if (!earth || !mars) return null
-  let sol = lambertSolve(mu, earth.r, mars.r, tof, true)
-  if (!sol) sol = lambertSolve(mu, earth.r, mars.r, tof, false)
-  if (!sol) return null
-  const dvDep = vnorm(vsub(sol.v1, earth.v))
-  const dvArr = vnorm(vsub(sol.v2, mars.v))
-  if (!Number.isFinite(dvDep) || !Number.isFinite(dvArr)) return null
-  return {
-    tDep,
-    tArr,
-    tof,
-    c3: dvDep * dvDep,
-    dvDep,
-    dvArr,
-    dvTot: dvDep + dvArr,
-    v1: sol.v1,
-  }
+  return lowestDv(porkchopArcs(tDep, tArr, mu))
 }
 
 export type PorkchopGrid = {
@@ -291,33 +359,43 @@ export function porkchopEarthMarsGrid(opts: {
   tofMin: number
   tofCount: number
   tofStep: number
+  /** Inclusive departure-window end (unix s). Reversed vs depStart is swapped. */
+  depEnd?: number
+  /** Inclusive TOF-window end (s). Reversed vs tofMin is swapped. */
+  tofMax?: number
 }): PorkchopGrid | null {
-  const { depStart, depCount, depStep, tofMin, tofCount, tofStep } = opts
-  if (
-    !(depCount >= 2) ||
-    !(tofCount >= 2) ||
-    !(depStep > 0) ||
-    !(tofStep > 0) ||
-    !(tofMin > 0)
-  ) {
-    return null
-  }
+  const { depStart, depCount, depStep, tofMin, tofCount, tofStep, depEnd, tofMax } = opts
+  const bounded = depEnd != null || tofMax != null
+  if (!(depStep > 0) || !(tofStep > 0)) return null
+  if (!bounded && (!(depCount >= 2) || !(tofCount >= 2) || !(tofMin > 0))) return null
+  const departures =
+    depEnd == null
+      ? indexSamples(depStart, depCount, depStep)
+      : samplesInsideInterval(depStart, depEnd, depStep)
+  const tofs =
+    tofMax == null
+      ? indexSamples(tofMin, tofCount, tofStep)
+      : samplesInsideInterval(tofMin, tofMax, tofStep)
+  if (departures.length === 0 || tofs.length === 0) return null
   const cells: PorkchopCell[] = []
-  for (let i = 0; i < depCount; i++) {
-    const tDep = depStart + i * depStep
-    for (let j = 0; j < tofCount; j++) {
-      const tof = tofMin + j * tofStep
-      const cell = porkchopTransfer(tDep, tDep + tof)
-      if (cell) cells.push(cell)
+  let bestDv: PorkchopCell | null = null
+  let bestC3: PorkchopCell | null = null
+  for (const tDep of departures) {
+    for (const tof of tofs) {
+      if (!(tof > 0)) continue
+      const arcs = porkchopArcs(tDep, tDep + tof)
+      if (arcs.length === 0) continue
+      const plot = lowestDv(arcs)
+      if (!plot) continue
+      cells.push(plot)
+      for (const arc of arcs) {
+        if (!bestDv || arc.dvTot < bestDv.dvTot) bestDv = arc
+        if (!bestC3 || arc.c3 < bestC3.c3) bestC3 = arc
+      }
     }
   }
-  if (cells.length < 2) return null
-  let bestDv = cells[0]
-  let bestC3 = cells[0]
-  for (const c of cells) {
-    if (c.dvTot < bestDv.dvTot) bestDv = c
-    if (c.c3 < bestC3.c3) bestC3 = c
-  }
+  if (cells.length < 1 || !bestDv || !bestC3) return null
+  if (!bounded && cells.length < 2) return null
   return { cells, bestDv, bestC3 }
 }
 

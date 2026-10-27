@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ToolShell } from '@/components/shared/ToolShell'
 import { ParamsGrid } from '@/components/shared/ParamsGrid'
@@ -16,8 +16,13 @@ import {
   twoWayRangeRateFromClockOffset,
   circularHorizonRangeRate,
   overheadDopplerRateHz,
+  DEFAULT_LAUNCH_SITE,
+  SAMPLE_ISS_TLE,
+  parseTle,
+  passDopplerPoints,
 } from '@/lib/physics'
 import { formatNumber } from '@/lib/physics/format'
+import { useDebounced } from '@/lib/use-debounced'
 import { numParam, strParam, useToolSearchParams } from '@/lib/use-tool-search-params'
 
 const SCHEMA = {
@@ -26,11 +31,20 @@ const SCHEMA = {
   vru: strParam('mps', TOOL_UNIT_SETS.velocity),
   dff: numParam(0),
   halt_km: numParam(420, { min: 1, max: 100000 }),
+  lat: numParam(DEFAULT_LAUNCH_SITE.latDeg, { min: -90, max: 90 }),
+  lon: numParam(DEFAULT_LAUNCH_SITE.lonDeg),
+  h_m: numParam(DEFAULT_LAUNCH_SITE.heightM, { min: 0 }),
 } as const
 
 export function DopplerShiftLeoTool() {
   const { t } = useTranslation()
   const [p, setP] = useToolSearchParams(SCHEMA)
+  const [tle, setTle] = useState(SAMPLE_ISS_TLE)
+  const dTle = useDebounced(tle, 200)
+  const dLat = useDebounced(p.lat, 200)
+  const dLon = useDebounced(p.lon, 200)
+  const dH = useDebounced(p.h_m, 200)
+  const dF0 = useDebounced(p.f0, 200)
   const res = useMemo(() => {
     const vr = toSi(p.vr, p.vru)
     const fd = dopplerShiftHz(p.f0, vr)
@@ -44,6 +58,24 @@ export function DopplerShiftLeoTool() {
     if (fd == null || fd2 == null || rdot == null || rdot2 == null) return null
     return { fd, fd2, rdot, rdot2, horizon, horizonFd, fdot }
   }, [p])
+
+  const latValid = Number.isFinite(dLat) && dLat >= -90 && dLat <= 90
+  const passDoppler = useMemo(() => {
+    const parsed = parseTle(dTle)
+    if (!parsed.ok || !latValid) return { parsed, points: null as ReturnType<typeof passDopplerPoints> }
+    const epochMs = (parsed.satrec.jdsatepoch - 2440587.5) * 86400000
+    const points = passDopplerPoints({
+      satrec: parsed.satrec,
+      observer: { latDeg: dLat, lonDeg: dLon, heightM: dH },
+      f0: dF0,
+      start: new Date(epochMs),
+      horizonH: 24,
+      stepS: 30,
+      minElDeg: 10,
+      refineS: 1,
+    })
+    return { parsed, points }
+  }, [dF0, dH, dLat, dLon, dTle, latValid])
 
   function onUseHorizonRate() {
     const horizon = circularHorizonRangeRate(p.halt_km * 1000)
@@ -95,6 +127,48 @@ export function DopplerShiftLeoTool() {
             step="any"
             value={p.halt_km}
             onChange={(e) => setP({ halt_km: Number(e.target.value) })}
+          />
+          <label className="col-span-full block min-w-0 space-y-2">
+            <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
+              {t('fields.tle')}
+            </span>
+            <textarea
+              value={tle}
+              onChange={(e) => setTle(e.target.value)}
+              spellCheck={false}
+              rows={4}
+              className="w-full resize-y border border-border bg-bg px-3 py-2 font-mono text-base leading-relaxed text-fg outline-none focus:border-border-strong"
+            />
+          </label>
+          <UiField
+            label={t('fields.site_lat')}
+            tip={t('fields.tip_lat')}
+            unit="°"
+            type="number"
+            min={-90}
+            max={90}
+            step="any"
+            value={p.lat}
+            onChange={(e) => setP({ lat: Number(e.target.value) })}
+          />
+          <UiField
+            label={t('fields.site_lon')}
+            tip={t('fields.tip_lon')}
+            unit="°"
+            type="number"
+            step="any"
+            value={p.lon}
+            onChange={(e) => setP({ lon: Number(e.target.value) })}
+          />
+          <UiField
+            label={t('fields.site_height')}
+            tip={t('fields.tip_height')}
+            unit="m"
+            type="number"
+            min={0}
+            step="any"
+            value={p.h_m}
+            onChange={(e) => setP({ h_m: Number(e.target.value) })}
           />
           <div className="col-span-full">
             <button
@@ -159,6 +233,34 @@ export function DopplerShiftLeoTool() {
                 unit="Hz/s"
               />
             ) : null}
+            {!latValid ? (
+              <p className="col-span-full font-mono text-sm text-muted">{t('fields.invalid_latitude')}</p>
+            ) : !passDoppler.parsed.ok ? (
+              <p className="col-span-full font-mono text-sm text-muted">{passDoppler.parsed.error}</p>
+            ) : passDoppler.points ? (
+              <>
+                <ResultCard
+                  label={t('fields.pass_fd_aos')}
+                  tip={t('fields.tip_pass_fd_aos')}
+                  value={formatNumber(passDoppler.points.aos.shiftHz, 4)}
+                  unit="Hz"
+                />
+                <ResultCard
+                  label={t('fields.pass_fd_closest')}
+                  tip={t('fields.tip_pass_fd_closest')}
+                  value={formatNumber(passDoppler.points.closest.shiftHz, 4)}
+                  unit="Hz"
+                />
+                <ResultCard
+                  label={t('fields.pass_fd_los')}
+                  tip={t('fields.tip_pass_fd_los')}
+                  value={formatNumber(passDoppler.points.los.shiftHz, 4)}
+                  unit="Hz"
+                />
+              </>
+            ) : (
+              <p className="col-span-full font-mono text-sm text-muted">{t('fields.pass_doppler_none')}</p>
+            )}
           </div>
         )
       }

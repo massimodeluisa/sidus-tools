@@ -15,14 +15,15 @@ import {
 } from '@/lib/physics/format'
 import { numParam, strParam, useToolSearchParams } from '@/lib/use-tool-search-params'
 
-const SCHEMA = {
-  T: numParam(5800,{min:0}),
+export const WIEN_SCHEMA = {
+  // Display-unit temperature. Do not clamp at 0: °C and °F are negative for T_K > 0.
+  T: numParam(5800),
   Tu: strParam('K', TOOL_UNIT_SETS.temperature),
 } as const
 
 export function WienPeakTool() {
   const { t } = useTranslation()
-  const [p, setP] = useToolSearchParams(SCHEMA)
+  const [p, setP] = useToolSearchParams(WIEN_SCHEMA)
   const res = useMemo(() => {
     const T=toSi(p.T,p.Tu)
     return wienPeakWavelength(T)
@@ -32,7 +33,7 @@ export function WienPeakTool() {
     <ToolShell
       parameters={
         <ParamsGrid>
-          <UiUnitField label={t('fields.disc_t')} category="temperature" unitIds={TOOL_UNIT_SETS.temperature} unitId={p.Tu} value={p.T} min={0} onValueChange={(T)=>setP({T})} onUnitChange={(Tu,T)=>setP({Tu,T})} />
+          <UiUnitField label={t('fields.disc_t')} category="temperature" unitIds={TOOL_UNIT_SETS.temperature} unitId={p.Tu} value={p.T} min={p.Tu === 'K' ? 0 : undefined} onValueChange={(T)=>setP({T})} onUnitChange={(Tu,T)=>setP({Tu,T})} />
         </ParamsGrid>
       }
       results={

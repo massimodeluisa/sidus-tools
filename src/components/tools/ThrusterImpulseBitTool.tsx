@@ -35,7 +35,7 @@ export function ThrusterImpulseBitTool() {
     <ToolShell
       parameters={
         <ParamsGrid>
-          <UiUnitField label={t('fields.disc_f')} category="force" unitIds={TOOL_UNIT_SETS.force} unitId={p.Fu} value={p.F} min={0} onValueChange={(F)=>setP({F})} onUnitChange={(Fu,F)=>setP({Fu,F})} />
+          <UiUnitField label={t('fields.pulse_average_thrust')} tip={t('fields.note_impulse_bit')} category="force" unitIds={TOOL_UNIT_SETS.force} unitId={p.Fu} value={p.F} min={0} onValueChange={(F)=>setP({F})} onUnitChange={(Fu,F)=>setP({Fu,F})} />
           <UiUnitField label={t('fields.ton')} category="time" unitIds={TOOL_UNIT_SETS.time} unitId={p.tonu} value={p.ton} min={0} onValueChange={(ton)=>setP({ton})} onUnitChange={(tonu,ton)=>setP({tonu,ton})} />
         </ParamsGrid>
       }

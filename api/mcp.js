@@ -21569,7 +21569,8 @@ var AU = 149597870700;
 // src/lib/physics/bodies.ts
 var BODIES = [
   { id: "sun", name: "Sun", mu: SUN_MU, radius: 6957e5, mass: SOLAR_MASS, color: "#e8d5a3", type: "star" },
-  { id: "mercury", name: "Mercury", mu: 22032e9, radius: 2439700, mass: 33011e19, color: "#9a9a9a", type: "planet" },
+  { id: "mercury", name: "Mercury", mu: 22032e9, radius: 2439400, mass: 33011e19, color: "#9a9a9a", type: "planet" },
+  // JPL mean radius 2439.4 km
   { id: "venus", name: "Venus", mu: 324859e9, radius: 6051800, mass: 48675e20, color: "#c9b896", type: "planet" },
   { id: "earth", name: "Earth", mu: EARTH_MU, radius: EARTH_RADIUS, mass: EARTH_MASS, color: "#7a9bb8", type: "planet", soi: 924e6 },
   { id: "moon", name: "Moon", mu: 49028e8, radius: 1737400, mass: 73458e18, color: "#b0b0b0", type: "moon" },
@@ -21581,7 +21582,8 @@ var BODIES = [
   // JPL SAT441 primary GM: 37931206.23 ± 0.24 km³/s²
   { id: "uranus", name: "Uranus", mu: 57939513e8, radius: 25362e3, mass: 8681e22, color: "#9ec4c8", type: "planet" },
   // JPL URA111 primary GM: 5793951.3 ± 4.4 km³/s²
-  { id: "neptune", name: "Neptune", mu: 6836529e9, radius: 24622e3, mass: 102413e21, color: "#5a7ab0", type: "planet" },
+  { id: "neptune", name: "Neptune", mu: 683509997e7, radius: 24622e3, mass: 102413e21, color: "#5a7ab0", type: "planet" },
+  // JPL NEP097 primary GM 6835099.97 km^3/s^2
   // JPL PLU060 Pluto-body GM: 869.3 ± 0.4 km³/s² (not Pluto-system GM).
   { id: "pluto", name: "Pluto", mu: 8693e8, radius: 1188300, mass: 1303e19, color: "#b8a898", type: "dwarf" }
 ];
@@ -21634,8 +21636,18 @@ function biellipticTransfer(mu2, r1, r2, rb) {
   const tof = Math.PI * Math.sqrt(a1 * a1 * a1 / mu2) + Math.PI * Math.sqrt(a2 * a2 * a2 / mu2);
   return { dv1, dv2, dv3, dvTotal: dv1 + dv2 + dv3, tof, a1, a2 };
 }
+function principalPlaneChangeRad(deltaIRad) {
+  if (!Number.isFinite(deltaIRad)) return NaN;
+  const twoPi2 = 2 * Math.PI;
+  let angle = Math.abs(deltaIRad) % twoPi2;
+  if (angle > Math.PI) angle = twoPi2 - angle;
+  return angle;
+}
 function planeChangeDeltaV(v, deltaIRad) {
-  return 2 * v * Math.sin(Math.abs(deltaIRad) / 2);
+  if (!Number.isFinite(v) || v < 0) return NaN;
+  const theta = principalPlaneChangeRad(deltaIRad);
+  if (!Number.isFinite(theta)) return NaN;
+  return 2 * v * Math.sin(theta / 2);
 }
 function multiStageDeltaV(stages) {
   if (!stages.length) return null;
@@ -21643,7 +21655,7 @@ function multiStageDeltaV(stages) {
   let total = 0;
   for (const s of stages) {
     if (!(s.ve > 0) || !(s.m0 > s.mf) || !(s.mf > 0)) return null;
-    const d = s.ve * Math.log(s.m0 / s.mf);
+    const d = s.ve * lnMassRatio(s.m0, s.mf);
     dv.push(d);
     total += d;
   }
@@ -21663,9 +21675,14 @@ function apsidesWithSpeeds(mu2, a, e) {
   const va = sqrtMu * Math.sqrt((1 - e) / (1 + e)) / sqrtA;
   return { rp, ra, vp, va };
 }
+function lnMassRatio(m0, mf) {
+  const ratio = m0 / mf;
+  if (ratio < 1.000001 && ratio > 0.999999) return Math.log1p((m0 - mf) / mf);
+  return Math.log(ratio);
+}
 function rocketDeltaV(ispS, m0, mf, g0 = 9.80665) {
   if (!(ispS > 0) || !(m0 > 0) || !(mf > 0) || m0 <= mf) return NaN;
-  return ispS * g0 * Math.log(m0 / mf);
+  return ispS * g0 * lnMassRatio(m0, mf);
 }
 
 // src/lib/physics/units.ts
@@ -21812,12 +21829,7 @@ function rvToElements(r, v, mu2) {
   ];
   const e = vnorm(evec);
   const energy = v2 / 2 - mu2 / rmag;
-  let a;
-  if (Math.abs(e - 1) < 1e-10) {
-    a = Infinity;
-  } else {
-    a = -mu2 / (2 * energy);
-  }
+  const a = -mu2 / (2 * energy);
   const i = clampAcos(hvec[2] / h);
   let raan = 0;
   if (n > EPS) {
@@ -21829,7 +21841,8 @@ function rvToElements(r, v, mu2) {
     argp = clampAcos(vdot(nvec, evec) / (n * e));
     if (evec[2] < 0) argp = TWO_PI - argp;
   } else if (e > EPS) {
-    argp = Math.atan2(evec[1], evec[0]);
+    const periapsisY = hvec[2] < 0 ? -evec[1] : evec[1];
+    argp = Math.atan2(periapsisY, evec[0]);
     if (argp < 0) argp += TWO_PI;
   }
   let nu = 0;
@@ -21841,7 +21854,7 @@ function rvToElements(r, v, mu2) {
       nu = clampAcos(vdot(nvec, r) / (n * rmag));
       if (r[2] < 0) nu = TWO_PI - nu;
     } else {
-      nu = Math.atan2(r[1], r[0]);
+      nu = hvec[2] < 0 ? Math.atan2(-r[1], r[0]) : Math.atan2(r[1], r[0]);
       if (nu < 0) nu += TWO_PI;
     }
   }
@@ -21873,7 +21886,9 @@ function elementsToRv(el, mu2) {
   const cnu = Math.cos(nu);
   const snu = Math.sin(nu);
   const denom = 1 + e * cnu;
-  if (Math.abs(denom) < EPS) return null;
+  if (e >= 1) {
+    if (!(denom > EPS)) return null;
+  } else if (Math.abs(denom) < EPS) return null;
   const r_pqw = [p * cnu / denom, p * snu / denom, 0];
   const sqrtMuP = Math.sqrt(mu2 / p);
   const v_pqw = [-sqrtMuP * snu, sqrtMuP * (e + cnu), 0];
@@ -22146,6 +22161,445 @@ function gmstRad(date4) {
 }
 var CIVIL_TWILIGHT_RAD = -6 * Math.PI / 180;
 
+// src/lib/physics/discovery-wave.ts
+function reflectionCoeff(z0, zL) {
+  if (!(z0 > 0) || !(zL >= 0)) return null;
+  const g = Math.abs((zL - z0) / (zL + z0));
+  return Number.isFinite(g) ? g : null;
+}
+function vswrFromGamma(gamma) {
+  if (!(gamma >= 0) || gamma >= 1) return null;
+  if (gamma === 0) return 1;
+  return (1 + gamma) / (1 - gamma);
+}
+function returnLossDb(gamma) {
+  if (!(gamma >= 0) || gamma >= 1) return null;
+  if (gamma === 0) return 200;
+  return -20 * Math.log10(gamma);
+}
+function effectiveAperture(gainLin, wavelengthM) {
+  if (!(gainLin > 0) || !(wavelengthM > 0)) return null;
+  return gainLin * wavelengthM * wavelengthM / (4 * Math.PI);
+}
+function dopplerShiftHz(f0, vRadial, c = C) {
+  if (!(f0 > 0) || !Number.isFinite(vRadial) || !(c > 0)) return null;
+  return f0 * vRadial / c;
+}
+function rainAttenuationDb(rateMmH, pathKm, k = 0.01, alpha = 1.1) {
+  if (!(rateMmH >= 0) || !(pathKm > 0) || !(k > 0) || !(alpha > 0)) return null;
+  return k * rateMmH ** alpha * pathKm;
+}
+function radarReceivedPower(opts) {
+  const { pt, g, wavelength: lam, rcs, range: R } = opts;
+  if (!(pt > 0) || !(g > 0) || !(lam > 0) || !(rcs > 0) || !(R > 0)) return null;
+  const pr = pt * g * g * lam * lam * rcs / ((4 * Math.PI) ** 3 * R ** 4);
+  return Number.isFinite(pr) && pr > 0 ? pr : null;
+}
+function ebN0FromCn0(cn0Hz, bitRate) {
+  if (!(cn0Hz > 0) || !(bitRate > 0)) return null;
+  return cn0Hz / bitRate;
+}
+function freeFallTimeConstG(h, g = G0) {
+  if (!(h > 0) || !(g > 0)) return null;
+  return Math.sqrt(2 * h / g);
+}
+function freeFallSpeedConstG(h, g = G0) {
+  if (!(h > 0) || !(g > 0)) return null;
+  return Math.sqrt(2 * g * h);
+}
+function ballisticRangeFlat(v0, gammaRad, g = G0) {
+  if (!(v0 > 0) || !(g > 0) || !(gammaRad > 0) || gammaRad >= Math.PI / 2) return null;
+  const range = v0 * v0 * Math.sin(2 * gammaRad) / g;
+  const tof = 2 * v0 * Math.sin(gammaRad) / g;
+  const hMax = v0 * v0 * Math.sin(gammaRad) ** 2 / (2 * g);
+  if (![range, tof, hMax].every((x) => Number.isFinite(x) && x >= 0)) return null;
+  return { range, tof, hMax };
+}
+function terminalVelocity(mass, cd, area, rho, g = G0) {
+  if (!(mass > 0) || !(cd > 0) || !(area > 0) || !(rho > 0) || !(g > 0)) return null;
+  return Math.sqrt(2 * mass * g / (rho * cd * area));
+}
+function bankAngleRad(v, turnRadius, g = G0) {
+  if (!(v > 0) || !(turnRadius > 0) || !(g > 0)) return null;
+  return Math.atan(v * v / (g * turnRadius));
+}
+function slewTimeMin(deltaTheta, wMax, aMax) {
+  const d = Math.abs(deltaTheta);
+  if (!(d > 0) || !(wMax > 0) || !(aMax > 0)) return null;
+  const thSwitch = wMax * wMax / aMax;
+  if (d <= thSwitch) return 2 * Math.sqrt(d / aMax);
+  return d / wMax + wMax / aMax;
+}
+function sunSensorAngle(bodyZ, sun) {
+  const nb = Math.hypot(...bodyZ);
+  const ns = Math.hypot(...sun);
+  if (!(nb > 0) || !(ns > 0)) return null;
+  const c = (bodyZ[0] * sun[0] + bodyZ[1] * sun[1] + bodyZ[2] * sun[2]) / (nb * ns);
+  return Math.acos(Math.min(1, Math.max(-1, c)));
+}
+function starTrackerNoiseRad(pixelScaleRad, nPixels) {
+  if (!(pixelScaleRad > 0) || !(nPixels >= 1)) return null;
+  return pixelScaleRad / Math.sqrt(nPixels);
+}
+function rwMomentum(inertia, omega) {
+  if (!(inertia > 0) || !Number.isFinite(omega)) return null;
+  return inertia * omega;
+}
+function magneticTorque(mAm2, bTesla, angleRad) {
+  if (!(mAm2 > 0) || !(bTesla > 0) || !Number.isFinite(angleRad)) return null;
+  return mAm2 * bTesla * Math.abs(Math.sin(angleRad));
+}
+function gravityGradientTorque(mu2, r, inertiaDiff, deltaRad) {
+  if (!(mu2 > 0) || !(r > 0) || !(inertiaDiff >= 0)) return null;
+  return 3 * mu2 / (r * r * r) * (inertiaDiff / 2) * Math.abs(Math.sin(2 * deltaRad));
+}
+function walkerSpacing(tSats, planes) {
+  if (!(tSats >= 1) || !(planes >= 1) || tSats % planes !== 0) return null;
+  const spp = tSats / planes;
+  return {
+    satsPerPlane: spp,
+    inPlaneSpacingRad: 2 * Math.PI / spp,
+    planeSpacingRad: 2 * Math.PI / planes
+  };
+}
+function coverageSwathWidth(altitude, fovRad, bodyR = EARTH_RADIUS) {
+  if (!(altitude > 0) || !(fovRad > 0) || fovRad >= Math.PI || !(bodyR > 0))
+    return null;
+  const r = bodyR + altitude;
+  const alpha = fovRad / 2;
+  const sinArg = r / bodyR * Math.sin(alpha);
+  if (!(sinArg < 1)) return null;
+  const lambda = Math.asin(sinArg) - alpha;
+  if (!(lambda > 0)) return null;
+  const sph = 2 * bodyR * lambda;
+  const flat = 2 * altitude * Math.tan(alpha);
+  const w = Number.isFinite(sph) && sph > 0 ? sph : flat;
+  return w > 0 ? w : null;
+}
+function revisitTimeSimple(periodS, swathWidthM, bodyR = EARTH_RADIUS) {
+  if (!(periodS > 0) || !(swathWidthM > 0) || !(bodyR > 0)) return null;
+  const earthCirc = 2 * Math.PI * bodyR;
+  const strips = earthCirc / swathWidthM;
+  return periodS * Math.max(1, strips);
+}
+function geoStationkeepingDvYear(northSouth = 45, eastWest = 5) {
+  return {
+    dVNS: northSouth,
+    dVEW: eastWest,
+    dVYear: northSouth + eastWest
+  };
+}
+function geoPropellantBudget(dryMass, isp, dvPerYear, lifeYears, g0 = G0) {
+  if (!(dryMass > 0) || !(isp > 0) || !(dvPerYear >= 0) || !(lifeYears > 0))
+    return null;
+  const dvTotal = dvPerYear * lifeYears;
+  const m0 = dryMass * Math.exp(dvTotal / (isp * g0));
+  return { mProp: m0 - dryMass, m0, dvTotal };
+}
+function dragMakeupDvPerRev(rho, a, v, ballisticB) {
+  if (!(rho > 0) || !(a > 0) || !(v > 0) || !(ballisticB > 0)) return null;
+  return Math.PI * rho * a * v / ballisticB;
+}
+function epsOrbitAverage(pSun, eclipseFraction, eta = 0.28) {
+  if (!(pSun > 0) || !(eclipseFraction >= 0) || eclipseFraction >= 1 || !(eta > 0))
+    return null;
+  return pSun * (1 - eclipseFraction) * eta;
+}
+function relativityClockRate(deltaPotential, speed, c = C) {
+  if (!(c > 0) || !Number.isFinite(deltaPotential) || !(speed >= 0)) return null;
+  return deltaPotential / (c * c) - speed * speed / (2 * c * c);
+}
+function tisserandParameter(a, e, iRad, aPlanet) {
+  if (!(a > 0) || !(e >= 0) || e >= 1 || !(aPlanet > 0) || !Number.isFinite(iRad))
+    return null;
+  return aPlanet / a + 2 * Math.cos(iRad) * Math.sqrt(a / aPlanet * (1 - e * e));
+}
+function opticalGsd(altitudeM, ifovRad) {
+  if (!(altitudeM > 0) || !(ifovRad > 0)) return null;
+  const gsd = altitudeM * ifovRad;
+  return Number.isFinite(gsd) && gsd > 0 ? gsd : null;
+}
+function solarSailAccel(powerFlux, area, mass, eta = 1, c = C) {
+  if (!(powerFlux > 0) || !(area > 0) || !(mass > 0) || !(eta > 0) || eta > 1 || !(c > 0)) return null;
+  const a = 2 * eta * powerFlux * area / (c * mass);
+  return Number.isFinite(a) && a > 0 ? a : null;
+}
+function finiteBurnDv(ve, m0, mdot, burnTime) {
+  if (!(ve > 0) || !(m0 > 0) || !(mdot > 0) || !(burnTime > 0)) return null;
+  const mf = m0 - mdot * burnTime;
+  if (!(mf > 0) || mf >= m0) return null;
+  const dv = ve * Math.log(m0 / mf);
+  return Number.isFinite(dv) && dv > 0 ? dv : null;
+}
+function bPlaneImpactParameter(mu2, vInf, turnAngleRad) {
+  if (!(mu2 > 0) || !(vInf > 0) || !(turnAngleRad > 0) || turnAngleRad >= Math.PI) return null;
+  const b = mu2 / (vInf * vInf) / Math.tan(turnAngleRad / 2);
+  return Number.isFinite(b) && b > 0 ? b : null;
+}
+function jacobiConstant(x, y, vx, vy, mu2) {
+  if (!(mu2 > 0) || mu2 >= 1) return null;
+  const r1 = Math.hypot(x + mu2, y);
+  const r2 = Math.hypot(x - (1 - mu2), y);
+  if (!(r1 > 0) || !(r2 > 0)) return null;
+  const C2 = x * x + y * y + 2 * (1 - mu2) / r1 + 2 * mu2 / r2 - (vx * vx + vy * vy);
+  return Number.isFinite(C2) ? C2 : null;
+}
+function orbitLifetimeRough(density, ballisticCoeff, speed, scaleHeight, orbitRadius) {
+  if (!(density > 0) || !(ballisticCoeff > 0) || !(speed > 0) || !(scaleHeight > 0) || !(orbitRadius > 0))
+    return null;
+  const t = scaleHeight * ballisticCoeff / (density * speed * orbitRadius);
+  return Number.isFinite(t) && t > 0 ? t : null;
+}
+function geoDriftRate(a, aGeo, nGeo) {
+  if (!(a > 0) || !(aGeo > 0) || !(nGeo > 0)) return null;
+  if (!Number.isFinite(a) || !Number.isFinite(aGeo) || !Number.isFinite(nGeo)) return null;
+  if (Math.abs(a - aGeo) / aGeo >= 0.1) return null;
+  const rate = -1.5 * nGeo * ((a - aGeo) / aGeo);
+  return Number.isFinite(rate) ? rate : null;
+}
+function stefanBoltzmannPower(area, tempK, emissivity = 1, sigma = 5670374419e-17) {
+  if (!(area > 0) || !(tempK > 0) || !(emissivity > 0) || !(emissivity <= 1)) return null;
+  const P = emissivity * sigma * area * tempK ** 4;
+  return Number.isFinite(P) && P > 0 ? P : null;
+}
+function wienPeakWavelength(tempK, b = 0.002897771955) {
+  if (!(tempK > 0)) return null;
+  const l = b / tempK;
+  return Number.isFinite(l) && l > 0 ? l : null;
+}
+function thrusterImpulseBit(force, ton) {
+  if (!(force > 0) || !(ton > 0)) return null;
+  return force * ton;
+}
+function argPerigeeDriftJ2(n, j22, bodyR, p, iRad) {
+  if (!(n > 0) || !(bodyR > 0) || !(p > 0) || !Number.isFinite(j22) || !Number.isFinite(iRad))
+    return null;
+  const c = Math.cos(iRad);
+  const wdot = 0.75 * n * j22 * (bodyR / p) ** 2 * (5 * c * c - 1);
+  return Number.isFinite(wdot) ? wdot : null;
+}
+function sarAzimuthResolution(wavelength, synthAngleRad) {
+  if (!(wavelength > 0) || !(synthAngleRad > 0)) return null;
+  const d = wavelength / (2 * synthAngleRad);
+  return Number.isFinite(d) && d > 0 ? d : null;
+}
+function radarRangeResolution(bandwidthHz, c = C) {
+  if (!(bandwidthHz > 0) || !(c > 0)) return null;
+  return c / (2 * bandwidthHz);
+}
+function linkMarginDb(cn0DbHz, requiredDbHz) {
+  if (!Number.isFinite(cn0DbHz) || !Number.isFinite(requiredDbHz)) return null;
+  return cn0DbHz - requiredDbHz;
+}
+function aerobrakingDv(ballisticInv, density, speed, pathLength) {
+  if (!(ballisticInv > 0) || !(density > 0) || !(speed > 0) || !(pathLength > 0))
+    return null;
+  const dv = 0.5 * ballisticInv * density * speed * pathLength;
+  return Number.isFinite(dv) && dv > 0 ? dv : null;
+}
+function diffractionLimitAngle(wavelength, diameter) {
+  if (!(wavelength > 0) || !(diameter > 0)) return null;
+  return 1.22 * wavelength / diameter;
+}
+function panelEolPower(p0, degradationPerYear, years) {
+  if (!(p0 > 0) || !(degradationPerYear >= 0) || degradationPerYear >= 1 || !(years >= 0))
+    return null;
+  const p = p0 * (1 - degradationPerYear) ** years;
+  return Number.isFinite(p) && p >= 0 ? p : null;
+}
+function magnetorquerMoment(turns, current, area) {
+  if (!(turns > 0) || !(current > 0) || !(area > 0)) return null;
+  return turns * current * area;
+}
+function captureCircularizeDv(mu2, rp, vInf) {
+  if (!Number.isFinite(mu2) || !Number.isFinite(rp) || !Number.isFinite(vInf)) return null;
+  if (!(mu2 > 0) || !(rp > 0) || !(vInf >= 0)) return null;
+  const vp = Math.sqrt(vInf * vInf + 2 * mu2 / rp);
+  const vc = Math.sqrt(mu2 / rp);
+  const dv = vp - vc;
+  return Number.isFinite(dv) && dv >= 0 ? dv : null;
+}
+function gravityLossDv(g, burnTime, gammaRad) {
+  if (!(g > 0) || !(burnTime > 0) || !Number.isFinite(gammaRad)) return null;
+  return g * burnTime * Math.sin(gammaRad);
+}
+function batteryDepthOfDischarge(eUsed, eCapacity) {
+  if (!Number.isFinite(eUsed) || !Number.isFinite(eCapacity)) return null;
+  if (!(eUsed > 0) || !(eCapacity > 0)) return null;
+  const d = eUsed / eCapacity;
+  return d > 0 && d <= 1 ? d : null;
+}
+function umbraLength(sunDistance, sunRadius, bodyRadius) {
+  if (!(sunDistance > 0) || !(sunRadius > bodyRadius) || !(bodyRadius > 0)) return null;
+  if (sunDistance < sunRadius + bodyRadius) return null;
+  const L = bodyRadius * sunDistance / (sunRadius - bodyRadius);
+  return Number.isFinite(L) && L > 0 ? L : null;
+}
+function eccentricMinusSine(E) {
+  if (Math.abs(E) < 0.01) {
+    const x2 = E * E;
+    return E * x2 * (1 / 6 - x2 * (1 / 120 - x2 * (1 / 5040 - x2 * (1 / 362880 - x2 * (1 / 39916800 - x2 / 6227020800)))));
+  }
+  return E - Math.sin(E);
+}
+function meanAnomalyFromE(E, e) {
+  if (!(e >= 0) || e >= 1 || !Number.isFinite(E)) return null;
+  const M = (1 - e) * E + e * eccentricMinusSine(E);
+  return Number.isFinite(M) ? M : null;
+}
+function flightPathAngle(e, nuRad) {
+  if (!Number.isFinite(e) || !(e >= 0) || !Number.isFinite(nuRad)) return null;
+  if (e < 1) {
+    const den2 = 1 + e * Math.cos(nuRad);
+    if (Math.abs(den2) < 1e-15) return null;
+    return Math.atan2(e * Math.sin(nuRad), den2);
+  }
+  const limit = e === 1 ? Math.PI : Math.acos(-1 / e);
+  if (!Number.isFinite(limit) || !(limit > 0)) return null;
+  const separation = limit - Math.abs(nuRad);
+  const asymptoteUlp = 2 ** (Math.floor(Math.log2(limit)) - 52);
+  if (!(separation > 4 * asymptoteUlp)) return null;
+  const den = 1 + e * Math.cos(nuRad);
+  if (!(den > 0)) return null;
+  const phi = Math.atan2(e * Math.sin(nuRad), den);
+  return Number.isFinite(phi) ? phi : null;
+}
+function hoopStress(pressure, radius, thickness) {
+  if (!(pressure > 0) || !(radius > 0) || !(thickness > 0)) return null;
+  return pressure * radius / thickness;
+}
+function hillSphere(a, m, M) {
+  if (!(a > 0) || !(m > 0) || !(M > 0) || m >= M) return null;
+  const r = a * Math.cbrt(m / (3 * M));
+  return Number.isFinite(r) && r > 0 ? r : null;
+}
+function edelbaumDv(v1, v2, diRad) {
+  if (!(v1 > 0) || !(v2 > 0) || !(diRad >= 0) || diRad >= 2) return null;
+  const dv = Math.sqrt(
+    Math.max(0, v1 * v1 + v2 * v2 - 2 * v1 * v2 * Math.cos(Math.PI * diRad / 2))
+  );
+  return Number.isFinite(dv) ? dv : null;
+}
+function repeatingGroundTrackPeriod(orbitsPerCycle, cycleDays) {
+  if (!Number.isFinite(orbitsPerCycle) || !Number.isFinite(cycleDays) || !(cycleDays > 0)) return null;
+  const k = Math.round(orbitsPerCycle);
+  if (!Number.isFinite(k) || k < 1) return null;
+  const T = cycleDays * 86400 / k;
+  return Number.isFinite(T) && T > 0 ? T : null;
+}
+function pointingBudgetRss(sigmas) {
+  if (!sigmas.length || sigmas.some((s) => !(s >= 0) || !Number.isFinite(s))) return null;
+  const sum = sigmas.reduce((a, s) => a + s * s, 0);
+  return Math.sqrt(sum);
+}
+function boiloffRate(heatIn, heatOfVaporization) {
+  if (!(heatIn > 0) || !(heatOfVaporization > 0)) return null;
+  return heatIn / heatOfVaporization;
+}
+function residualDipoleTorque(mRes, B) {
+  if (!(mRes > 0) || !(B > 0)) return null;
+  return mRes * B;
+}
+function solarFluxAtDistance(r, s0 = 1361, au = 149597870700) {
+  if (!(r > 0) || !(s0 > 0) || !(au > 0)) return null;
+  return s0 * (au / r) ** 2;
+}
+function nyquistSampleRate(fMax) {
+  if (!(fMax > 0)) return null;
+  return 2 * fMax;
+}
+function dataVolumeBits(rateBps, contactS, eta = 1) {
+  if (!(rateBps > 0) || !(contactS > 0) || !(eta > 0) || eta > 1) return null;
+  return rateBps * contactS * eta;
+}
+function earthIrFlux(altitude, te = 255, bodyR = EARTH_RADIUS, sigma = 5670374419e-17) {
+  if (!(altitude >= 0) || !(te > 0) || !(bodyR > 0)) return null;
+  const F = sigma * te ** 4 * (bodyR / (bodyR + altitude)) ** 2;
+  return Number.isFinite(F) && F > 0 ? F : null;
+}
+
+// src/lib/physics/power.ts
+var SOLAR_CONSTANT_1AU = 1361;
+function solarArrayPower(areaM2, eta, incidenceDeg, rAu = 1, s0 = SOLAR_CONSTANT_1AU) {
+  if (!(areaM2 > 0) || !(eta > 0) || !(eta <= 1) || !(rAu > 0)) return null;
+  if (!Number.isFinite(incidenceDeg) || incidenceDeg < 0 || incidenceDeg > 90) return null;
+  if (incidenceDeg >= 90) return 0;
+  const c = Math.cos(incidenceDeg * Math.PI / 180);
+  if (!(c > 0)) return 0;
+  return s0 * eta * areaM2 * c / (rAu * rAu);
+}
+function batteryEnergyJ(capacityAh, voltageV) {
+  if (!(capacityAh > 0) || !(voltageV > 0)) return null;
+  return capacityAh * voltageV * 3600;
+}
+function batteryEndurance(energyJ, loadW) {
+  if (!(energyJ > 0) || !(loadW > 0)) return null;
+  return energyJ / loadW;
+}
+function rcsDeltaV(thrustN, burnS, massKg) {
+  if (!(thrustN > 0) || !(burnS > 0) || !(massKg > 0)) return null;
+  return thrustN * burnS / massKg;
+}
+function angularDiameter(radiusM, distanceM) {
+  if (!(radiusM > 0) || !(distanceM > radiusM)) return null;
+  return 2 * Math.atan(radiusM / distanceM);
+}
+function diffractionResolution(freqHz, apertureM, rangeM) {
+  if (!(freqHz > 0) || !(apertureM > 0)) return null;
+  const lambda = 299792458 / freqHz;
+  const thetaRad = 1.22 * lambda / apertureM;
+  const gsdM = rangeM != null && rangeM > 0 ? thetaRad * rangeM : null;
+  return { thetaRad, gsdM };
+}
+var STEFAN_BOLTZMANN = 5670374419e-17;
+function thermalRadiatedPower(areaM2, tempK, emissivity = 0.8) {
+  if (!(areaM2 > 0) || !(tempK > 0) || !(emissivity > 0) || emissivity > 1) return null;
+  return emissivity * STEFAN_BOLTZMANN * areaM2 * tempK ** 4;
+}
+function dragForce(rho, v, cd, areaM2) {
+  if (!(rho > 0) || !(v > 0) || !(cd > 0) || !(areaM2 > 0)) return null;
+  return 0.5 * rho * v * v * cd * areaM2;
+}
+function wheelMomentum(inertia, omegaRadS) {
+  if (!(inertia > 0) || !Number.isFinite(omegaRadS)) return null;
+  return inertia * omegaRadS;
+}
+function wheelTorque(inertia, alphaRadS2) {
+  if (!(inertia > 0) || !Number.isFinite(alphaRadS2)) return null;
+  return inertia * alphaRadS2;
+}
+function alongTrackFromDeltaM(a, deltaMRad) {
+  if (!(a > 0) || !Number.isFinite(deltaMRad)) return null;
+  return a * deltaMRad;
+}
+function apoapsisRaiseFromCircular(mu2, r, ra) {
+  if (!(mu2 > 0) || !(r > 0) || !(ra > r)) return null;
+  const a = (r + ra) / 2;
+  const vc = Math.sqrt(mu2 / r);
+  const vp = Math.sqrt(mu2 * (2 / r - 1 / a));
+  return { a, dv: vp - vc, vp, vc };
+}
+function semiMajorFromPeriod(mu2, periodS) {
+  if (!(mu2 > 0) || !(periodS > 0)) return null;
+  return Math.cbrt(mu2 * periodS * periodS / (4 * Math.PI * Math.PI));
+}
+var EARTH_ROTATION_RATE = 7292115e-11;
+function groundTrackShiftPerOrbit(periodS, omegaEarth = EARTH_ROTATION_RATE) {
+  if (!(periodS > 0)) return null;
+  return -omegaEarth * periodS;
+}
+function eclipseWithBeta(a, bodyR, betaRad, periodS) {
+  if (!Number.isFinite(betaRad) || Math.abs(betaRad) > Math.PI / 2) return null;
+  if (!(a > bodyR) || !(periodS > 0)) return null;
+  const cosb = Math.cos(betaRad);
+  if (Math.abs(cosb) < 1e-6) return 0;
+  const arg = Math.sqrt(1 - (bodyR / a) ** 2) / cosb;
+  if (arg >= 1) return 0;
+  if (arg <= -1) return periodS;
+  const betaShadow = Math.acos(Math.min(1, Math.max(-1, arg)));
+  return periodS / Math.PI * betaShadow;
+}
+
 // src/lib/physics/j2.ts
 var EARTH_J2 = 0.00108262668;
 function j2RaanRate(mu2, a, e, iRad, j22 = EARTH_J2, rEq = EARTH_RADIUS) {
@@ -22159,6 +22613,7 @@ function j2RaanRate(mu2, a, e, iRad, j22 = EARTH_J2, rEq = EARTH_RADIUS) {
 }
 function j2ArgpRate(mu2, a, e, iRad, j22 = EARTH_J2, rEq = EARTH_RADIUS) {
   if (!(a > 0) || e < 0 || e >= 1) return null;
+  if (e === 0) return null;
   if (!(mu2 > 0) || !(rEq > 0)) return null;
   const p = a * (1 - e * e);
   if (!(p > 0)) return null;
@@ -22214,10 +22669,14 @@ function machNumber(v, aSound) {
 
 // src/lib/physics/launch.ts
 function launchAzimuth(latRad, iRad) {
+  if (!Number.isFinite(latRad) || !Number.isFinite(iRad)) return null;
+  const halfPi = Math.PI / 2;
+  if (Math.abs(latRad) >= halfPi) return null;
+  if (iRad < 0 || iRad > Math.PI) return null;
   const c = Math.cos(iRad) / Math.cos(latRad);
   if (!Number.isFinite(c) || Math.abs(c) > 1 + 1e-12) return null;
-  const cl = Math.min(1, Math.max(-1, c));
-  const beta = Math.asin(cl);
+  const snapped = Math.abs(c) >= 1 - 1e-12 ? Math.sign(c) : c;
+  const beta = Math.asin(snapped);
   const a1 = beta;
   const a2 = Math.PI - beta;
   const wrap = (x) => {
@@ -22592,7 +23051,7 @@ function lightTimeRoundTrip(rangeM, c = 299792458) {
 }
 var SOLAR_PRESSURE_1AU = 456e-8;
 function solarRadiationForce(areaM2, cr = 1, rAu = 1) {
-  if (!(areaM2 > 0) || !(cr > 0) || !(rAu > 0)) return null;
+  if (!(areaM2 > 0) || !(cr > 0) || cr > 2 || !(rAu > 0)) return null;
   return SOLAR_PRESSURE_1AU * areaM2 * cr / (rAu * rAu);
 }
 function solarRadiationAccel(massKg, areaM2, cr = 1, rAu = 1) {
@@ -22615,7 +23074,7 @@ function exponentialDensity(h, rho0, scaleH) {
 
 // src/lib/physics/maneuvers.ts
 function hohmannWithPlaneChange(mu2, r1, r2, deltaIRad) {
-  if (!(mu2 > 0) || !(r1 > 0) || !(r2 > 0)) return null;
+  if (!(mu2 > 0) || !(r1 > 0) || !(r2 > 0) || !Number.isFinite(deltaIRad)) return null;
   const h = hohmannTransfer(mu2, r1, r2);
   const v1 = Math.sqrt(mu2 / r1);
   const v2 = Math.sqrt(mu2 / r2);
@@ -22660,14 +23119,18 @@ function deltaAFromTangentialDv(a, v, dv) {
   return 2 * a * dv / v;
 }
 function planeChangeAtApsides(mu2, rp, ra, deltaIRad) {
-  if (!(mu2 > 0) || !(rp > 0) || !(ra > rp)) return null;
+  if (!(mu2 > 0) || !(rp > 0) || !(ra > rp) || !Number.isFinite(deltaIRad)) return null;
   const a = (rp + ra) / 2;
   const vp = visViva(mu2, rp, a);
   const va = visViva(mu2, ra, a);
+  if (!Number.isFinite(vp) || !(vp > 0) || !Number.isFinite(va) || !(va > 0)) return null;
   const di = Math.abs(deltaIRad);
   const dvPeri = planeChangeDeltaV(vp, di);
   const dvApo = planeChangeDeltaV(va, di);
-  return { dvPeri, dvApo, ratio: dvApo / dvPeri };
+  if (!Number.isFinite(dvPeri) || !Number.isFinite(dvApo)) return null;
+  const ratio = dvPeri === 0 ? va / vp : dvApo / dvPeri;
+  if (!Number.isFinite(ratio)) return null;
+  return { dvPeri, dvApo, ratio };
 }
 
 // src/lib/physics/propulsion.ts
@@ -22747,10 +23210,15 @@ function deorbitBurn(mu2, rCirc, rp) {
   return { a, dv: vc - vApo, vc, vApo, tofHalf };
 }
 function meanMotionFromAltitude(h, mu2 = EARTH_MU, bodyR = EARTH_RADIUS) {
-  if (!(h >= 0) || !(mu2 > 0)) return null;
+  if (!(h >= 0) || !(mu2 > 0) || !Number.isFinite(h) || !Number.isFinite(mu2)) return null;
   const a = bodyR + h;
-  const n = Math.sqrt(mu2 / (a * a * a));
-  return { a, n, period: orbitalPeriod(mu2, a), v: circularOrbitVelocity(mu2, a) };
+  if (!(a > 0) || !Number.isFinite(a)) return null;
+  const n = Math.sqrt(mu2 / a) / a;
+  if (!(n > 0) || !Number.isFinite(n)) return null;
+  const period = 2 * Math.PI / n;
+  const v = circularOrbitVelocity(mu2, a);
+  if (!Number.isFinite(period) || !(period > 0) || !Number.isFinite(v) || !(v > 0)) return null;
+  return { a, n, period, v };
 }
 function normalizeEqualStageCount(nStages) {
   if (!Number.isFinite(nStages)) return null;
@@ -22764,85 +23232,6 @@ function equalStageMassRatio(totalDv, nStages, ispS, g0 = 9.80665) {
   const ve = ispS * g0;
   const dvStage = totalDv / nStages;
   return { dvStage, massRatio: Math.exp(dvStage / ve), ve };
-}
-
-// src/lib/physics/power.ts
-var SOLAR_CONSTANT_1AU = 1361;
-function solarArrayPower(areaM2, eta, incidenceDeg, rAu = 1, s0 = SOLAR_CONSTANT_1AU) {
-  if (!(areaM2 > 0) || !(eta > 0) || !(eta <= 1) || !(rAu > 0)) return null;
-  const c = Math.cos(incidenceDeg * Math.PI / 180);
-  if (c <= 0) return 0;
-  return s0 * eta * areaM2 * c / (rAu * rAu);
-}
-function batteryEnergyJ(capacityAh, voltageV) {
-  if (!(capacityAh > 0) || !(voltageV > 0)) return null;
-  return capacityAh * voltageV * 3600;
-}
-function batteryEndurance(energyJ, loadW) {
-  if (!(energyJ > 0) || !(loadW > 0)) return null;
-  return energyJ / loadW;
-}
-function rcsDeltaV(thrustN, burnS, massKg) {
-  if (!(thrustN > 0) || !(burnS > 0) || !(massKg > 0)) return null;
-  return thrustN * burnS / massKg;
-}
-function angularDiameter(radiusM, distanceM) {
-  if (!(radiusM > 0) || !(distanceM > radiusM)) return null;
-  return 2 * Math.atan(radiusM / distanceM);
-}
-function diffractionResolution(freqHz, apertureM, rangeM) {
-  if (!(freqHz > 0) || !(apertureM > 0)) return null;
-  const lambda = 299792458 / freqHz;
-  const thetaRad = 1.22 * lambda / apertureM;
-  const gsdM = rangeM != null && rangeM > 0 ? thetaRad * rangeM : null;
-  return { thetaRad, gsdM };
-}
-var STEFAN_BOLTZMANN = 5670374419e-17;
-function thermalRadiatedPower(areaM2, tempK, emissivity = 0.8) {
-  if (!(areaM2 > 0) || !(tempK > 0) || !(emissivity > 0) || emissivity > 1) return null;
-  return emissivity * STEFAN_BOLTZMANN * areaM2 * tempK ** 4;
-}
-function dragForce(rho, v, cd, areaM2) {
-  if (!(rho > 0) || !(v > 0) || !(cd > 0) || !(areaM2 > 0)) return null;
-  return 0.5 * rho * v * v * cd * areaM2;
-}
-function wheelMomentum(inertia, omegaRadS) {
-  if (!(inertia > 0) || !Number.isFinite(omegaRadS)) return null;
-  return inertia * omegaRadS;
-}
-function wheelTorque(inertia, alphaRadS2) {
-  if (!(inertia > 0) || !Number.isFinite(alphaRadS2)) return null;
-  return inertia * alphaRadS2;
-}
-function alongTrackFromDeltaM(a, deltaMRad) {
-  if (!(a > 0) || !Number.isFinite(deltaMRad)) return null;
-  return a * deltaMRad;
-}
-function apoapsisRaiseFromCircular(mu2, r, ra) {
-  if (!(mu2 > 0) || !(r > 0) || !(ra > r)) return null;
-  const a = (r + ra) / 2;
-  const vc = Math.sqrt(mu2 / r);
-  const vp = Math.sqrt(mu2 * (2 / r - 1 / a));
-  return { a, dv: vp - vc, vp, vc };
-}
-function semiMajorFromPeriod(mu2, periodS) {
-  if (!(mu2 > 0) || !(periodS > 0)) return null;
-  return Math.cbrt(mu2 * periodS * periodS / (4 * Math.PI * Math.PI));
-}
-var EARTH_ROTATION_RATE = 7292115e-11;
-function groundTrackShiftPerOrbit(periodS, omegaEarth = EARTH_ROTATION_RATE) {
-  if (!(periodS > 0)) return null;
-  return -omegaEarth * periodS;
-}
-function eclipseWithBeta(a, bodyR, betaRad, periodS) {
-  if (!(a > bodyR) || !(periodS > 0)) return null;
-  const cosb = Math.cos(betaRad);
-  if (Math.abs(cosb) < 1e-6) return 0;
-  const arg = Math.sqrt(1 - (bodyR / a) ** 2) / cosb;
-  if (arg >= 1) return 0;
-  if (arg <= -1) return periodS;
-  const betaShadow = Math.acos(Math.min(1, Math.max(-1, arg)));
-  return periodS / Math.PI * betaShadow;
 }
 
 // src/lib/physics/ground-track.ts
@@ -23182,28 +23571,49 @@ function invert4(a) {
   }
   return inv;
 }
-function saastamoinenTropoDelay(elevRad, latRad, heightM, pHpa = 1013.25, tK = 288.15, eHpa = 11) {
-  if (!(elevRad > 0.05) || elevRad > Math.PI / 2) return null;
-  if (!(heightM >= -500) || heightM > 1e5) return null;
+var PA_PER_HPA = 100;
+var TROPO_ELEV_MIN_RAD = 5 * Math.PI / 180;
+function saastamoinenTropoDelay(elevRad, pPa, tK, ePa) {
+  if (![elevRad, pPa, tK, ePa].every(Number.isFinite)) return null;
+  if (elevRad < TROPO_ELEV_MIN_RAD || elevRad > Math.PI / 2) return null;
+  if (!(pPa > 0) || !(tK > 0) || ePa < 0 || ePa > pPa) return null;
   const z = Math.PI / 2 - elevRad;
-  const d = 2277e-6 / Math.cos(z) * (pHpa + (1255 / tK + 0.05) * eHpa - Math.tan(z) ** 2);
-  const scale = Math.exp(-heightM / 7e3);
-  const delay = d * scale * (1 + 0.1 * Math.cos(2 * latRad));
-  return Number.isFinite(delay) && delay > 0 ? delay : null;
+  const pHpa = pPa / PA_PER_HPA;
+  const eHpa = ePa / PA_PER_HPA;
+  const delay = 2277e-6 / Math.cos(z) * (pHpa + (1255 / tK + 0.05) * eHpa - 1.16 * Math.tan(z) ** 2);
+  return Number.isFinite(delay) ? delay : null;
 }
 function klobucharIonoDelayM(elevRad, tecu, fHz = 157542e4) {
-  if (!(elevRad > 0.05) || !(tecu >= 0) || !(fHz > 0)) return null;
-  const mf = 1 / Math.sin(elevRad);
-  const dVert = 403e15 * tecu / (fHz * fHz);
-  const dV = 40.3 * tecu * 1e16 / (fHz * fHz);
-  const d = dV * mf;
-  return Number.isFinite(d) && d >= 0 ? d : Number.isFinite(dVert) ? dVert * mf : null;
+  if (![elevRad, tecu, fHz].every(Number.isFinite)) return null;
+  if (elevRad < 0 || elevRad > Math.PI / 2) return null;
+  if (!(tecu >= 0) || !(fHz > 0)) return null;
+  const elevSemi = elevRad / Math.PI;
+  const obliquity = 1 + 16 * (0.53 - elevSemi) ** 3;
+  const delay = 40.3 * tecu * 1e16 / (fHz * fHz) * obliquity;
+  return Number.isFinite(delay) && delay >= 0 ? delay : null;
 }
 function opticalLinkReceivedPower(opts) {
   const { ptW, etaT, etaR, gt, gr, wavelengthM: lam, rangeM: R } = opts;
   const L = opts.lossLin ?? 1;
   if (![ptW, etaT, etaR, gt, gr, lam, R, L].every(Number.isFinite) || !(ptW > 0) || !(etaT > 0 && etaT <= 1) || !(etaR > 0 && etaR <= 1) || !(gt > 0) || !(gr > 0) || !(lam > 0) || !(R > 0) || !(L >= 1))
     return null;
+  const k = 2 * Math.PI / lam;
+  const hasTxRadius = opts.txRadiusM !== void 0;
+  const hasRxRadius = opts.rxRadiusM !== void 0;
+  if (hasTxRadius !== hasRxRadius) return null;
+  let rt;
+  let rr;
+  if (hasTxRadius) {
+    const tx = opts.txRadiusM;
+    const rx = opts.rxRadiusM;
+    if (!(Number.isFinite(tx) && tx > 0) || !(Number.isFinite(rx) && rx > 0)) return null;
+    rt = tx;
+    rr = rx;
+  } else {
+    rt = Math.sqrt(gt) / k;
+    rr = Math.sqrt(gr) / k;
+  }
+  if (!(R >= k * rt * rr)) return null;
   const fspl = (lam / (4 * Math.PI * R)) ** 2;
   const pr = ptW * etaT * etaR * gt * gr * fspl / L;
   return Number.isFinite(pr) && pr > 0 ? pr : null;
@@ -23223,337 +23633,6 @@ function laserRangeFromRtt(rttS, c = C) {
 function opticalQFromSnr(snrLin) {
   if (!(snrLin > 0)) return null;
   return Math.sqrt(snrLin);
-}
-
-// src/lib/physics/discovery-wave.ts
-function reflectionCoeff(z0, zL) {
-  if (!(z0 > 0) || !(zL >= 0)) return null;
-  const g = Math.abs((zL - z0) / (zL + z0));
-  return Number.isFinite(g) ? g : null;
-}
-function vswrFromGamma(gamma) {
-  if (!(gamma >= 0) || gamma >= 1) return null;
-  if (gamma === 0) return 1;
-  return (1 + gamma) / (1 - gamma);
-}
-function returnLossDb(gamma) {
-  if (!(gamma >= 0) || gamma >= 1) return null;
-  if (gamma === 0) return 200;
-  return -20 * Math.log10(gamma);
-}
-function effectiveAperture(gainLin, wavelengthM) {
-  if (!(gainLin > 0) || !(wavelengthM > 0)) return null;
-  return gainLin * wavelengthM * wavelengthM / (4 * Math.PI);
-}
-function dopplerShiftHz(f0, vRadial, c = C) {
-  if (!(f0 > 0) || !Number.isFinite(vRadial) || !(c > 0)) return null;
-  return f0 * vRadial / c;
-}
-function rainAttenuationDb(rateMmH, pathKm, k = 0.01, alpha = 1.1) {
-  if (!(rateMmH >= 0) || !(pathKm > 0) || !(k > 0) || !(alpha > 0)) return null;
-  return k * rateMmH ** alpha * pathKm;
-}
-function radarReceivedPower(opts) {
-  const { pt, g, wavelength: lam, rcs, range: R } = opts;
-  if (!(pt > 0) || !(g > 0) || !(lam > 0) || !(rcs > 0) || !(R > 0)) return null;
-  const pr = pt * g * g * lam * lam * rcs / ((4 * Math.PI) ** 3 * R ** 4);
-  return Number.isFinite(pr) && pr > 0 ? pr : null;
-}
-function ebN0FromCn0(cn0Hz, bitRate) {
-  if (!(cn0Hz > 0) || !(bitRate > 0)) return null;
-  return cn0Hz / bitRate;
-}
-function freeFallTimeConstG(h, g = G0) {
-  if (!(h > 0) || !(g > 0)) return null;
-  return Math.sqrt(2 * h / g);
-}
-function freeFallSpeedConstG(h, g = G0) {
-  if (!(h > 0) || !(g > 0)) return null;
-  return Math.sqrt(2 * g * h);
-}
-function ballisticRangeFlat(v0, gammaRad, g = G0) {
-  if (!(v0 > 0) || !(g > 0) || !(gammaRad > 0) || gammaRad >= Math.PI / 2) return null;
-  const range = v0 * v0 * Math.sin(2 * gammaRad) / g;
-  const tof = 2 * v0 * Math.sin(gammaRad) / g;
-  const hMax = v0 * v0 * Math.sin(gammaRad) ** 2 / (2 * g);
-  if (![range, tof, hMax].every((x) => Number.isFinite(x) && x >= 0)) return null;
-  return { range, tof, hMax };
-}
-function terminalVelocity(mass, cd, area, rho, g = G0) {
-  if (!(mass > 0) || !(cd > 0) || !(area > 0) || !(rho > 0) || !(g > 0)) return null;
-  return Math.sqrt(2 * mass * g / (rho * cd * area));
-}
-function bankAngleRad(v, turnRadius, g = G0) {
-  if (!(v > 0) || !(turnRadius > 0) || !(g > 0)) return null;
-  return Math.atan(v * v / (g * turnRadius));
-}
-function slewTimeMin(deltaTheta, wMax, aMax) {
-  const d = Math.abs(deltaTheta);
-  if (!(d > 0) || !(wMax > 0) || !(aMax > 0)) return null;
-  const thSwitch = wMax * wMax / aMax;
-  if (d <= thSwitch) return 2 * Math.sqrt(d / aMax);
-  return d / wMax + wMax / aMax;
-}
-function sunSensorAngle(bodyZ, sun) {
-  const nb = Math.hypot(...bodyZ);
-  const ns = Math.hypot(...sun);
-  if (!(nb > 0) || !(ns > 0)) return null;
-  const c = (bodyZ[0] * sun[0] + bodyZ[1] * sun[1] + bodyZ[2] * sun[2]) / (nb * ns);
-  return Math.acos(Math.min(1, Math.max(-1, c)));
-}
-function starTrackerNoiseRad(pixelScaleRad, nPixels) {
-  if (!(pixelScaleRad > 0) || !(nPixels >= 1)) return null;
-  return pixelScaleRad / Math.sqrt(nPixels);
-}
-function rwMomentum(inertia, omega) {
-  if (!(inertia > 0) || !Number.isFinite(omega)) return null;
-  return inertia * omega;
-}
-function magneticTorque(mAm2, bTesla, angleRad) {
-  if (!(mAm2 > 0) || !(bTesla > 0) || !Number.isFinite(angleRad)) return null;
-  return mAm2 * bTesla * Math.abs(Math.sin(angleRad));
-}
-function gravityGradientTorque(mu2, r, inertiaDiff, deltaRad) {
-  if (!(mu2 > 0) || !(r > 0) || !(inertiaDiff >= 0)) return null;
-  return 3 * mu2 / (r * r * r) * (inertiaDiff / 2) * Math.abs(Math.sin(2 * deltaRad));
-}
-function walkerSpacing(tSats, planes) {
-  if (!(tSats >= 1) || !(planes >= 1) || tSats % planes !== 0) return null;
-  const spp = tSats / planes;
-  return {
-    satsPerPlane: spp,
-    inPlaneSpacingRad: 2 * Math.PI / spp,
-    planeSpacingRad: 2 * Math.PI / planes
-  };
-}
-function coverageSwathWidth(altitude, fovRad, bodyR = EARTH_RADIUS) {
-  if (!(altitude > 0) || !(fovRad > 0) || fovRad >= Math.PI || !(bodyR > 0))
-    return null;
-  const r = bodyR + altitude;
-  const alpha = fovRad / 2;
-  const sinArg = r / bodyR * Math.sin(alpha);
-  if (!(sinArg < 1)) return null;
-  const lambda = Math.asin(sinArg) - alpha;
-  if (!(lambda > 0)) return null;
-  const sph = 2 * bodyR * lambda;
-  const flat = 2 * altitude * Math.tan(alpha);
-  const w = Number.isFinite(sph) && sph > 0 ? sph : flat;
-  return w > 0 ? w : null;
-}
-function revisitTimeSimple(periodS, swathWidthM, bodyR = EARTH_RADIUS) {
-  if (!(periodS > 0) || !(swathWidthM > 0) || !(bodyR > 0)) return null;
-  const earthCirc = 2 * Math.PI * bodyR;
-  const strips = earthCirc / swathWidthM;
-  return periodS * Math.max(1, strips);
-}
-function geoStationkeepingDvYear(northSouth = 45, eastWest = 5) {
-  return {
-    dVNS: northSouth,
-    dVEW: eastWest,
-    dVYear: northSouth + eastWest
-  };
-}
-function geoPropellantBudget(dryMass, isp, dvPerYear, lifeYears, g0 = G0) {
-  if (!(dryMass > 0) || !(isp > 0) || !(dvPerYear >= 0) || !(lifeYears > 0))
-    return null;
-  const dvTotal = dvPerYear * lifeYears;
-  const m0 = dryMass * Math.exp(dvTotal / (isp * g0));
-  return { mProp: m0 - dryMass, m0, dvTotal };
-}
-function dragMakeupDvPerRev(rho, a, v, ballisticB) {
-  if (!(rho > 0) || !(a > 0) || !(v > 0) || !(ballisticB > 0)) return null;
-  return Math.PI * rho * a * v / ballisticB;
-}
-function epsOrbitAverage(pSun, eclipseFraction, eta = 0.28) {
-  if (!(pSun > 0) || !(eclipseFraction >= 0) || eclipseFraction >= 1 || !(eta > 0))
-    return null;
-  return pSun * (1 - eclipseFraction) * eta;
-}
-function relativityClockRate(deltaPotential, speed, c = C) {
-  if (!(c > 0) || !Number.isFinite(deltaPotential) || !(speed >= 0)) return null;
-  return deltaPotential / (c * c) - speed * speed / (2 * c * c);
-}
-function tisserandParameter(a, e, iRad, aPlanet) {
-  if (!(a > 0) || !(e >= 0) || e >= 1 || !(aPlanet > 0) || !Number.isFinite(iRad))
-    return null;
-  return aPlanet / a + 2 * Math.cos(iRad) * Math.sqrt(a / aPlanet * (1 - e * e));
-}
-function opticalGsd(altitudeM, ifovRad) {
-  if (!(altitudeM > 0) || !(ifovRad > 0)) return null;
-  const gsd = altitudeM * ifovRad;
-  return Number.isFinite(gsd) && gsd > 0 ? gsd : null;
-}
-function solarSailAccel(powerFlux, area, mass, eta = 1, c = C) {
-  if (!(powerFlux > 0) || !(area > 0) || !(mass > 0) || !(eta > 0) || !(c > 0)) return null;
-  const a = 2 * eta * powerFlux * area / (c * mass);
-  return Number.isFinite(a) && a > 0 ? a : null;
-}
-function finiteBurnDv(ve, m0, mdot, burnTime) {
-  if (!(ve > 0) || !(m0 > 0) || !(mdot > 0) || !(burnTime > 0)) return null;
-  const mf = m0 - mdot * burnTime;
-  if (!(mf > 0) || mf >= m0) return null;
-  const dv = ve * Math.log(m0 / mf);
-  return Number.isFinite(dv) && dv > 0 ? dv : null;
-}
-function bPlaneImpactParameter(mu2, vInf, turnAngleRad) {
-  if (!(mu2 > 0) || !(vInf > 0) || !(turnAngleRad > 0) || turnAngleRad >= Math.PI) return null;
-  const b = mu2 / (vInf * vInf) / Math.tan(turnAngleRad / 2);
-  return Number.isFinite(b) && b > 0 ? b : null;
-}
-function jacobiConstant(x, y, vx, vy, mu2) {
-  if (!(mu2 > 0) || mu2 >= 1) return null;
-  const r1 = Math.hypot(x + mu2, y);
-  const r2 = Math.hypot(x - (1 - mu2), y);
-  if (!(r1 > 0) || !(r2 > 0)) return null;
-  const C2 = x * x + y * y + 2 * (1 - mu2) / r1 + 2 * mu2 / r2 - (vx * vx + vy * vy);
-  return Number.isFinite(C2) ? C2 : null;
-}
-function orbitLifetimeRough(density, ballisticCoeff, speed, scaleHeight, orbitRadius) {
-  if (!(density > 0) || !(ballisticCoeff > 0) || !(speed > 0) || !(scaleHeight > 0) || !(orbitRadius > 0))
-    return null;
-  const t = scaleHeight * ballisticCoeff / (density * speed * orbitRadius);
-  return Number.isFinite(t) && t > 0 ? t : null;
-}
-function geoDriftRate(a, aGeo, nGeo) {
-  if (!(a > 0) || !(aGeo > 0) || !(nGeo > 0)) return null;
-  const rate = -1.5 * nGeo * ((a - aGeo) / aGeo);
-  return Number.isFinite(rate) ? rate : null;
-}
-function stefanBoltzmannPower(area, tempK, emissivity = 1, sigma = 5670374419e-17) {
-  if (!(area > 0) || !(tempK > 0) || !(emissivity > 0) || !(emissivity <= 1)) return null;
-  const P = emissivity * sigma * area * tempK ** 4;
-  return Number.isFinite(P) && P > 0 ? P : null;
-}
-function wienPeakWavelength(tempK, b = 0.002897771955) {
-  if (!(tempK > 0)) return null;
-  const l = b / tempK;
-  return Number.isFinite(l) && l > 0 ? l : null;
-}
-function thrusterImpulseBit(force, ton) {
-  if (!(force > 0) || !(ton > 0)) return null;
-  return force * ton;
-}
-function argPerigeeDriftJ2(n, j22, bodyR, p, iRad) {
-  if (!(n > 0) || !(bodyR > 0) || !(p > 0) || !Number.isFinite(j22) || !Number.isFinite(iRad))
-    return null;
-  const c = Math.cos(iRad);
-  const wdot = 0.75 * n * j22 * (bodyR / p) ** 2 * (5 * c * c - 1);
-  return Number.isFinite(wdot) ? wdot : null;
-}
-function sarAzimuthResolution(wavelength, synthAngleRad) {
-  if (!(wavelength > 0) || !(synthAngleRad > 0)) return null;
-  const d = wavelength / (2 * synthAngleRad);
-  return Number.isFinite(d) && d > 0 ? d : null;
-}
-function radarRangeResolution(bandwidthHz, c = C) {
-  if (!(bandwidthHz > 0) || !(c > 0)) return null;
-  return c / (2 * bandwidthHz);
-}
-function linkMarginDb(cn0DbHz, requiredDbHz) {
-  if (!Number.isFinite(cn0DbHz) || !Number.isFinite(requiredDbHz)) return null;
-  return cn0DbHz - requiredDbHz;
-}
-function aerobrakingDv(ballisticInv, density, speed, pathLength) {
-  if (!(ballisticInv > 0) || !(density > 0) || !(speed > 0) || !(pathLength > 0))
-    return null;
-  const dv = 0.5 * ballisticInv * density * speed * pathLength;
-  return Number.isFinite(dv) && dv > 0 ? dv : null;
-}
-function diffractionLimitAngle(wavelength, diameter) {
-  if (!(wavelength > 0) || !(diameter > 0)) return null;
-  return 1.22 * wavelength / diameter;
-}
-function panelEolPower(p0, degradationPerYear, years) {
-  if (!(p0 > 0) || !(degradationPerYear >= 0) || degradationPerYear >= 1 || !(years >= 0))
-    return null;
-  const p = p0 * (1 - degradationPerYear) ** years;
-  return Number.isFinite(p) && p >= 0 ? p : null;
-}
-function magnetorquerMoment(turns, current, area) {
-  if (!(turns > 0) || !(current > 0) || !(area > 0)) return null;
-  return turns * current * area;
-}
-function captureCircularizeDv(mu2, rp, vInf) {
-  if (!Number.isFinite(mu2) || !Number.isFinite(rp) || !Number.isFinite(vInf)) return null;
-  if (!(mu2 > 0) || !(rp > 0) || !(vInf >= 0)) return null;
-  const vp = Math.sqrt(vInf * vInf + 2 * mu2 / rp);
-  const vc = Math.sqrt(mu2 / rp);
-  const dv = vp - vc;
-  return Number.isFinite(dv) && dv >= 0 ? dv : null;
-}
-function gravityLossDv(g, burnTime, gammaRad) {
-  if (!(g > 0) || !(burnTime > 0) || !Number.isFinite(gammaRad)) return null;
-  return g * burnTime * Math.sin(gammaRad);
-}
-function batteryDepthOfDischarge(eUsed, eCapacity) {
-  if (!(eUsed >= 0) || !(eCapacity > 0)) return null;
-  const d = eUsed / eCapacity;
-  return Number.isFinite(d) && d >= 0 ? d : null;
-}
-function umbraLength(sunDistance, sunRadius, bodyRadius) {
-  if (!(sunDistance > 0) || !(sunRadius > bodyRadius) || !(bodyRadius > 0)) return null;
-  const L = bodyRadius * sunDistance / (sunRadius - bodyRadius);
-  return Number.isFinite(L) && L > 0 ? L : null;
-}
-function meanAnomalyFromE(E, e) {
-  if (!(e >= 0) || e >= 1 || !Number.isFinite(E)) return null;
-  return E - e * Math.sin(E);
-}
-function flightPathAngle(e, nuRad) {
-  if (!(e >= 0) || e >= 1 || !Number.isFinite(nuRad)) return null;
-  const den = 1 + e * Math.cos(nuRad);
-  if (Math.abs(den) < 1e-15) return null;
-  return Math.atan2(e * Math.sin(nuRad), den);
-}
-function hoopStress(pressure, radius, thickness) {
-  if (!(pressure > 0) || !(radius > 0) || !(thickness > 0)) return null;
-  return pressure * radius / thickness;
-}
-function hillSphere(a, m, M) {
-  if (!(a > 0) || !(m > 0) || !(M > 0)) return null;
-  return a * Math.cbrt(m / (3 * M));
-}
-function edelbaumDv(v1, v2, diRad) {
-  if (!(v1 > 0) || !(v2 > 0) || !(diRad >= 0) || diRad > Math.PI) return null;
-  const dv = Math.sqrt(
-    Math.max(0, v1 * v1 + v2 * v2 - 2 * v1 * v2 * Math.cos(Math.PI * diRad / 2))
-  );
-  return Number.isFinite(dv) ? dv : null;
-}
-function repeatingGroundTrackPeriod(orbitsPerCycle, cycleDays) {
-  if (!(orbitsPerCycle > 0) || !(cycleDays > 0)) return null;
-  const T = cycleDays * 86400 / orbitsPerCycle;
-  return Number.isFinite(T) && T > 0 ? T : null;
-}
-function pointingBudgetRss(sigmas) {
-  if (!sigmas.length || sigmas.some((s) => !(s >= 0) || !Number.isFinite(s))) return null;
-  const sum = sigmas.reduce((a, s) => a + s * s, 0);
-  return Math.sqrt(sum);
-}
-function boiloffRate(heatIn, heatOfVaporization) {
-  if (!(heatIn > 0) || !(heatOfVaporization > 0)) return null;
-  return heatIn / heatOfVaporization;
-}
-function residualDipoleTorque(mRes, B) {
-  if (!(mRes > 0) || !(B > 0)) return null;
-  return mRes * B;
-}
-function solarFluxAtDistance(r, s0 = 1361, au = 149597870700) {
-  if (!(r > 0) || !(s0 > 0) || !(au > 0)) return null;
-  return s0 * (au / r) ** 2;
-}
-function nyquistSampleRate(fMax) {
-  if (!(fMax > 0)) return null;
-  return 2 * fMax;
-}
-function dataVolumeBits(rateBps, contactS, eta = 1) {
-  if (!(rateBps > 0) || !(contactS > 0) || !(eta > 0) || eta > 1) return null;
-  return rateBps * contactS * eta;
-}
-function earthIrFlux(altitude, te = 255, bodyR = EARTH_RADIUS, sigma = 5670374419e-17) {
-  if (!(altitude >= 0) || !(te > 0) || !(bodyR > 0)) return null;
-  const F = sigma * te ** 4 * (bodyR / (bodyR + altitude)) ** 2;
-  return Number.isFinite(F) && F > 0 ? F : null;
 }
 
 // src/lib/physics/wave10.ts
@@ -23693,50 +23772,86 @@ function heliocentricCircularState(a, L0, tUnix, mu2 = SUN_MU) {
   const v = [-n * a * s, n * a * c, 0];
   return { r, v, L };
 }
-function porkchopTransfer(tDep, tArr, mu2 = SUN_MU) {
+function samplesInsideInterval(start, end, step) {
+  if (!(step > 0) || !Number.isFinite(start) || !Number.isFinite(end)) return [];
+  const lo = Math.min(start, end);
+  const hi = Math.max(start, end);
+  const count = Math.floor((hi - lo) / step + 1e-12) + 1;
+  const samples = [];
+  for (let i = 0; i < count; i++) {
+    const x = lo + i * step;
+    if (x > hi + step * 1e-9) break;
+    samples.push(x);
+  }
+  return samples;
+}
+function indexSamples(start, count, step) {
+  if (!(count >= 1) || !(step > 0) || !Number.isFinite(start)) return [];
+  const out = [];
+  for (let i = 0; i < count; i++) out.push(start + i * step);
+  return out;
+}
+function porkchopArcs(tDep, tArr, mu2 = SUN_MU) {
   const tof = tArr - tDep;
-  if (!(tof > 0)) return null;
+  if (!(tof > 0)) return [];
   const earth = heliocentricCircularState(AU, EARTH_HELIO_L0, tDep, mu2);
   const mars = heliocentricCircularState(MARS_SMA_M, MARS_HELIO_L0, tArr, mu2);
-  if (!earth || !mars) return null;
-  let sol = lambertSolve(mu2, earth.r, mars.r, tof, true);
-  if (!sol) sol = lambertSolve(mu2, earth.r, mars.r, tof, false);
-  if (!sol) return null;
-  const dvDep = vnorm(vsub(sol.v1, earth.v));
-  const dvArr = vnorm(vsub(sol.v2, mars.v));
-  if (!Number.isFinite(dvDep) || !Number.isFinite(dvArr)) return null;
-  return {
-    tDep,
-    tArr,
-    tof,
-    c3: dvDep * dvDep,
-    dvDep,
-    dvArr,
-    dvTot: dvDep + dvArr,
-    v1: sol.v1
-  };
+  if (!earth || !mars) return [];
+  const arcs = [];
+  for (const shortWay of [true, false]) {
+    const sol = lambertSolve(mu2, earth.r, mars.r, tof, shortWay);
+    if (!sol) continue;
+    const dvDep = vnorm(vsub(sol.v1, earth.v));
+    const dvArr = vnorm(vsub(sol.v2, mars.v));
+    if (!Number.isFinite(dvDep) || !Number.isFinite(dvArr)) continue;
+    arcs.push({
+      tDep,
+      tArr,
+      tof,
+      c3: dvDep * dvDep,
+      dvDep,
+      dvArr,
+      dvTot: dvDep + dvArr,
+      v1: sol.v1
+    });
+  }
+  return arcs;
+}
+function lowestDv(arcs) {
+  if (arcs.length === 0) return null;
+  let best = arcs[0];
+  for (const arc of arcs) {
+    if (arc.dvTot < best.dvTot) best = arc;
+  }
+  return best;
 }
 function porkchopEarthMarsGrid(opts) {
-  const { depStart, depCount, depStep, tofMin, tofCount, tofStep } = opts;
-  if (!(depCount >= 2) || !(tofCount >= 2) || !(depStep > 0) || !(tofStep > 0) || !(tofMin > 0)) {
-    return null;
-  }
+  const { depStart, depCount, depStep, tofMin, tofCount, tofStep, depEnd, tofMax } = opts;
+  const bounded = depEnd != null || tofMax != null;
+  if (!(depStep > 0) || !(tofStep > 0)) return null;
+  if (!bounded && (!(depCount >= 2) || !(tofCount >= 2) || !(tofMin > 0))) return null;
+  const departures = depEnd == null ? indexSamples(depStart, depCount, depStep) : samplesInsideInterval(depStart, depEnd, depStep);
+  const tofs = tofMax == null ? indexSamples(tofMin, tofCount, tofStep) : samplesInsideInterval(tofMin, tofMax, tofStep);
+  if (departures.length === 0 || tofs.length === 0) return null;
   const cells = [];
-  for (let i = 0; i < depCount; i++) {
-    const tDep = depStart + i * depStep;
-    for (let j = 0; j < tofCount; j++) {
-      const tof = tofMin + j * tofStep;
-      const cell = porkchopTransfer(tDep, tDep + tof);
-      if (cell) cells.push(cell);
+  let bestDv = null;
+  let bestC3 = null;
+  for (const tDep of departures) {
+    for (const tof of tofs) {
+      if (!(tof > 0)) continue;
+      const arcs = porkchopArcs(tDep, tDep + tof);
+      if (arcs.length === 0) continue;
+      const plot = lowestDv(arcs);
+      if (!plot) continue;
+      cells.push(plot);
+      for (const arc of arcs) {
+        if (!bestDv || arc.dvTot < bestDv.dvTot) bestDv = arc;
+        if (!bestC3 || arc.c3 < bestC3.c3) bestC3 = arc;
+      }
     }
   }
-  if (cells.length < 2) return null;
-  let bestDv = cells[0];
-  let bestC3 = cells[0];
-  for (const c of cells) {
-    if (c.dvTot < bestDv.dvTot) bestDv = c;
-    if (c.c3 < bestC3.c3) bestC3 = c;
-  }
+  if (cells.length < 1 || !bestDv || !bestC3) return null;
+  if (!bounded && cells.length < 2) return null;
   return { cells, bestDv, bestC3 };
 }
 function conjunctionPc2d(missM, sigmaX, sigmaY, radiusM) {
@@ -25491,7 +25606,7 @@ var MCP_TOOL_DEFS = [
   },
   {
     name: "flyby_speed",
-    description: "Gravity assist / flyby excess sketch.",
+    description: "Turn-angle eccentricity sketch: e = 1/sin(\u03B4/2) from the turn angle, with v\u221E echoed. Not the web periapsis speed.",
     inputSchema: {
       v_inf_in_m_s: number2(),
       turn_deg: number2()
@@ -26171,15 +26286,17 @@ var MCP_TOOL_DEFS = [
   },
   {
     name: "gnss_troposphere_delay",
-    description: "Saastamoinen-class tropo delay.",
+    description: "Saastamoinen 1972 range correction. Pressures are pascals. Not a modern mapping function. Elevation is limited to 5-90 degrees.",
     inputSchema: {
-      elev_deg: number2(),
-      lat_deg: number2(),
-      height_m: number2()
+      elev_deg: number2().finite().min(5).max(90),
+      p_pa: number2().finite().positive(),
+      t_k: number2().finite().positive(),
+      e_pa: number2().finite().min(0)
     },
-    sample: { "elev_deg": 30, "lat_deg": 28.57, "height_m": 10 },
+    sample: { "elev_deg": 30, "p_pa": 101325, "t_k": 288.15, "e_pa": 1100 },
     run: (args) => {
-      const d = saastamoinenTropoDelay(args.elev_deg * Math.PI / 180, args.lat_deg * Math.PI / 180, args.height_m);
+      if (!(args.e_pa <= args.p_pa)) return null;
+      const d = saastamoinenTropoDelay(args.elev_deg * Math.PI / 180, args.p_pa, args.t_k, args.e_pa);
       return d == null ? null : { delay_m: d };
     }
   },
@@ -26467,11 +26584,11 @@ var MCP_TOOL_DEFS = [
   },
   {
     name: "gnss_ionosphere_klobuchar",
-    description: "Klobuchar-class iono delay.",
+    description: "Supplied-VTEC delay using the GPS Klobuchar obliquity factor. Not the complete broadcast correction. Elevation is limited to 0-90 degrees.",
     inputSchema: {
-      elev_deg: number2(),
-      tecu: number2(),
-      freq_hz: number2().optional()
+      elev_deg: number2().finite().min(0).max(90),
+      tecu: number2().finite().min(0),
+      freq_hz: number2().finite().positive().optional()
     },
     sample: { "elev_deg": 45, "tecu": 20 },
     run: (args) => {

@@ -253,6 +253,23 @@ describe('precision metadata coverage', () => {
     expect(molniya.limits).not.toContain('First-order J2 secular rates')
   })
 
+  it('six closed-form calculators are not tagged two-body', () => {
+    const closedFormToolIds = [
+      'hoop-stress',
+      'planck-radiance',
+      'nyquist-rate',
+      'quaternion-euler',
+      'pointing-budget-rss',
+      'data-volume',
+    ]
+    for (const id of closedFormToolIds) {
+      const p = getToolPrecision(id)
+      expect(p.modelClass).toBe('closed-form')
+      expect(p.limits).not.toContain('spherical central mass')
+      expect(p.limits).not.toContain('two-body')
+    }
+  })
+
   it('getToolPrecision always returns limits text', () => {
     for (const t of TOOLS.filter((x) => x.status === 'live')) {
       const p = getToolPrecision(t.id)

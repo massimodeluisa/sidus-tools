@@ -32,7 +32,7 @@ export function MeanAnomalyFromETool() {
       parameters={
         <ParamsGrid>
           <UiUnitField label={t('fields.disc_e_2')} category="angle" unitIds={TOOL_UNIT_SETS.angle} unitId={p.Eu} value={p.E} min={0} onValueChange={(E)=>setP({E})} onUnitChange={(Eu,E)=>setP({Eu,E})} />
-          <UiField label={t('fields.disc_e')} type="number" min={0}  step="any" value={p.e} onChange={(e)=>setP({e:Number(e.target.value)})} />
+          <UiField label={t('fields.disc_e')} type="number" min={0}  step="any" value={p.e} hint={t('fields.hint_mean_anomaly_e')} onChange={(e)=>setP({e:Number(e.target.value)})} />
         </ParamsGrid>
       }
       results={
@@ -45,10 +45,12 @@ export function MeanAnomalyFromETool() {
         )
       }
       code={
-        <CodeExport
-          formulaId="mean-anomaly-from-e"
-          values={{ ...p, E: toSi(p.E, p.Eu) }}
-        />
+        res == null ? undefined : (
+          <CodeExport
+            formulaId="mean-anomaly-from-e"
+            values={{ ...p, E: toSi(p.E, p.Eu) }}
+          />
+        )
       }
     />
   )

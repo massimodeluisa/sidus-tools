@@ -6,7 +6,7 @@ import type { FormulaSnippet } from '../types'
  * Matches SolarPressureTool + lib/physics/mission.ts solarRadiationForce/Accel.
  */
 const A =
-  'Flat-plate SRP; P0 ≈ 4.56e-6 N/m² at 1 AU; F = P0 A Cr / r_au²; a = F/m. SI.'
+  'Flat-plate SRP at normal incidence; P0 ≈ 4.56e-6 N/m² at 1 AU; Cr greater than 0 and at most 2; F = P0 A Cr / r_au²; a = F/m. SI.'
 
 export const solarPressureSnippets: FormulaSnippet = {
   formulaId: 'solar-pressure',

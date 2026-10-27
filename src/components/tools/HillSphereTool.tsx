@@ -36,7 +36,7 @@ export function HillSphereTool() {
       parameters={
         <ParamsGrid>
           <UiUnitField label={t('fields.disc_a_2')} category="length" unitIds={TOOL_UNIT_SETS.length} unitId={p.au} value={p.a} min={0} onValueChange={(a)=>setP({a})} onUnitChange={(au,a)=>setP({au,a})} />
-          <UiUnitField label={t('fields.disc_m')} category="mass" unitIds={TOOL_UNIT_SETS.mass} unitId={p.mu} value={p.m} min={0} onValueChange={(m)=>setP({m})} onUnitChange={(mu,m)=>setP({mu,m})} />
+          <UiUnitField label={t('fields.disc_m')} category="mass" unitIds={TOOL_UNIT_SETS.mass} unitId={p.mu} value={p.m} min={0} hint={t('fields.hint_hill_mass')} onValueChange={(m)=>setP({m})} onUnitChange={(mu,m)=>setP({mu,m})} />
           <UiUnitField label={t('fields.disc_m_2')} category="mass" unitIds={TOOL_UNIT_SETS.mass} unitId={p.Mu} value={p.M} min={0} onValueChange={(M)=>setP({M})} onUnitChange={(Mu,M)=>setP({Mu,M})} />
         </ParamsGrid>
       }
@@ -50,10 +50,12 @@ export function HillSphereTool() {
         )
       }
       code={
-        <CodeExport
-          formulaId="hill-sphere"
-          values={{ ...p, a: toSi(p.a, p.au), m: toSi(p.m, p.mu), M: toSi(p.M, p.Mu) }}
-        />
+        res == null ? undefined : (
+          <CodeExport
+            formulaId="hill-sphere"
+            values={{ ...p, a: toSi(p.a, p.au), m: toSi(p.m, p.mu), M: toSi(p.M, p.Mu) }}
+          />
+        )
       }
     />
   )

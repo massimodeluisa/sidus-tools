@@ -18,6 +18,7 @@ import {
 } from './planetary'
 import { EARTH_MU, EARTH_RADIUS, AU, SUN_MU } from './constants'
 import { getBody } from './bodies'
+import { hohmannTransfer } from './orbital'
 
 describe('geometry: spherical + topocentric', () => {
   it('equator quarter-turn is R·π/2', () => {
@@ -128,6 +129,35 @@ describe('planetary: heliocentric / patched conic', () => {
     const phi = hohmannPhaseAngle(HELIO_SMA_M.earth, HELIO_SMA_M.mars)!
     expect(phi).toBeGreaterThan(0)
     expect(phi).toBeLessThan(Math.PI)
+  })
+
+  it('wraps inward phase into [-π, π) and leaves Δv on the vis-viva burns (#187)', () => {
+    const cases: [string, string, string, number][] = [
+      ['Jupiter → Mercury', 'jupiter', 'mercury', -72.7504],
+      ['Pluto → Mercury', 'pluto', 'mercury', -99.7695],
+    ]
+    for (const [label, from, to, deg] of cases) {
+      const r1 = HELIO_SMA_M[from]!
+      const r2 = HELIO_SMA_M[to]!
+      const phase = hohmannPhaseAngle(r1, r2)!
+      const h = heliocentricHohmann(r1, r2)!
+      const bare = hohmannTransfer(SUN_MU, r1, r2)
+      const aT = 0.5 * (r1 + r2)
+      const unwrapped = Math.PI * (1 - (aT / r2) ** 1.5)
+      expect(phase, label).toBeGreaterThanOrEqual(-Math.PI)
+      expect(phase, label).toBeLessThan(Math.PI)
+      expect((phase * 180) / Math.PI, label).toBeCloseTo(deg, 4)
+      expect(Math.abs(unwrapped), label).toBeGreaterThan(Math.PI)
+      expect(h.dv1, label).toBe(bare.dv1)
+      expect(h.dv2, label).toBe(bare.dv2)
+      expect(h.dvTotal, label).toBe(bare.dvTotal)
+    }
+    const outward = hohmannPhaseAngle(HELIO_SMA_M.earth!, HELIO_SMA_M.mars!)!
+    const aOut = 0.5 * (HELIO_SMA_M.earth! + HELIO_SMA_M.mars!)
+    const unwrappedOut = Math.PI * (1 - (aOut / HELIO_SMA_M.mars!) ** 1.5)
+    expect(outward).toBeCloseTo(unwrappedOut, 12)
+    expect(outward).toBeGreaterThan(0)
+    expect(outward).toBeLessThan(Math.PI)
   })
 
   it('patched conic Earth park → Mars: finite v∞ and park Δv', () => {

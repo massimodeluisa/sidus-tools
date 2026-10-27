@@ -71,6 +71,7 @@ export function lightTimeRoundTrip(rangeM: number, c = 299_792_458): number | nu
 /**
  * Solar radiation pressure force on a flat plate:
  * F ≈ P₀ · A · C_r · (AU/r)²  with P₀ ≈ 4.56e-6 N/m² at 1 AU.
+ * C_r is in (0, 2]: about 1 absorb, about 2 mirror.
  * Acceleration a = F/m.
  */
 export const SOLAR_PRESSURE_1AU = 4.56e-6 // N/m²
@@ -80,7 +81,7 @@ export function solarRadiationForce(
   cr = 1.0,
   rAu = 1,
 ): number | null {
-  if (!(areaM2 > 0) || !(cr > 0) || !(rAu > 0)) return null
+  if (!(areaM2 > 0) || !(cr > 0) || cr > 2 || !(rAu > 0)) return null
   return (SOLAR_PRESSURE_1AU * areaM2 * cr) / (rAu * rAu)
 }
 

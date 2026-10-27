@@ -472,7 +472,7 @@ const dnu = ang_rad;
 const dnu_xfer = if (way[0] == 'l') 6.283185307179586 - dnu else dnu;
 const A = std.math.sin(dnu_xfer) * std.math.sqrt(r1n * r2n / (1.0 - std.math.cos(dnu)));
 var z: f64 = 0.0;
-// Integer, not bool: the Zig wrapper prints every top-level name with {d}, and Zig 0.17 rejects {d} on bool.
+// Integer, not bool: the verifier reads printed tokens with parseFloat, which turns true into NaN.
 var lambert_ok: i32 = 0;
 var C: f64 = 0.5;
 var S: f64 = 1.0 / 6.0;

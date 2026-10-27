@@ -60,13 +60,11 @@ export function rvToElements(r: Vec3, v: Vec3, mu: number): ClassicalElements | 
   ]
   const e = vnorm(evec)
 
+  // |e−1| below 1e-10 is not an exact parabola. A finite, signed energy
+  // still has a finite semimajor axis; only a non-finite quotient (zero energy)
+  // is the parabolic boundary.
   const energy = v2 / 2 - mu / rmag
-  let a: number
-  if (Math.abs(e - 1) < 1e-10) {
-    a = Infinity
-  } else {
-    a = -mu / (2 * energy)
-  }
+  const a = -mu / (2 * energy)
 
   const i = clampAcos(hvec[2] / h)
 
@@ -81,8 +79,11 @@ export function rvToElements(r: Vec3, v: Vec3, mu: number): ClassicalElements | 
     argp = clampAcos(vdot(nvec, evec) / (n * e))
     if (evec[2] < 0) argp = TWO_PI - argp
   } else if (e > EPS) {
-    // equatorial: use longitude of periapsis from e_x
-    argp = Math.atan2(evec[1], evec[0])
+    // Equatorial retrograde (h_z < 0, i = π) reflects the perifocal y-axis, so
+    // the longitude of periapsis is atan2(−e_y, e_x). sin(π) is not a node test:
+    // elementsToRv(i = π) can leave a false node and hide this branch.
+    const periapsisY = hvec[2] < 0 ? -evec[1] : evec[1]
+    argp = Math.atan2(periapsisY, evec[0])
     if (argp < 0) argp += TWO_PI
   }
 
@@ -96,7 +97,10 @@ export function rvToElements(r: Vec3, v: Vec3, mu: number): ClassicalElements | 
       nu = clampAcos(vdot(nvec, r) / (n * rmag))
       if (r[2] < 0) nu = TWO_PI - nu
     } else {
-      nu = Math.atan2(r[1], r[0])
+      // Circular equatorial: for i = π, elementsToRv reflects the perifocal
+      // y-axis, so a retrograde (h_z < 0) state recovers the true longitude
+      // from -r_y; otherwise the rotation is identity in that axis.
+      nu = hvec[2] < 0 ? Math.atan2(-r[1], r[0]) : Math.atan2(r[1], r[0])
       if (nu < 0) nu += TWO_PI
     }
   }
@@ -139,7 +143,13 @@ export function elementsToRv(
   const cnu = Math.cos(nu)
   const snu = Math.sin(nu)
   const denom = 1 + e * cnu
-  if (Math.abs(denom) < EPS) return null
+  if (e >= 1) {
+    // Hyperbolic anomalies live on a single occupied branch bounded by the
+    // asymptote at 1 + e·cosν = 0 (ν_inf = acos(-1/e)). At or past it the
+    // conic has no real radius, so reject instead of returning a state whose
+    // energy disagrees with the supplied a.
+    if (!(denom > EPS)) return null
+  } else if (Math.abs(denom) < EPS) return null
 
   const r_pqw: Vec3 = [(p * cnu) / denom, (p * snu) / denom, 0]
   const sqrtMuP = Math.sqrt(mu / p)

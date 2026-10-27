@@ -27,7 +27,7 @@ export function RadarRangeResolutionTool() {
     <ToolShell
       parameters={
         <ParamsGrid>
-          <UiField label={t('fields.disc_b')} type="number" min={1}  step="any" value={p.B} onChange={(e)=>setP({B:Number(e.target.value)})} />
+          <UiField label={t('fields.radar_pulse_bandwidth')} tip={t('fields.note_radar_slant')} type="number" min={1}  step="any" value={p.B} onChange={(e)=>setP({B:Number(e.target.value)})} />
         </ParamsGrid>
       }
       results={

@@ -32,7 +32,7 @@ export function SarAzimuthResolutionTool() {
       parameters={
         <ParamsGrid>
           <UiField label={t('fields.lam')} type="number" min={1e-9}  step="any" value={p.lam} onChange={(e)=>setP({lam:Number(e.target.value)})} />
-          <UiUnitField label={t('fields.theta')} category="angle" unitIds={TOOL_UNIT_SETS.angle} unitId={p.thetau} value={p.theta} min={0} onValueChange={(theta)=>setP({theta})} onUnitChange={(thetau,theta)=>setP({thetau,theta})} />
+          <UiUnitField label={t('fields.sar_processing_beamwidth')} tip={t('fields.note_sar_azimuth')} category="angle" unitIds={TOOL_UNIT_SETS.angle} unitId={p.thetau} value={p.theta} min={0} onValueChange={(theta)=>setP({theta})} onUnitChange={(thetau,theta)=>setP({thetau,theta})} />
         </ParamsGrid>
       }
       results={

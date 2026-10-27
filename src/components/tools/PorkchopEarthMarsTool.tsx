@@ -15,7 +15,9 @@ import {
   MARS_SMA_M,
   SUN_MU,
   TOOL_UNIT_SETS,
+  parseUtcDayStart,
   porkchopEarthMarsGrid,
+  samplesInsideInterval,
 } from '@/lib/physics'
 import { numParam, strParam, useToolSearchParams } from '@/lib/use-tool-search-params'
 
@@ -28,29 +30,31 @@ const SCHEMA = {
   tofStep: numParam(20, { min: 5, max: 60 }),
 } as const
 
-function parseDayStart(isoDate: string): number | null {
-  const t = Date.parse(`${isoDate}T00:00:00Z`)
-  return Number.isFinite(t) ? t / 1000 : null
-}
-
 export function PorkchopEarthMarsTool() {
   const { t } = useTranslation()
   const [p, setP] = useToolSearchParams(SCHEMA)
   const res = useMemo(() => {
-    const depStart = parseDayStart(p.dep)
+    const depStart = parseUtcDayStart(p.dep)
     if (depStart == null) return null
     const depStep = p.depStep * 86400
-    const depCount = Math.max(2, Math.floor(p.depSpan / p.depStep) + 1)
-    const tofMin = p.tofMin * 86400
     const tofStep = p.tofStep * 86400
-    const tofCount = Math.max(2, Math.floor((p.tofMax - p.tofMin) / p.tofStep) + 1)
+    if (!(depStep > 0) || !(tofStep > 0)) return null
+    const departures = samplesInsideInterval(depStart, depStart + p.depSpan * 86400, depStep)
+    const tofs = samplesInsideInterval(p.tofMin * 86400, p.tofMax * 86400, tofStep)
+    const dep0 = departures[0]
+    const tof0 = tofs[0]
+    const depEnd = departures[departures.length - 1]
+    const tofEnd = tofs[tofs.length - 1]
+    if (dep0 == null || tof0 == null || depEnd == null || tofEnd == null) return null
     return porkchopEarthMarsGrid({
-      depStart,
-      depCount,
+      depStart: dep0,
+      depCount: departures.length,
       depStep,
-      tofMin,
-      tofCount,
+      depEnd,
+      tofMin: tof0,
+      tofCount: tofs.length,
       tofStep,
+      tofMax: tofEnd,
     })
   }, [p])
 
@@ -101,6 +105,9 @@ export function PorkchopEarthMarsTool() {
             min={5}
             onChange={(e) => setP({ tofStep: Number(e.target.value) })}
           />
+          <p className="col-span-full font-mono text-xs leading-relaxed text-muted">
+            {t('fields.porkchop_epoch_note')}
+          </p>
         </ParamsGrid>
       }
       results={

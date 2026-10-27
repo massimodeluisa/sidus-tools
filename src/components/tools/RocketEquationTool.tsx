@@ -13,9 +13,9 @@ import {
   exhaustVelocity,
   fromSi,
   G0,
+  propellantForDeltaV,
   propellantMass,
   rocketDeltaV,
-  rocketMassInitial,
   TOOL_UNIT_SETS,
   toSi,
 } from '@/lib/physics'
@@ -57,14 +57,14 @@ export function RocketEquationTool() {
       }
     }
     if (!(dv_si >= 0)) return null
-    const M0 = rocketMassInitial(p.isp, dv_si, mf_kg)
-    if (!Number.isFinite(M0)) return null
+    const solved = propellantForDeltaV(p.isp, dv_si, mf_kg)
+    if (!solved) return null
     return {
       deltaV: dv_si,
-      m0: M0,
+      m0: solved.m0,
       mf: mf_kg,
-      prop: propellantMass(M0, mf_kg),
-      ratio: M0 / mf_kg,
+      prop: solved.prop,
+      ratio: solved.m0 / mf_kg,
       ve: exhaustVelocity(p.isp),
     }
   }, [dv_si, m0_kg, mf_kg, p.isp, p.mode])
@@ -220,7 +220,7 @@ export function RocketEquationTool() {
         )
       }
       preview={<FunctionPlot points={curve} xLabel="m₀/m_f" yLabel="Δv (km/s)" />}
-      code={<CodeExport formulaId="rocket-equation" values={{ m0_kg, mf_kg, dv_si, isp: p.isp, m0: m0_kg, mf: mf_kg, dv: p.dv, mode: p.mode }} />}
+      code={<CodeExport formulaId="rocket-equation" values={{ m0_kg, mf_kg, dv_si, isp: p.isp, m0: m0_kg, mf: mf_kg, mode: p.mode }} />}
     />
   )
 }

@@ -109,7 +109,7 @@ describe('gnss-optical', () => {
   })
 
   it('tropo delay positive at mid elevation', () => {
-    const d = saastamoinenTropoDelay(Math.PI / 4, 0.7, 100)
+    const d = saastamoinenTropoDelay(Math.PI / 4, 101_325, 288.15, 1_100)
     expect(d).not.toBeNull()
     expect(d!).toBeGreaterThan(0)
   })

@@ -294,6 +294,14 @@ const si = 1`),
     expect(extractAssignedNames('const v = 1\nconst T = 2')).toEqual(['v', 'T'])
   })
 
+  it('extractAssignedNames ignores an unmatched bracket inside a comment', () => {
+    expect(extractAssignedNames('// phase in [-π, π).\nconst a = 0.5 * (r1 + r2)')).toContain('a')
+    expect(extractAssignedNames('/* phase in [-π, π). */\nconst double a = 0.5 * (r1 + r2);')).toContain('a')
+    expect(extractAssignedNames('# phase in [-π, π).\na = 0.5 * (r1 + r2)')).toContain('a')
+    expect(extractAssignedNames('! phase in [-π, π).\na = 0.5d0 * (r1 + r2)')).toContain('a')
+    expect(extractAssignedNames('% phase in [-π, π).\na = 0.5 * (r1 + r2);')).toContain('a')
+  })
+
   it('stripTsTypes removes param and return annotations', () => {
     expect(stripTsTypes('const v: number = 1')).toBe('const v = 1')
     const stripped = stripTsTypes(
@@ -317,6 +325,22 @@ const si = 1`),
   it('stripTsTypes removes a tuple annotation', () => {
     const stripped = stripTsTypes('const r_m: [number, number, number] = [1, 2, 3]')
     expect(stripped).toBe('const r_m = [1, 2, 3]')
+  })
+
+  it('stripTsTypes removes an object return type and its union', () => {
+    const stripped = stripTsTypes(
+      'function keplerPropagate(mu: number, r0: Vec3, dt: number, tol = 1e-10): { r: Vec3, v: Vec3 } | null { return null }',
+    )
+    expect(stripped).toBe(
+      'function keplerPropagate(mu, r0, dt, tol = 1e-10) { return null }',
+    )
+    expect(stripped).not.toMatch(/\)\s*:/)
+  })
+
+  it('stripTsTypes leaves the kepler propagate export executable as JavaScript', () => {
+    const stripped = stripTsTypes(getSnippets('kepler-propagate')!.code.typescript!)
+    expect(stripped).not.toMatch(/\)\s*:/)
+    expect(() => new Function(stripped)).not.toThrow()
   })
 
   it('stripTsTypes fully strips plotter\'s real TS body (arrow-fn param + object-array locals)', () => {

@@ -385,7 +385,8 @@ export function solarSailAccel(
   eta = 1,
   c = C,
 ): number | null {
-  if (!(powerFlux > 0) || !(area > 0) || !(mass > 0) || !(eta > 0) || !(c > 0)) return null
+  // Ideal reflector: efficiency is physical only on (0, 1].
+  if (!(powerFlux > 0) || !(area > 0) || !(mass > 0) || !(eta > 0) || eta > 1 || !(c > 0)) return null
   const a = (2 * eta * powerFlux * area) / (c * mass)
   return Number.isFinite(a) && a > 0 ? a : null
 }
@@ -443,8 +444,10 @@ export function jacobiConstant(
 }
 
 /**
- * Rough circular-orbit drag lifetime [s] to lose ~one scale height of altitude.
- * da/dt ≈ −(ρ v a)/β with β = m/(Cd A) ⇒ Δt ≈ H β / (ρ v a).
+ * Local circular-orbit drag timescale [s]: t = H / |da/dt| with density frozen
+ * at the supplied value. da/dt ≈ −(ρ v a)/β, β = m/(Cd A), so t = H β / (ρ v a).
+ * This is not the elapsed time to descend one scale height. With a and v held
+ * fixed and ρ = ρ0 exp(−x/H), that descent is (1 − e^{−1}) times this timescale.
  */
 export function orbitLifetimeRough(
   density: number,
@@ -467,13 +470,20 @@ export function orbitLifetimeRough(
   return Number.isFinite(t) && t > 0 ? t : null
 }
 
-/** GEO longitude drift rate [rad/s] from semi-major vs GEO: Ω̇ ≈ −(3/2) n_geo (a−a_geo)/a_geo. */
+/**
+ * GEO longitude drift rate [rad/s], linear near GEO only:
+ * Ω̇ ≈ −(3/2) n_geo (a−a_geo)/a_geo.
+ * |a − a_geo| / a_geo ≥ 0.1 is outside that expansion (about 12% off the
+ * two-body rate at ±10%). Those inputs return null; the formula inside is unchanged.
+ */
 export function geoDriftRate(
   a: number,
   aGeo: number,
   nGeo: number,
 ): number | null {
   if (!(a > 0) || !(aGeo > 0) || !(nGeo > 0)) return null
+  if (!Number.isFinite(a) || !Number.isFinite(aGeo) || !Number.isFinite(nGeo)) return null
+  if (Math.abs(a - aGeo) / aGeo >= 0.1) return null
   const rate = -1.5 * nGeo * ((a - aGeo) / aGeo)
   return Number.isFinite(rate) ? rate : null
 }
@@ -592,11 +602,12 @@ export function gravityLossDv(g: number, burnTime: number, gammaRad: number): nu
   return g * burnTime * Math.sin(gammaRad)
 }
 
-/** Battery depth of discharge fraction: DoD = E_used / E_capacity. */
+/** Battery depth of discharge fraction on (0, 1]: DoD = E_used / E_capacity. */
 export function batteryDepthOfDischarge(eUsed: number, eCapacity: number): number | null {
-  if (!(eUsed >= 0) || !(eCapacity > 0)) return null
+  if (!Number.isFinite(eUsed) || !Number.isFinite(eCapacity)) return null
+  if (!(eUsed > 0) || !(eCapacity > 0)) return null
   const d = eUsed / eCapacity
-  return Number.isFinite(d) && d >= 0 ? d : null
+  return d > 0 && d <= 1 ? d : null
 }
 
 /** Earth geometric umbra length [m] from Sun-Earth distance (point-Sun cone sketch). */
@@ -606,23 +617,66 @@ export function umbraLength(
   bodyRadius: number,
 ): number | null {
   if (!(sunDistance > 0) || !(sunRadius > bodyRadius) || !(bodyRadius > 0)) return null
+  // Center-to-center separation. Touching spheres are the cone limit; overlap is not an umbra.
+  if (sunDistance < sunRadius + bodyRadius) return null
   // L = R_body * d / (R_sun - R_body)
   const L = (bodyRadius * sunDistance) / (sunRadius - bodyRadius)
   return Number.isFinite(L) && L > 0 ? L : null
 }
 
-/** Mean anomaly from eccentric anomaly (radians): M = E − e sin E. */
-export function meanAnomalyFromE(E: number, e: number): number | null {
-  if (!(e >= 0) || e >= 1 || !Number.isFinite(E)) return null
-  return E - e * Math.sin(E)
+/**
+ * E − sin E without cancellation for tiny |E|.
+ * Series through E^13; switch at 1e-2 rad, where the remainder is far below 1 ulp.
+ */
+function eccentricMinusSine(E: number): number {
+  if (Math.abs(E) < 1e-2) {
+    const x2 = E * E
+    return (
+      E *
+      x2 *
+      (1 / 6 -
+        x2 *
+          (1 / 120 -
+            x2 *
+              (1 / 5040 -
+                x2 * (1 / 362880 - x2 * (1 / 39916800 - x2 / 6_227_020_800)))))
+    )
+  }
+  return E - Math.sin(E)
 }
 
-/** Flight-path angle from e, ν: tan φ = e sin ν / (1 + e cos ν). */
+/**
+ * Mean anomaly from eccentric anomaly (radians).
+ * Elliptic only: 0 ≤ e < 1 and finite E. M = (1−e)E + e(E−sin E).
+ * Parabolic (e = 1) and hyperbolic (e > 1) orbits return null.
+ */
+export function meanAnomalyFromE(E: number, e: number): number | null {
+  if (!(e >= 0) || e >= 1 || !Number.isFinite(E)) return null
+  const M = (1 - e) * E + e * eccentricMinusSine(E)
+  return Number.isFinite(M) ? M : null
+}
+
+/**
+ * Flight-path angle from e, ν: tan φ = e sin ν / (1 + e cos ν).
+ * Ellipse keeps that formula. Parabola needs |ν| < π. Hyperbola needs |ν|
+ * inside the asymptote acos(−1/e), excluding a 4-ulp neighborhood of it.
+ */
 export function flightPathAngle(e: number, nuRad: number): number | null {
-  if (!(e >= 0) || e >= 1 || !Number.isFinite(nuRad)) return null
+  if (!Number.isFinite(e) || !(e >= 0) || !Number.isFinite(nuRad)) return null
+  if (e < 1) {
+    const den = 1 + e * Math.cos(nuRad)
+    if (Math.abs(den) < 1e-15) return null
+    return Math.atan2(e * Math.sin(nuRad), den)
+  }
+  const limit = e === 1 ? Math.PI : Math.acos(-1 / e)
+  if (!Number.isFinite(limit) || !(limit > 0)) return null
+  const separation = limit - Math.abs(nuRad)
+  const asymptoteUlp = 2 ** (Math.floor(Math.log2(limit)) - 52)
+  if (!(separation > 4 * asymptoteUlp)) return null
   const den = 1 + e * Math.cos(nuRad)
-  if (Math.abs(den) < 1e-15) return null
-  return Math.atan2(e * Math.sin(nuRad), den)
+  if (!(den > 0)) return null
+  const phi = Math.atan2(e * Math.sin(nuRad), den)
+  return Number.isFinite(phi) ? phi : null
 }
 
 // ─── Pass 4: final high-value pure-SI before stop ───────────────────────────
@@ -633,31 +687,38 @@ export function hoopStress(pressure: number, radius: number, thickness: number):
   return (pressure * radius) / thickness
 }
 
-/** Hill sphere radius [m]: r_H ≈ a (m / (3 M))^{1/3}. */
+/** Hill sphere radius [m]: r_H ≈ a (m / (3 M))^{1/3}. Small-secondary only: m < M. */
 export function hillSphere(a: number, m: number, M: number): number | null {
-  if (!(a > 0) || !(m > 0) || !(M > 0)) return null
-  return a * Math.cbrt(m / (3 * M))
+  if (!(a > 0) || !(m > 0) || !(M > 0) || m >= M) return null
+  const r = a * Math.cbrt(m / (3 * M))
+  return Number.isFinite(r) && r > 0 ? r : null
 }
 
 /**
  * Edelbaum low-thrust combined plane change + circular transfer [m/s]:
  * Δv = √(v₁² + v₂² − 2 v₁ v₂ cos(π Δi / 2)).
+ * Single branch only: 0 ≤ Δi < 2 rad (about 114.6°). Not a 180° model.
  */
 export function edelbaumDv(v1: number, v2: number, diRad: number): number | null {
-  if (!(v1 > 0) || !(v2 > 0) || !(diRad >= 0) || diRad > Math.PI) return null
+  if (!(v1 > 0) || !(v2 > 0) || !(diRad >= 0) || diRad >= 2) return null
   const dv = Math.sqrt(
     Math.max(0, v1 * v1 + v2 * v2 - 2 * v1 * v2 * Math.cos((Math.PI * diRad) / 2)),
   )
   return Number.isFinite(dv) ? dv : null
 }
 
-/** Repeating ground track: k orbits in n days → a from mean motion (educational period). */
+/**
+ * Average period [s] for a positive integer revolution count k in `cycleDays`.
+ * Fractional k uses the same Math.round the page applies before this call.
+ */
 export function repeatingGroundTrackPeriod(
   orbitsPerCycle: number,
   cycleDays: number,
 ): number | null {
-  if (!(orbitsPerCycle > 0) || !(cycleDays > 0)) return null
-  const T = (cycleDays * 86400) / orbitsPerCycle
+  if (!Number.isFinite(orbitsPerCycle) || !Number.isFinite(cycleDays) || !(cycleDays > 0)) return null
+  const k = Math.round(orbitsPerCycle)
+  if (!Number.isFinite(k) || k < 1) return null
+  const T = (cycleDays * 86400) / k
   return Number.isFinite(T) && T > 0 ? T : null
 }
 

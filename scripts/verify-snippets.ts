@@ -29,6 +29,7 @@ import {
   type CodeLang,
   type LiveCodeValues,
 } from '../src/lib/snippets/index.ts'
+import { applyValuePlaceholders } from '../src/lib/snippets/live-values.ts'
 import { asInjected, scenariosFor } from '../src/lib/snippets/verify/inputs.ts'
 import { EXPECTED, TOLERANCE_OVERRIDES, UNVERIFIABLE } from '../src/lib/snippets/verify/expected/index.ts'
 import { getAliasGroups } from '../src/lib/snippets/verify/expected/shared.ts'
@@ -554,14 +555,19 @@ function runScenario(
   const source = lang === 'typescript' ? stripTsTypes(body) : body
   const renderLang: CodeLang = lang === 'typescript' ? 'javascript' : lang
 
+  // Placeholders name the UI bag, including a key the body also assigns
+  // (`e = {{e}}` on the rv-elements inverse path). Substitute before pruning,
+  // or the prune drops `e` and the compiler is left with a literal `{{e}}`.
+  const substituted = applyValuePlaceholders(source, renderLang, scenario.bag)
+
   // A body that assigns its own constant must win over the shared bag: drop those
   // keys so the wrapper cannot inject a same-named value and shadow the formula.
-  const assigned = bodyAssignedNames(source)
+  const assigned = bodyAssignedNames(substituted)
   const pruned: LiveCodeValues = {}
   for (const [k, v] of Object.entries(scenario.bag)) {
     if (!assigned.has(canonicalizePhysicsIds(k))) pruned[k] = v
   }
-  const program = renderLiveCode(source, renderLang, pruned)
+  const program = renderLiveCode(substituted, renderLang, pruned)
   // Names still injected as live inputs are not results. MATLAB emits the preamble
   // without terminators, so Octave echoes each one as `name = value`; comparing
   // those would test the bag against physics instead of the snippet.

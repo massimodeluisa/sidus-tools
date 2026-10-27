@@ -38,19 +38,24 @@ export function GnssIonosphereKlobucharTool() {
         </ParamsGrid>
       }
       results={
-        res == null || (typeof res === 'number' && !Number.isFinite(res)) ? (
-          <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
-        ) : (
-          <div className="sidus-results">
-            <ResultCard label={t('fields.delay')} si={res} category="length" unitId="km" unitIds={TOOL_UNIT_SETS.length} digits={4} accent />
-          </div>
-        )
+        <>
+          {res == null || (typeof res === 'number' && !Number.isFinite(res)) ? (
+            <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
+          ) : (
+            <div className="sidus-results">
+              <ResultCard label={t('fields.delay')} si={res} category="length" unitId="m" unitIds={TOOL_UNIT_SETS.length} digits={4} accent />
+            </div>
+          )}
+          <p className="mt-3 font-mono text-[11px] leading-relaxed text-muted">{t('fields.iono_supplied_vtec')}</p>
+        </>
       }
       code={
-        <CodeExport
-          formulaId="gnss-ionosphere-klobuchar"
-          values={{ ...p, elev: toSi(p.elev, p.elevu) }}
-        />
+        res == null ? null : (
+          <CodeExport
+            formulaId="gnss-ionosphere-klobuchar"
+            values={{ ...p, elev: toSi(p.elev, p.elevu) }}
+          />
+        )
       }
     />
   )

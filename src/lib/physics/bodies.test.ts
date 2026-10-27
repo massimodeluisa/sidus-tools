@@ -23,4 +23,13 @@ describe('body constants', () => {
     // JPL PLU060 reports Pluto GM = 869.3 ± 0.4 km^3/s^2.
     expect(getBody('pluto').mu).toBe(869.3e9)
   })
+
+  it('uses the JPL NEP097 Neptune primary GM', () => {
+    expect(getBody('neptune').mu).toBe(6.83509997e15)
+  })
+
+  it('uses the JPL mean radius for Mercury and keeps the Earth radius', () => {
+    expect(getBody('mercury').radius).toBe(2_439_400)
+    expect(getBody('earth').radius).toBe(6_378_137)
+  })
 })

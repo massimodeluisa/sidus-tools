@@ -159,7 +159,7 @@ export function MultiStageTool() {
           </div>
         )
       }
-      code={<CodeExport formulaId="multi-stage" values={{ isp1: p.isp1, m01: m01_kg, mf1: mf1_kg, isp2: p.isp2, m02: m02_kg, mf2: mf2_kg, isp3: p.isp3, m03: m03_kg, mf3: mf3_kg, stages: p.stages }} />}
+      code={<CodeExport formulaId="multi-stage" values={{ isp1: p.isp1, m01: m01_kg, mf1: mf1_kg, isp2: p.isp2, m02: m02_kg, mf2: mf2_kg, isp3: p.isp3, m03: m03_kg, mf3: mf3_kg, stages: n }} />}
     />
   )
 }

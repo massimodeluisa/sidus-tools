@@ -35,7 +35,7 @@ export function AerobrakingPassTool() {
     <ToolShell
       parameters={
         <ParamsGrid>
-          <UiField label={t('fields.ball')} type="number" min={1e-9}  step="any" value={p.ball} onChange={(e)=>setP({ball:Number(e.target.value)})} />
+          <UiField label={t('fields.ball')} tip={t('fields.note_aerobrake')} type="number" min={1e-9}  step="any" value={p.ball} onChange={(e)=>setP({ball:Number(e.target.value)})} />
           <UiField label={t('fields.rho')} type="number" min={1e-20}  step="any" value={p.rho} onChange={(e)=>setP({rho:Number(e.target.value)})} />
           <UiUnitField label={t('fields.disc_v_2')} category="velocity" unitIds={TOOL_UNIT_SETS.velocity} unitId={p.vu} value={p.v} min={0} onValueChange={(v)=>setP({v})} onUnitChange={(vu,v)=>setP({vu,v})} />
           <UiUnitField label={t('fields.disc_l')} category="length" unitIds={TOOL_UNIT_SETS.length} unitId={p.Lu} value={p.L} min={0} onValueChange={(L)=>setP({L})} onUnitChange={(Lu,L)=>setP({Lu,L})} />

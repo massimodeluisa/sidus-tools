@@ -7,6 +7,7 @@ import { UiField } from '@/components/shared/UiField'
 import { UiUtcField } from '@/components/shared/UiUtcField'
 import { ResultCard } from '@/components/shared/ResultCard'
 import { CodeExport } from '@/components/shared/CodeExport'
+import { presentLookAngles } from '@/lib/look-angle-present'
 import {
   DEFAULT_LAUNCH_SITE,
   eciSiToEcefSi,
@@ -34,17 +35,23 @@ export function LookAnglesTool() {
 
   const parsed = useMemo(() => parseTle(tle), [tle])
   const atDate = useMemo(() => resolveUtcParam(p.at), [p.at])
+  const latValid = Number.isFinite(p.lat) && p.lat >= -90 && p.lat <= 90
+
+  const propagated = useMemo(() => {
+    if (!parsed.ok) return null
+    return propagateEci(parsed.satrec, atDate)
+  }, [atDate, parsed])
 
   const look = useMemo(() => {
-    if (!parsed.ok) return null
-    const st = propagateEci(parsed.satrec, atDate)
-    if (!st) return null
+    if (!propagated) return null
     return lookAnglesFromEci(
       { latDeg: p.lat, lonDeg: p.lon, heightM: p.h_m },
-      st.r,
+      propagated.r,
       atDate,
     )
-  }, [atDate, p.h_m, p.lat, p.lon, parsed])
+  }, [atDate, p.h_m, p.lat, p.lon, propagated])
+
+  const view = presentLookAngles(propagated != null, look)
 
   const satEcef = useMemo(() => {
     if (!parsed.ok) return null
@@ -73,6 +80,8 @@ export function LookAnglesTool() {
             label={t('fields.site_lat')}
             unit="°"
             type="number"
+            min={-90}
+            max={90}
             step="any"
             value={p.lat}
             onChange={(e) => setP({ lat: Number(e.target.value) })}
@@ -112,22 +121,30 @@ export function LookAnglesTool() {
       results={
         !parsed.ok ? (
           <p className="font-mono text-sm text-muted">{parsed.error}</p>
-        ) : !look ? (
+        ) : !latValid ? (
+          <p className="font-mono text-sm text-muted">{t('fields.invalid_latitude')}</p>
+        ) : view.status === 'propagation_failed' ? (
           <p className="font-mono text-sm text-muted">{t('fields.no_look_angles')}</p>
+        ) : view.status === 'no_look' ? (
+          <p className="font-mono text-sm text-muted">{t('fields.no_look_zero_range')}</p>
         ) : (
           <div className="sidus-results">
-            <ResultCard
-              label={t('fields.azimuth')}
-              si={look.azimuthRad}
-              category="angle"
-              unitId="deg"
-              unitIds={TOOL_UNIT_SETS.angle}
-              digits={3}
-              accent
-            />
+            {view.status === 'zenith' ? (
+              <ResultCard label={t('fields.azimuth')} value={t('fields.azimuth_undefined_zenith')} />
+            ) : (
+              <ResultCard
+                label={t('fields.azimuth')}
+                si={view.azimuthRad}
+                category="angle"
+                unitId="deg"
+                unitIds={TOOL_UNIT_SETS.angle}
+                digits={3}
+                accent
+              />
+            )}
             <ResultCard
               label={t('fields.elevation')}
-              si={look.elevationRad}
+              si={view.elevationRad}
               category="angle"
               unitId="deg"
               unitIds={TOOL_UNIT_SETS.angle}
@@ -136,7 +153,7 @@ export function LookAnglesTool() {
             />
             <ResultCard
               label={t('fields.range')}
-              si={look.rangeM}
+              si={view.rangeM}
               category="length"
               unitId="km"
               unitIds={TOOL_UNIT_SETS.length}
@@ -144,11 +161,11 @@ export function LookAnglesTool() {
             />
             <ResultCard
               label={t('fields.above_horizon')}
-              value={look.elevationRad > 0 ? t('common.yes') : t('common.no')}
+              value={view.elevationRad > 0 ? t('common.yes') : t('common.no')}
             />
             <ResultCard
               label={t('fields.el_raw')}
-              si={look.elevationRad}
+              si={view.elevationRad}
               category="angle"
               unitId="deg"
               unitIds={TOOL_UNIT_SETS.angle}

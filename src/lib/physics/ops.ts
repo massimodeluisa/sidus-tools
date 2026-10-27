@@ -4,7 +4,7 @@
  */
 
 import { EARTH_MU, EARTH_RADIUS } from './constants'
-import { circularOrbitVelocity, orbitalPeriod, visViva } from './orbital'
+import { circularOrbitVelocity, visViva } from './orbital'
 
 /** Sum Δv phases (ignore non-finite). */
 export function deltaVBudget(phases: number[]): { total: number; count: number } | null {
@@ -149,10 +149,16 @@ export function meanMotionFromAltitude(
   mu = EARTH_MU,
   bodyR = EARTH_RADIUS,
 ): { a: number; n: number; period: number; v: number } | null {
-  if (!(h >= 0) || !(mu > 0)) return null
+  if (!(h >= 0) || !(mu > 0) || !Number.isFinite(h) || !Number.isFinite(mu)) return null
   const a = bodyR + h
-  const n = Math.sqrt(mu / (a * a * a))
-  return { a, n, period: orbitalPeriod(mu, a), v: circularOrbitVelocity(mu, a) }
+  if (!(a > 0) || !Number.isFinite(a)) return null
+  // sqrt(mu/a)/a = sqrt(mu/a^3) without the a^3 product, which overflows for huge finite a.
+  const n = Math.sqrt(mu / a) / a
+  if (!(n > 0) || !Number.isFinite(n)) return null
+  const period = (2 * Math.PI) / n
+  const v = circularOrbitVelocity(mu, a)
+  if (!Number.isFinite(period) || !(period > 0) || !Number.isFinite(v) || !(v > 0)) return null
+  return { a, n, period, v }
 }
 
 /**

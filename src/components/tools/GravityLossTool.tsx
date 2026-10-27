@@ -36,7 +36,7 @@ export function GravityLossTool() {
         <ParamsGrid>
           <UiField label={t('fields.disc_g_2')} type="number" min={0.001}  step="any" value={p.g} onChange={(e)=>setP({g:Number(e.target.value)})} />
           <UiUnitField label={t('fields.disc_tb')} category="time" unitIds={TOOL_UNIT_SETS.time} unitId={p.tbu} value={p.tb} min={0} onValueChange={(tb)=>setP({tb})} onUnitChange={(tbu,tb)=>setP({tbu,tb})} />
-          <UiUnitField label={t('fields.gamma')} category="angle" unitIds={TOOL_UNIT_SETS.angle} unitId={p.gammau} value={p.gamma} min={0} onValueChange={(gamma)=>setP({gamma})} onUnitChange={(gammau,gamma)=>setP({gammau,gamma})} />
+          <UiUnitField label={t('fields.flight_path_above_horiz')} tip={t('fields.note_gravity_loss')} category="angle" unitIds={TOOL_UNIT_SETS.angle} unitId={p.gammau} value={p.gamma} min={0} onValueChange={(gamma)=>setP({gamma})} onUnitChange={(gammau,gamma)=>setP({gammau,gamma})} />
         </ParamsGrid>
       }
       results={

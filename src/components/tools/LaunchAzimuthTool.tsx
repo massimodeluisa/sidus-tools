@@ -26,8 +26,9 @@ const SCHEMA = {
   latu: strParam('deg', TOOL_UNIT_SETS.angle),
   i: numParam(51.6),
   iu: strParam('deg', TOOL_UNIT_SETS.angle),
-  h: numParam(200, { min: 0 }),
-  hu: strParam('km', TOOL_UNIT_SETS.altitude),
+  // Pad altitude, not an orbital radius: rotation boost is ω (R + h_pad) cos φ.
+  h: numParam(DEFAULT_LAUNCH_SITE.heightM, { min: 0 }),
+  hu: strParam('m', TOOL_UNIT_SETS.altitude),
 } as const
 
 export function LaunchAzimuthTool() {
@@ -41,8 +42,15 @@ export function LaunchAzimuthTool() {
   const res = useMemo(() => {
     const az = launchAzimuth(lat, i)
     const iMin = minInclinationFromLat(lat)
+    const iMax = Math.PI - iMin
+    const domainOk =
+      Number.isFinite(lat) &&
+      Number.isFinite(i) &&
+      Math.abs(lat) < Math.PI / 2 &&
+      i >= 0 &&
+      i <= Math.PI
     const boost = earthRotationBoost(lat, EARTH_RADIUS + Math.max(0, h))
-    return { az, iMin, boost }
+    return { az, iMin, iMax, domainOk, boost }
   }, [h, i, lat])
 
   return (
@@ -83,7 +91,10 @@ export function LaunchAzimuthTool() {
             latDeg={latDegDisplay}
             onSelect={(site) => {
               const latRad = (site.latDeg * Math.PI) / 180
-              setP({ lat: fromSi(latRad, p.latu) })
+              setP({
+                lat: fromSi(latRad, p.latu),
+                h: fromSi(site.heightM, p.hu),
+              })
             }}
           />
         </ParamsGrid>
@@ -91,9 +102,12 @@ export function LaunchAzimuthTool() {
       results={
         !res.az ? (
           <p className="font-mono text-sm text-muted">
-            {t('fields.launch_az_impossible', {
-              imin: formatNumber((res.iMin * 180) / Math.PI, 2),
-            })}
+            {res.domainOk
+              ? t('fields.launch_az_impossible', {
+                  imin: formatNumber((res.iMin * 180) / Math.PI, 2),
+                  imax: formatNumber((res.iMax * 180) / Math.PI, 2),
+                })
+              : t('fields.launch_az_domain')}
           </p>
         ) : (
           <div className="sidus-results">

@@ -2,7 +2,7 @@
  * Polar sky plot for one pass: azimuth around the ring, elevation toward
  * the center, north up. Samples are already in-pass look angles.
  */
-type Sample = { azimuthRad: number; elevationRad: number }
+type Sample = { azimuthRad: number | null; elevationRad: number }
 
 type Props = {
   samples: Sample[]
@@ -17,14 +17,19 @@ const CX = 100
 const CY = 100
 const R = 86
 
-function project(azimuthRad: number, elevationRad: number): [number, number] {
+function project(azimuthRad: number | null, elevationRad: number): [number, number] | null {
   const elDeg = Math.min(90, Math.max(0, (elevationRad * 180) / Math.PI))
   const rho = R * (1 - elDeg / 90)
+  if (azimuthRad == null) return rho === 0 ? [CX, CY] : null
   return [CX + rho * Math.sin(azimuthRad), CY - rho * Math.cos(azimuthRad)]
 }
 
 export function PassSkyPlot({ samples, caption, north, east, south, west }: Props) {
-  const points = samples.map((sample) => project(sample.azimuthRad, sample.elevationRad).join(',')).join(' ')
+  const points = samples
+    .map((sample) => project(sample.azimuthRad, sample.elevationRad))
+    .filter((point): point is [number, number] => point !== null)
+    .map((point) => point.join(','))
+    .join(' ')
   const rings = [0, 30, 60]
   return (
     <figure className="min-w-0">
@@ -66,6 +71,8 @@ export function PassSkyPlot({ samples, caption, north, east, south, west }: Prop
 }
 
 function Dot({ sample }: { sample: Sample }) {
-  const [x, y] = project(sample.azimuthRad, sample.elevationRad)
+  const projected = project(sample.azimuthRad, sample.elevationRad)
+  if (!projected) return null
+  const [x, y] = projected
   return <circle cx={x} cy={y} r={2.2} className="fill-signal" />
 }

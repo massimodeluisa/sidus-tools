@@ -6,6 +6,8 @@ type Schema<T extends Record<string, string | number>> = {
     default: T[K]
     parse: (raw: string | null) => T[K]
     serialize?: (v: T[K]) => string
+    min?: number
+    max?: number
   }
 }
 
@@ -171,9 +173,12 @@ export function useToolSearchParams<T extends Record<string, string | number>>(
       /* The ref is advanced before the state is, so two patches in the same
          tick still compose the way the updater form used to make them. */
       const merged = { ...localRef.current, ...patch } as T
-      localRef.current = merged
-      setLocal(merged)
-      writeUrl(merged)
+      /* Declared numeric bounds are enforced on write, not only on parse, so
+         live state, local input and the URL can never disagree after a reload. */
+      const constrained = constrainStored(schema, merged) as T
+      localRef.current = constrained
+      setLocal(constrained)
+      writeUrl(constrained)
     },
     [writeUrl],
   )
@@ -189,7 +194,7 @@ export function useToolSearchParams<T extends Record<string, string | number>>(
 }
 
 export function numParam(defaultValue: number, opts?: { min?: number; max?: number }) {
-  return {
+  const entry = {
     default: defaultValue,
     parse: (raw: string | null) => {
       if (isAbsent(raw)) return defaultValue
@@ -199,16 +204,135 @@ export function numParam(defaultValue: number, opts?: { min?: number; max?: numb
       if (opts?.max != null && n > opts.max) return opts.max
       return n
     },
+    min: opts?.min,
+    max: opts?.max,
+    constrainStored: (value: number) => clampNumericValue(entry, value),
   }
+  return entry
+}
+
+function clampNumericValue(
+  entry: { default: number; min?: number; max?: number },
+  value: number,
+): number {
+  if (!Number.isFinite(value)) return entry.default
+  let v = value
+  if (typeof entry.min === 'number' && v < entry.min) v = entry.min
+  if (typeof entry.max === 'number' && v > entry.max) v = entry.max
+  return v
 }
 
 export function strParam(defaultValue: string, allowed?: readonly string[]) {
-  return {
+  const entry = {
     default: defaultValue,
     parse: (raw: string | null) => {
       if (isAbsent(raw)) return defaultValue
       if (allowed && !allowed.includes(raw)) return defaultValue
       return raw
     },
+    constrainStored: (value: string) => value,
   }
+  return entry
+}
+
+function isParamEntry(value: unknown): value is { default: unknown; parse?: unknown; min?: number; max?: number } {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'default' in (value as object) &&
+    typeof (value as { parse?: unknown }).parse === 'function'
+  )
+}
+
+function isSchema(value: unknown): value is Record<string, { default: unknown; parse: (raw: string | null) => unknown; min?: number; max?: number }> {
+  if (typeof value !== 'object' || value === null) return false
+  const entries = Object.values(value as object)
+  if (entries.length === 0) return false
+  return entries.every((entry) => isParamEntry(entry))
+}
+
+function clampValue(entry: { default: unknown; min?: number; max?: number }, value: unknown): unknown {
+  if (typeof value === 'string') return value
+  if (typeof value !== 'number') return value
+  if (!Number.isFinite(value)) {
+    return typeof entry.default === 'number' ? entry.default : value
+  }
+  let v = value
+  if (typeof entry.min === 'number' && v < entry.min) v = entry.min
+  if (typeof entry.max === 'number' && v > entry.max) v = entry.max
+  return v
+}
+
+function constrainObject(
+  schema: Record<string, { default: unknown; min?: number; max?: number }>,
+  values: Record<string, unknown>,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...values }
+  for (const key of Object.keys(schema)) {
+    if (Object.prototype.hasOwnProperty.call(values, key)) {
+      out[key] = clampValue(schema[key], values[key])
+    }
+  }
+  return out
+}
+
+export function constrainStored(
+  entry: ReturnType<typeof numParam>,
+): (value: number) => number
+export function constrainStored<T extends Record<string, string | number>>(
+  schema: Schema<T>,
+): (values: T) => T
+export function constrainStored(
+  entry: ReturnType<typeof numParam>,
+  value: number,
+): number
+export function constrainStored(
+  value: number,
+  entry: ReturnType<typeof numParam>,
+): number
+export function constrainStored<T extends Record<string, string | number>>(
+  schema: Schema<T>,
+  values: T,
+): T
+export function constrainStored<T extends Record<string, string | number>>(
+  values: T,
+  schema: Schema<T>,
+): T
+export function constrainStored(
+  entry: ReturnType<typeof strParam>,
+  value: string,
+): string
+export function constrainStored(
+  value: string,
+  entry: ReturnType<typeof strParam>,
+): string
+export function constrainStored(...args: any[]): any {
+  if (args.length === 0) return undefined
+  if (args.length === 1) {
+    const arg = args[0]
+    if (isParamEntry(arg)) {
+      const entry = arg as { default: unknown; min?: number; max?: number }
+      return (value: unknown) => clampValue(entry, value)
+    }
+    if (isSchema(arg)) {
+      const schema = arg as Record<string, { default: unknown; min?: number; max?: number }>
+      return (values: unknown) => constrainObject(schema, (values ?? {}) as Record<string, unknown>)
+    }
+    return arg
+  }
+  const a = args[0]
+  const b = args[1]
+  if (isParamEntry(a) && !isSchema(a)) {
+    return clampValue(a as { default: unknown; min?: number; max?: number }, b)
+  }
+  if (isParamEntry(b) && !isSchema(b)) {
+    return clampValue(b as { default: unknown; min?: number; max?: number }, a)
+  }
+  if (isSchema(a)) {
+    return constrainObject(a as Record<string, { default: unknown; min?: number; max?: number }>, (b ?? {}) as Record<string, unknown>)
+  }
+  if (isSchema(b)) {
+    return constrainObject(b as Record<string, { default: unknown; min?: number; max?: number }>, (a ?? {}) as Record<string, unknown>)
+  }
+  return a
 }

@@ -67,6 +67,7 @@ export function OrbitLifetimeRoughTool() {
           />
           <UiUnitField
             label={t('fields.disc_h_2')}
+            hint={t('fields.hint_drag_local')}
             category="length"
             unitIds={TOOL_UNIT_SETS.length}
             unitId={p.Hu}
@@ -93,7 +94,7 @@ export function OrbitLifetimeRoughTool() {
         ) : (
           <div className="sidus-results">
             <ResultCard
-              label={t('fields.tlife')}
+              label={t('fields.drag_local_timescale')}
               si={res}
               category="time"
               unitId="s"

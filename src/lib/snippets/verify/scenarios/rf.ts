@@ -142,7 +142,7 @@ export const RF_SCENARIOS: Record<string, Scenario[]> = {
   'gnss-ionosphere-klobuchar': [
     {
       name: 'zenith-typical',
-      source: 'zenith elevation (well-known baseline, mapping function = 1) with typical daytime TEC and GPS L1',
+      source: 'zenith elevation with typical daytime TEC and GPS L1; the GPS obliquity factor is slightly above 1 at 90 deg',
       bag: { elev: Math.PI / 2, tecu: 20, f: 1.575_42e9 },
     },
     {
@@ -155,23 +155,51 @@ export const RF_SCENARIOS: Record<string, Scenario[]> = {
       source: 'adversarial synthetic: distinct non-round elevation/TEC/frequency',
       bag: { elev: 0.853_2, tecu: 33.7, f: 1.5e9 },
     },
+    {
+      name: 'obliquity-5deg-10tecu-l1',
+      source: 'IS-GPS-200 obliquity factor at 5 deg, 10 TECU, GPS L1 (1.57542 GHz)',
+      bag: { elev: (5 * Math.PI) / 180, tecu: 10, f: 1.57542e9 },
+    },
+  ],
+
+  'gnss-troposphere-delay': [
+    {
+      name: 'illustrative-default',
+      source: 'Saastamoinen 1972 with the page illustrative surface meteorology (1013.25 hPa, 288.15 K, 11 hPa) at 30 deg',
+      bag: { elev: (30 * Math.PI) / 180, p: 1013.25 * 100, T: 288.15, e: 11 * 100 },
+    },
+    {
+      name: 'zenith',
+      source: 'same meteorology at 90 deg, where sec(z) = 1 and the tan term vanishes',
+      bag: { elev: Math.PI / 2, p: 1013.25 * 100, T: 288.15, e: 11 * 100 },
+    },
+    {
+      name: 'minimum-elevation',
+      source: 'same meteorology at the 5 deg operational cutoff',
+      bag: { elev: (5 * Math.PI) / 180, p: 1013.25 * 100, T: 288.15, e: 11 * 100 },
+    },
+    {
+      name: 'changed-meteorology',
+      source: 'distinct surface pressure, temperature, and vapour pressure at 30 deg',
+      bag: { elev: (30 * Math.PI) / 180, p: 1000 * 100, T: 300, e: 20 * 100 },
+    },
   ],
 
   'laser-link-budget': [
     {
       name: 'isl-telecom-wavelength',
       source: 'well-known telecom laser wavelength (1550 nm) over a 1000 km inter-satellite link',
-      bag: { lam: 1.55e-6, R: 1_000_000, etaT: 0.8, etaR: 0.7, gt: 1e6, gr: 1e6, L: 1, pt: 1 },
+      bag: { lam: 1.55e-6, R: 1_000_000, etaT: 0.8, etaR: 0.7, gt: 1e6, gr: 1e6, L: 1, pt: 1, rt: 0.05, rr: 0.06 },
     },
     {
       name: 'ndyag-geo-downlink',
       source: 'well-known Nd:YAG laser wavelength (1064 nm) over a GEO-scale downlink range',
-      bag: { lam: 1.064e-6, R: 38_000_000, etaT: 0.85, etaR: 0.75, gt: 5e5, gr: 8e5, L: 1.2, pt: 2 },
+      bag: { lam: 1.064e-6, R: 38_000_000, etaT: 0.85, etaR: 0.75, gt: 5e5, gr: 8e5, L: 1.2, pt: 2, rt: 0.08, rr: 0.1 },
     },
     {
       name: 'synthetic',
       source: 'adversarial synthetic: distinct non-round optical link parameters',
-      bag: { lam: 1.31e-6, R: 1_873_456, etaT: 0.763, etaR: 0.812, gt: 734_000, gr: 612_000, L: 1.05, pt: 1.47 },
+      bag: { lam: 1.31e-6, R: 1_873_456, etaT: 0.763, etaR: 0.812, gt: 734_000, gr: 612_000, L: 1.05, pt: 1.47, rt: 0.06, rr: 0.07 },
     },
   ],
 

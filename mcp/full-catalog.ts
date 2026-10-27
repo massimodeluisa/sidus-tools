@@ -1232,7 +1232,7 @@ return { beta_kg_m2: beta, dv_per_rev_m_s: dv }
   },
   {
     name: "flyby_speed",
-    description: "Gravity assist / flyby excess sketch.",
+    description: "Turn-angle eccentricity sketch: e = 1/sin(δ/2) from the turn angle, with v∞ echoed. Not the web periapsis speed.",
     inputSchema: {
     v_inf_in_m_s: z.number(),
     turn_deg: z.number(),
@@ -1873,15 +1873,17 @@ return { gamma: g, vswr: v, return_loss_db: rl }
   },
   {
     name: "gnss_troposphere_delay",
-    description: "Saastamoinen-class tropo delay.",
+    description: "Saastamoinen 1972 range correction. Pressures are pascals. Not a modern mapping function. Elevation is limited to 5-90 degrees.",
     inputSchema: {
-    elev_deg: z.number(),
-    lat_deg: z.number(),
-    height_m: z.number(),
+    elev_deg: z.number().finite().min(5).max(90),
+    p_pa: z.number().finite().positive(),
+    t_k: z.number().finite().positive(),
+    e_pa: z.number().finite().min(0),
   },
-    sample: {"elev_deg":30,"lat_deg":28.57,"height_m":10},
+    sample: {"elev_deg":30,"p_pa":101325,"t_k":288.15,"e_pa":1100},
     run: (args) => {
-      const d = saastamoinenTropoDelay((args.elev_deg*Math.PI)/180, (args.lat_deg*Math.PI)/180, args.height_m);
+      if (!(args.e_pa <= args.p_pa)) return null
+      const d = saastamoinenTropoDelay((args.elev_deg*Math.PI)/180, args.p_pa, args.t_k, args.e_pa);
 return d == null ? null : { delay_m: d }
     },
   },
@@ -2155,11 +2157,11 @@ return w == null ? null : { swath_m: w }
   },
   {
     name: "gnss_ionosphere_klobuchar",
-    description: "Klobuchar-class iono delay.",
+    description: "Supplied-VTEC delay using the GPS Klobuchar obliquity factor. Not the complete broadcast correction. Elevation is limited to 0-90 degrees.",
     inputSchema: {
-    elev_deg: z.number(),
-    tecu: z.number(),
-    freq_hz: z.number().optional(),
+    elev_deg: z.number().finite().min(0).max(90),
+    tecu: z.number().finite().min(0),
+    freq_hz: z.number().finite().positive().optional(),
   },
     sample: {"elev_deg":45,"tecu":20},
     run: (args) => {
