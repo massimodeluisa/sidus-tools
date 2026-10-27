@@ -924,12 +924,30 @@ export function extractAssignedNames(code: string, lang?: CodeLang): string[] {
   let bracket = 0
   /** Python def/class indent base; -1 = not inside a def body */
   let pyBlockBase = -1
+  /**
+   * Assumptions prose uses half-open intervals such as `[-π, π)`. Counting
+   * that `[` leaves bracket depth stuck at 1, so every later assignment is
+   * invisible and the shared bag redeclares the name.
+   */
+  let inBlockComment = false
 
   const updateDepths = (line: string) => {
+    if (!inBlockComment) {
+      const trimmed = line.trim()
+      if (trimmed.startsWith('#') || trimmed.startsWith('%') || trimmed.startsWith('!')) return
+    }
     let inStr: '"' | "'" | '`' | null = null
     let esc = false
     for (let i = 0; i < line.length; i++) {
       const c = line[i]
+      const next = line[i + 1]
+      if (inBlockComment) {
+        if (c === '*' && next === '/') {
+          inBlockComment = false
+          i++
+        }
+        continue
+      }
       if (inStr) {
         if (esc) {
           esc = false
@@ -946,6 +964,12 @@ export function extractAssignedNames(code: string, lang?: CodeLang): string[] {
         inStr = c
         continue
       }
+      if (c === '/' && next === '*') {
+        inBlockComment = true
+        i++
+        continue
+      }
+      if (c === '/' && next === '/') return
       if (c === '{') brace++
       else if (c === '}') brace = Math.max(0, brace - 1)
       else if (c === '(') paren++
@@ -1189,7 +1213,7 @@ function printLines(
        * std.debug.print is stable across 0.14 and 0.15+. The verifier reads
        * both stdout and stderr for zig to match.
        */
-      return finalNames.map((n) => `std.debug.print("${n} = {d}\\n", .{${n}});`)
+      return finalNames.map((n) => `std.debug.print("${n} = {}\\n", .{${n}});`)
     case 'fortran':
       return finalNames.map((n) => `print *, '${n} = ', ${n}`)
     default:
@@ -2083,6 +2107,13 @@ export function stripTsTypes(code: string): string {
   s = s.replace(
     /([,\(\s])([A-Za-z_$][\w$]*)\s*:\s*\[[^\]]*\](?=\s*[=,)])/g,
     '$1$2',
+  )
+  // Object return types must go before the identifier rule. That rule eats
+  // `r: Vec3` inside `{ r: Vec3, v: Vec3 }` and leaves `{ r, v: Vec3 }`, which
+  // is not JavaScript. `| null` (and further unions) ride along with the braces.
+  s = s.replace(
+    /\)\s*:\s*\{[^{}]*\}(?:\s*\|\s*[A-Za-z_$][\w$<>[\]|&.]*)*(?=\s*[{=])/g,
+    ')',
   )
   // Parameter / variable types: `name: Type` before `=`, `,`, `)`
   // Type class must NOT include `,` or whitespace: those terminate the type.

@@ -471,6 +471,14 @@ export const SAMPLE_OVERRIDES: Record<string, LiveCodeValues> = {
     vx: -5643.05,
     vy: 4303.33,
     vz: 2428.79,
+    // Forward scenarios stay on rv2el. The inverse branch still has to compile,
+    // so the dead names are real values and `ang` is a string (`ang[0]`).
+    mode: 'rv2el',
+    ang: 'r',
+    a_km: 0,
+    raan_deg: 0,
+    argp_deg: 0,
+    nu_deg: 0,
   },
   // Deorbit needs h (starting circular altitude) > hp (target perigee); the shared bag's h/hp
   // are sized for other tools (tropo-safe altitude / transfer-ellipse perigee) and invert that.

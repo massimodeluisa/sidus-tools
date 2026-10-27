@@ -38,8 +38,8 @@ if (isfinite(elev) && isfinite(tecu) && isfinite(f) && elev >= 0.0 && elev <= M_
     cpp: `// ${A}
 const double e_sc = elev / M_PI;
 const double obliq = 1.0 + 16.0 * pow(0.53 - e_sc, 3.0);
-double d = nan("");
-if (isfinite(elev) && isfinite(tecu) && isfinite(f) && elev >= 0.0 && elev <= M_PI / 2.0 && tecu >= 0.0 && f > 0.0) {
+double d = std::nan("");
+if (std::isfinite(elev) && std::isfinite(tecu) && std::isfinite(f) && elev >= 0.0 && elev <= M_PI / 2.0 && tecu >= 0.0 && f > 0.0) {
   d = (40.3 * tecu * 1e16) / pow(f, 2.0) * obliq;
 }`,
     rust: `// ${A}
@@ -59,7 +59,8 @@ if (std.math.isFinite(elev) and std.math.isFinite(tecu) and std.math.isFinite(f)
     fortran: `! ${A}
   e_sc = elev / 3.141592653589793d0
   obliq = 1.0d0 + 16.0d0 * (0.53d0 - e_sc) ** 3
-  d = (elev - elev) / (elev - elev)
+  d = 0.0d0
+  d = d / d
   if (elev == elev .and. tecu == tecu .and. f == f .and. elev >= 0.0d0 .and. elev <= 3.141592653589793d0 / 2.0d0 .and. tecu >= 0.0d0 .and. tecu < 1.0d300 .and. f > 0.0d0 .and. f < 1.0d300) then
     d = (40.3d0 * tecu * 1.0d16) / (f ** 2) * obliq
   end if`,

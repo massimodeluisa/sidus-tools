@@ -63,7 +63,8 @@ const M = if ((e >= 0.0) and (e < 1.0)) (1.0 - e) * E + e * e_minus_sin else std
   if (e >= 0.0d0 .and. e < 1.0d0) then
     M = (1.0d0 - e) * E + e * e_minus_sin
   else
-    M = (e - e) / (e - e)
+    M = 0.0d0
+    M = M / M
   end if`,
     matlab: `% ${A}
 x2 = E * E;

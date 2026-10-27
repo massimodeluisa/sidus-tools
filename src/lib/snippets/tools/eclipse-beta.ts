@@ -81,7 +81,10 @@ T = 2.0d0 * 3.141592653589793d0 * sqrt((a * a * a) / mu)
 arg = sqrt(1.0d0 - (R / a)**2) / cos(betaRad)
 frac = acos(arg) / 3.141592653589793d0
 t_ecl = frac * T
-if (abs(betaRad) > 3.141592653589793d0 / 2.0d0) t_ecl = (t_ecl - t_ecl) / (t_ecl - t_ecl)`,
+if (abs(betaRad) > 3.141592653589793d0 / 2.0d0) then
+  t_ecl = 0.0d0
+  t_ecl = t_ecl / t_ecl
+end if`,
 
     matlab: `% Eclipse vs β-angle: ${A}
 a = R + h;

@@ -10,6 +10,8 @@ export const flightPathAngleSnippets: FormulaSnippet = {
     python: `# ${A}
 import math
 phi = float("nan")
+limit = float("nan")
+ulp = float("nan")
 if math.isfinite(e) and e >= 0.0 and math.isfinite(nu):
     den = 1.0 + e * math.cos(nu)
     if e < 1.0:
@@ -94,23 +96,35 @@ if (std.math.isFinite(e) and e >= 0.0 and std.math.isFinite(nu)) {
     }
 }`,
     fortran: `! ${A}
-  phi = (nu - nu) / (nu - nu)
-  if (e == e .and. nu == nu .and. e >= 0.0d0) then
-    den = 1.0d0 + e * cos(nu)
-    if (e < 1.0d0) then
-      if (abs(den) >= 1.0d-15) phi = atan2(e * sin(nu), den)
+  phi = 0.0d0
+  phi = phi / phi
+  limit = phi
+  ulp = phi
+  ! e is a parameter. gfortran rejects acos(-1/e) at compile time when that
+  ! constant is outside [-1, 1], even in the untaken hyperbolic branch.
+  e_run = e
+  arg = 0.0d0
+  if (e_run == e_run .and. nu == nu .and. e_run >= 0.0d0) then
+    den = 1.0d0 + e_run * cos(nu)
+    if (e_run < 1.0d0) then
+      if (abs(den) >= 1.0d-15) phi = atan2(e_run * sin(nu), den)
     else
-      if (e == 1.0d0) then
+      if (e_run == 1.0d0) then
         limit = 3.141592653589793d0
       else
-        limit = acos(-1.0d0 / e)
+        arg = -1.0d0 / e_run
+        if (arg < -1.0d0) arg = -1.0d0
+        if (arg > 1.0d0) arg = 1.0d0
+        limit = acos(arg)
       end if
       ulp = 2.0d0 ** (floor(log(limit) / log(2.0d0)) - 52.0d0)
-      if (limit - abs(nu) > 4.0d0 * ulp .and. den > 0.0d0) phi = atan2(e * sin(nu), den)
+      if (limit - abs(nu) > 4.0d0 * ulp .and. den > 0.0d0) phi = atan2(e_run * sin(nu), den)
     end if
   end if`,
     matlab: `% ${A}
 phi = NaN;
+limit = NaN;
+ulp = NaN;
 if isfinite(e) && e >= 0 && isfinite(nu)
   den = 1 + e * cos(nu);
   if e < 1
@@ -123,6 +137,8 @@ if isfinite(e) && e >= 0 && isfinite(nu)
 end`,
     julia: `# ${A}
 phi = NaN
+limit = NaN
+ulp = NaN
 if isfinite(e) && e >= 0 && isfinite(nu)
     den = 1 + e * cos(nu)
     if e < 1

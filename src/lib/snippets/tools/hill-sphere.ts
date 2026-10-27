@@ -32,7 +32,8 @@ else
   if (a > 0.0d0 .and. m > 0.0d0 .and. M > 0.0d0 .and. m < M) then
     rH = a * (m / (3.0d0 * M)) ** (1.0d0 / 3.0d0)
   else
-    rH = (a - a) / (a - a)
+    rH = 0.0d0
+    rH = rH / rH
   end if`,
     matlab: `% ${A}
 if a > 0 && m > 0 && M > 0 && m < M

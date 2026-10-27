@@ -113,7 +113,8 @@ const v_boost = omega_e * (R + h) * std.math.cos(lat);`,
 
     fortran: `! Launch azimuth: ${A}
 c = cos(i) / cos(lat)
-beta = (c - c) / (c - c)
+beta = 0.0d0
+beta = beta / beta
 if (abs(lat) < 0.5d0 * 3.141592653589793d0 .and. i >= 0.0d0 .and. &
     i <= 3.141592653589793d0 .and. abs(c) <= 1.0d0 + 1.0d-12) then
   beta = asin(max(-1.0d0, min(1.0d0, c)))

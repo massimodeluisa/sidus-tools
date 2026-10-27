@@ -40,7 +40,8 @@ else
   if (a > 0.0d0 .and. aGeo > 0.0d0 .and. nGeo > 0.0d0 .and. abs(a - aGeo) / aGeo < 0.1d0) then
     rate = -1.5d0 * nGeo * (a - aGeo) / aGeo
   else
-    rate = (a - a) / (a - a)
+    rate = 0.0d0
+    rate = rate / rate
   end if`,
     matlab: `% ${A}
 if a > 0 && aGeo > 0 && nGeo > 0 && abs(a - aGeo) / aGeo < 0.1

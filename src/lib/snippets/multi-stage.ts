@@ -167,25 +167,27 @@ g0 = 9.80665d0
 n = min(3, max(1, floor(stages)))
 dv1_ratio = m01 / mf1
 if (dv1_ratio < 1.000001d0 .and. dv1_ratio > 0.999999d0) then
-  dv1 = isp1 * g0 * log1p((m01 - mf1) / mf1)
+  xrel = (m01 - mf1) / mf1
+  dv1 = isp1 * g0 * (xrel - 0.5d0 * xrel * xrel + xrel * xrel * xrel / 3.0d0)
 else
   dv1 = isp1 * g0 * log(dv1_ratio)
 endif
+! mf2/mf3 are parameters and are 0 when that stage is inactive. A parameter
+! divisor of 0 is a compile error even inside the untaken branch, so divide
+! the variable copy. log(1+xrel) is log(m0/mf) without another parameter division.
+den2 = mf2
 if (n >= 2) then
-  if ((m02 / mf2) < 1.000001d0 .and. (m02 / mf2) > 0.999999d0) then
-    dv2 = isp2 * g0 * log1p((m02 - mf2) / mf2)
-  else
-    dv2 = isp2 * g0 * log(m02 / mf2)
-  endif
+  xrel = (m02 - den2) / den2
+  dv2 = isp2 * g0 * (xrel - 0.5d0 * xrel * xrel + xrel * xrel * xrel / 3.0d0)
+  if (xrel >= 0.000001d0 .or. xrel <= -0.000001d0) dv2 = isp2 * g0 * log(1.0d0 + xrel)
 else
   dv2 = 0.0d0
 endif
+den3 = mf3
 if (n >= 3) then
-  if ((m03 / mf3) < 1.000001d0 .and. (m03 / mf3) > 0.999999d0) then
-    dv3 = isp3 * g0 * log1p((m03 - mf3) / mf3)
-  else
-    dv3 = isp3 * g0 * log(m03 / mf3)
-  endif
+  xrel = (m03 - den3) / den3
+  dv3 = isp3 * g0 * (xrel - 0.5d0 * xrel * xrel + xrel * xrel * xrel / 3.0d0)
+  if (xrel >= 0.000001d0 .or. xrel <= -0.000001d0) dv3 = isp3 * g0 * log(1.0d0 + xrel)
 else
   dv3 = 0.0d0
 endif

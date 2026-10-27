@@ -25,7 +25,8 @@ const L = if (d > 0.0 and Rb > 0.0 and Rs > Rb and d >= Rs + Rb) Rb * d / (Rs - 
   if (d > 0.0d0 .and. Rb > 0.0d0 .and. Rs > Rb .and. d >= Rs + Rb) then
     L = Rb * d / (Rs - Rb)
   else
-    L = (d - d) / (d - d)
+    L = 0.0d0
+    L = L / L
   end if`,
     matlab: `% ${A}
 if d > 0 && Rb > 0 && Rs > Rb && d >= Rs + Rb

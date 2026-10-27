@@ -35,7 +35,8 @@ if (!((e > 0.0) and (e < 1.0) and (a * (1.0 - e) > Rb))) e = std.math.nan(f64);`
     fortran: `! ${A}
 e = -(j3 / (2.0d0 * j2)) * (Rb / a) * sin(inc)
 if (.not. (e > 0.0d0) .or. .not. (e < 1.0d0) .or. .not. (a * (1.0d0 - e) > Rb)) then
-  e = (e - e) / (e - e)
+  e = 0.0d0
+  e = e / e
 end if`,
     matlab: `% ${A}
 e = -(j3 / (2.0 * j2)) * (Rb / a) * sin(inc);

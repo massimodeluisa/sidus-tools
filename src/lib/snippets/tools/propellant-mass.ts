@@ -52,7 +52,11 @@ const prop = mf * std.math.expm1(x);`,
     fortran: `! Propellant mass: ${A}
 x = dv / (isp * g0)
 m0 = mf * exp(x)
-prop = mf * expm1(x)`,
+if (abs(x) < 1.0d-4) then
+  prop = mf * (x + 0.5d0 * x * x + x * x * x / 6.0d0)
+else
+  prop = mf * (exp(x) - 1.0d0)
+endif`,
 
     matlab: `% Propellant mass: ${A}
 x = dv / (isp * g0);

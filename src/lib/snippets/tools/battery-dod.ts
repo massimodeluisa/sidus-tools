@@ -41,7 +41,8 @@ else
   if (eUsed == eUsed .and. eCap == eCap .and. eUsed > 0.0d0 .and. eCap > 0.0d0 .and. eUsed <= eCap) then
     DoD = eUsed / eCap
   else
-    DoD = (eUsed - eUsed) / (eUsed - eUsed)
+    DoD = 0.0d0
+    DoD = DoD / DoD
   end if`,
     matlab: `% ${A}
 if isfinite(eUsed) && isfinite(eCap) && eUsed > 0 && eCap > 0 && eUsed <= eCap

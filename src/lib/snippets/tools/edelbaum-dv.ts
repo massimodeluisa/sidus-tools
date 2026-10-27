@@ -36,7 +36,8 @@ else
   if (di >= 0.0d0 .and. di < 2.0d0) then
     dv = sqrt(v1**2.0d0 + v2**2.0d0 - 2.0d0 * v1 * v2 * cos(3.141592653589793d0 * di / 2.0d0))
   else
-    dv = (di - di) / (di - di)
+    dv = 0.0d0
+    dv = dv / dv
   end if`,
     matlab: `% ${A}
 if di >= 0 && di < 2

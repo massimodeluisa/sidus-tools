@@ -491,7 +491,8 @@ if (kepler_ok > 0.5d0) then
   v_y = fd*ry + gd*vy
   v_z = fd*rz + gd*vz
 else
-  r_x = (chi - chi) / (chi - chi)
+  r_x = 0.0d0
+  r_x = r_x / r_x
   r_y = r_x
   r_z = r_x
   v_x = r_x

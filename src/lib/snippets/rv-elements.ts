@@ -104,6 +104,9 @@ nu = elements['nu']
 energy = elements['energy']
 rx_out, ry_out, rz_out = r
 vx_out, vy_out, vz_out = v
+ang_scale = 1.0
+state = None
+p_conic = float("nan")
 el2rv = ('mode' in globals()) and mode == 'el2rv'
 if el2rv:
     ang_scale = math.pi / 180.0 if str(ang)[:1] == 'd' else 1.0
@@ -765,6 +768,7 @@ rz_out = rz
 vx_out = vx
 vy_out = vy
 vz_out = vz
+ang_scale = 1.0d0
 if (mode(1:1) == 'e') then
   if (ang(1:1) == 'd') then
     ang_scale = 0.017453292519943295d0
@@ -811,7 +815,8 @@ if (mode(1:1) == 'e') then
     energy = -mu / (2.0d0 * a)
     h = sqrt(mu * p)
   else
-    rx_out = 0.0d0 / 0.0d0
+    rx_out = 0.0d0
+    rx_out = rx_out / rx_out
     ry_out = rx_out
     rz_out = rx_out
     vx_out = rx_out
@@ -866,6 +871,11 @@ else
 end
 rx_out = rx; ry_out = ry; rz_out = rz;
 vx_out = vx; vy_out = vy; vz_out = vz;
+ang_scale = 1;
+p = NaN; cnu = NaN; snu = NaN; denom = NaN; physical = NaN;
+r_pf = NaN; x_pf = NaN; y_pf = NaN; speed = NaN;
+vx_pf = NaN; vy_pf = NaN;
+cO = NaN; sO = NaN; ci = NaN; si = NaN; cw = NaN; sw = NaN;
 if mode(1) == 'e'
   if ang(1) == 'd', ang_scale = pi/180; else, ang_scale = 1; end
   a = a_km * 1000;
@@ -1003,6 +1013,9 @@ nu = elements.nu
 energy = elements.energy
 rx_out, ry_out, rz_out = rx, ry, rz
 vx_out, vy_out, vz_out = vx, vy, vz
+ang_scale = 1.0
+state = nothing
+p_conic = NaN
 el2rv = @isdefined(mode) && mode == "el2rv"
 if el2rv
     ang_scale = (ang isa AbstractString && startswith(string(ang), "d")) ? π/180 : 1.0

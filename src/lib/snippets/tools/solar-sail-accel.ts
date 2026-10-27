@@ -48,7 +48,8 @@ else
   if (eta == eta .and. eta > 0.0d0 .and. eta <= 1.0d0 .and. flux > 0.0d0 .and. A > 0.0d0 .and. m > 0.0d0) then
     a = 2.0d0 * eta * flux * A / (c * m)
   else
-    a = (eta - eta) / (eta - eta)
+    a = 0.0d0
+    a = a / a
   end if`,
     matlab: `% ${A}
 c = 299792458.0;

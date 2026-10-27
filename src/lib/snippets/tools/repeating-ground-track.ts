@@ -32,7 +32,8 @@ const T = if (k_int >= 1.0) days * @as(f64, 86400.0) / k_int else std.math.nan(f
   if (k_int >= 1.0d0) then
     T = days * 86400.0d0 / k_int
   else
-    T = (k - k) / (k - k)
+    T = 0.0d0
+    T = T / T
   end if`,
     matlab: `% ${A}
 k_int = round(k);

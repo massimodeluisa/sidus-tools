@@ -95,13 +95,18 @@ ve = isp * g0
 x = dv_si / ve
 ratio = m0 / mf
 if (ratio < 1.000001d0 .and. ratio > 0.999999d0) then
-  ln_ratio = log1p((m0 - mf) / mf)
+  xrel = (m0 - mf) / mf
+  ln_ratio = xrel - 0.5d0 * xrel * xrel + xrel * xrel * xrel / 3.0d0
 else
   ln_ratio = log(ratio)
 endif
 if (mode(1:1) == 'm') then
   dv = dv_si
-  prop = mf * expm1(x)
+  if (abs(x) < 1.0d-4) then
+    prop = mf * (x + 0.5d0 * x * x + x * x * x / 6.0d0)
+  else
+    prop = mf * (exp(x) - 1.0d0)
+  endif
   m0_solved = mf * exp(x)
 else
   dv = ve * ln_ratio

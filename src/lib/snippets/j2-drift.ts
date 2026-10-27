@@ -129,7 +129,8 @@ draan = -1.5d0 * n * J2 * k * cos(i)
 if (e > 0.0d0 .and. e < 1.0d0) then
   dargp = 0.75d0 * n * J2 * k * (5.0d0 * cos(i) * cos(i) - 1.0d0)
 else
-  dargp = (e - e) / (e - e)
+  dargp = 0.0d0
+  dargp = dargp / dargp
 end if
 draan_deg_day = (draan * 180.0d0 / 3.141592653589793d0) * 86400.0d0
 dargp_deg_day = (dargp * 180.0d0 / 3.141592653589793d0) * 86400.0d0`,

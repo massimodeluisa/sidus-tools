@@ -90,7 +90,8 @@ if (theta > acos(-1.0d0)) then
   theta = two_pi - theta
 endif
 if (v < 0.0d0) then
-  dv = 0.0d0 / 0.0d0
+  dv = 0.0d0
+  dv = dv / dv
 else
   dv = 2.0d0 * v * sin(theta / 2.0d0)
 endif`,

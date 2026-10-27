@@ -39,35 +39,36 @@ if (
 }`,
     c: `/* ${A} */
 const double elev_min = 5.0 * M_PI / 180.0;
+const double z = M_PI / 2.0 - elev;
 double d = nan("");
 if (isfinite(elev) && isfinite(p) && isfinite(T) && isfinite(e) && elev >= elev_min && elev <= M_PI / 2.0 && p > 0.0 && T > 0.0 && e >= 0.0 && e <= p) {
-  const double z = M_PI / 2.0 - elev;
   d = 0.002277 / cos(z) * (p / 100.0 + (1255.0 / T + 0.05) * (e / 100.0) - 1.16 * pow(tan(z), 2.0));
 }`,
     cpp: `// ${A}
 const double elev_min = 5.0 * M_PI / 180.0;
-double d = nan("");
-if (isfinite(elev) && isfinite(p) && isfinite(T) && isfinite(e) && elev >= elev_min && elev <= M_PI / 2.0 && p > 0.0 && T > 0.0 && e >= 0.0 && e <= p) {
-  const double z = M_PI / 2.0 - elev;
+const double z = M_PI / 2.0 - elev;
+double d = std::nan("");
+if (std::isfinite(elev) && std::isfinite(p) && std::isfinite(T) && std::isfinite(e) && elev >= elev_min && elev <= M_PI / 2.0 && p > 0.0 && T > 0.0 && e >= 0.0 && e <= p) {
   d = 0.002277 / cos(z) * (p / 100.0 + (1255.0 / T + 0.05) * (e / 100.0) - 1.16 * pow(tan(z), 2.0));
 }`,
     rust: `// ${A}
 let elev_min = 5.0_f64 * std::f64::consts::PI / 180.0_f64;
+let z = std::f64::consts::PI / 2.0_f64 - elev;
 let mut d = f64::NAN;
 if elev.is_finite() && p.is_finite() && T.is_finite() && e.is_finite() && elev >= elev_min && elev <= std::f64::consts::PI / 2.0_f64 && p > 0.0_f64 && T > 0.0_f64 && e >= 0.0_f64 && e <= p {
-    let z = std::f64::consts::PI / 2.0_f64 - elev;
     d = 0.002277_f64 / (z).cos() * (p / 100.0_f64 + (1255.0_f64 / T + 0.05_f64) * (e / 100.0_f64) - 1.16_f64 * (z).tan().powi(2));
 }`,
     zig: `// ${A}
 const elev_min = @as(f64, 5.0) * std.math.pi / @as(f64, 180.0);
+const z = std.math.pi / @as(f64, 2.0) - elev;
 var d: f64 = std.math.nan(f64);
 if (std.math.isFinite(elev) and std.math.isFinite(p) and std.math.isFinite(T) and std.math.isFinite(e) and elev >= elev_min and elev <= std.math.pi / @as(f64, 2.0) and p > 0.0 and T > 0.0 and e >= 0.0 and e <= p) {
-    const z = std.math.pi / @as(f64, 2.0) - elev;
     d = @as(f64, 0.002277) / std.math.cos(z) * (p / @as(f64, 100.0) + (@as(f64, 1255.0) / T + @as(f64, 0.05)) * (e / @as(f64, 100.0)) - @as(f64, 1.16) * std.math.pow(f64, std.math.tan(z), @as(f64, 2.0)));
 }`,
     fortran: `! ${A}
   elev_min = 5.0d0 * 3.141592653589793d0 / 180.0d0
-  d = (elev - elev) / (elev - elev)
+  d = 0.0d0
+  d = d / d
   if (elev == elev .and. p == p .and. T == T .and. e == e .and. elev >= elev_min .and. elev <= 3.141592653589793d0 / 2.0d0 .and. p > 0.0d0 .and. p < 1.0d300 .and. T > 0.0d0 .and. T < 1.0d300 .and. e >= 0.0d0 .and. e <= p) then
     z = 3.141592653589793d0 / 2.0d0 - elev
     d = 0.002277d0 / cos(z) * (p / 100.0d0 + (1255.0d0 / T + 0.05d0) * (e / 100.0d0) - 1.16d0 * tan(z) ** 2)

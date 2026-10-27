@@ -7,7 +7,7 @@ export const porkchopEarthMarsSnippets: FormulaSnippet = {
   assumptions: A,
   code: {
     python:
-      "# Circular heliocentric Lambert cell; C3 = |v1-vE|^2 from a supplied v1; SI. Does not loop dates.\nnE = math.sqrt(mu / aE**3)\nLE = LE0 + nE * (tDep - t0)\nvEx = -nE * aE * math.sin(LE)\nvEy = nE * aE * math.cos(LE)\nc3 = (v1x - vEx)**2 + (v1y - vEy)**2 + v1z**2",
+      "# Circular heliocentric Lambert cell; C3 = |v1-vE|^2 from a supplied v1; SI. Does not loop dates.\nimport math\nnE = math.sqrt(mu / aE**3)\nLE = LE0 + nE * (tDep - t0)\nvEx = -nE * aE * math.sin(LE)\nvEy = nE * aE * math.cos(LE)\nc3 = (v1x - vEx)**2 + (v1y - vEy)**2 + v1z**2",
     javascript:
       "// Circular heliocentric Lambert cell; C3 = |v1-vE|^2 from a supplied v1; SI. Does not loop dates.\nconst nE = Math.sqrt(mu / aE**3)\nconst LE = LE0 + nE * (tDep - t0)\nconst vEx = -nE * aE * Math.sin(LE)\nconst vEy = nE * aE * Math.cos(LE)\nconst c3 = (v1x - vEx)**2 + (v1y - vEy)**2 + v1z**2",
     typescript:

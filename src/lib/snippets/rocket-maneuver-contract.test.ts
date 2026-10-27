@@ -99,11 +99,21 @@ describe('rocket-equation exports honor solve mode and stable evaluations', () =
   })
 
   it('every executable body branches on mode and uses log1p and expm1', () => {
-    for (const body of executableBodies(rocketSnippets)) {
-      expect(body).toMatch(/\bmode\b/)
-      expect(body).toMatch(/\bdv_si\b/)
-      expect(body).toMatch(/log1p|\.ln_1p\(/)
-      expect(body).toMatch(/expm1|\.exp_m1\(/)
+    for (const lang of EXECUTABLE) {
+      const body = rocketSnippets.code[lang]!
+      expect(body, lang).toBeTruthy()
+      expect(body, lang).toMatch(/\bmode\b/)
+      expect(body, lang).toMatch(/\bdv_si\b/)
+      if (lang === 'fortran') {
+        const code = body.split('\n').filter((line) => !line.trim().startsWith('!')).join('\n')
+        expect(code).toMatch(/xrel - 0\.5d0 \* xrel \* xrel \+ xrel \* xrel \* xrel \/ 3\.0d0/)
+        expect(code).toMatch(/x \+ 0\.5d0 \* x \* x \+ x \* x \* x \/ 6\.0d0/)
+        expect(code).not.toMatch(/\blog1p\b/)
+        expect(code).not.toMatch(/\bexpm1\b/)
+      } else {
+        expect(body, lang).toMatch(/log1p|\.ln_1p\(/)
+        expect(body, lang).toMatch(/expm1|\.exp_m1\(/)
+      }
     }
     expect(rocketSnippets.code.latex).toMatch(/expm1/)
   })
@@ -124,9 +134,19 @@ describe('propellant-mass exports use expm1', () => {
   })
 
   it('does not subtract the rounded wet mass in any executable body', () => {
-    for (const body of executableBodies(propellantMassSnippets)) {
-      expect(body).toMatch(/expm1|\.exp_m1\(/)
-      expect(body).not.toMatch(/m0\s*-\s*mf/)
+    for (const lang of EXECUTABLE) {
+      const body = propellantMassSnippets.code[lang]!
+      expect(body, lang).toBeTruthy()
+      const code = lang === 'fortran'
+        ? body.split('\n').filter((line) => !line.trim().startsWith('!')).join('\n')
+        : body
+      if (lang === 'fortran') {
+        expect(code).toMatch(/x \+ 0\.5d0 \* x \* x \+ x \* x \* x \/ 6\.0d0/)
+        expect(code).not.toMatch(/\bexpm1\b/)
+      } else {
+        expect(code, lang).toMatch(/expm1|\.exp_m1\(/)
+      }
+      expect(code, lang).not.toMatch(/m0\s*-\s*mf/)
     }
   })
 })
@@ -264,11 +284,19 @@ describe('multi-stage exports use log1p near unit mass ratio', () => {
   })
 
   it('keeps the active-stage gate and a stable logarithm in every executable body', () => {
-    for (const body of executableBodies(multiStageSnippets)) {
-      expect(body).toMatch(/log1p|\.ln_1p\(/)
-      expect(body).toMatch(/\bn\s*>=\s*2\b/)
-      expect(body).toMatch(/\bn\s*>=\s*3\b/)
-      expect(body).toMatch(/dv_total\b[^=\n]*=\s*dv1\s*\+\s*dv2\s*\+\s*dv3/)
+    for (const lang of EXECUTABLE) {
+      const body = multiStageSnippets.code[lang]!
+      expect(body, lang).toBeTruthy()
+      if (lang === 'fortran') {
+        const code = body.split('\n').filter((line) => !line.trim().startsWith('!')).join('\n')
+        expect(code).toMatch(/xrel - 0\.5d0 \* xrel \* xrel \+ xrel \* xrel \* xrel \/ 3\.0d0/)
+        expect(code).not.toMatch(/\blog1p\b/)
+      } else {
+        expect(body, lang).toMatch(/log1p|\.ln_1p\(/)
+      }
+      expect(body, lang).toMatch(/\bn\s*>=\s*2\b/)
+      expect(body, lang).toMatch(/\bn\s*>=\s*3\b/)
+      expect(body, lang).toMatch(/dv_total\b[^=\n]*=\s*dv1\s*\+\s*dv2\s*\+\s*dv3/)
     }
   })
 })
