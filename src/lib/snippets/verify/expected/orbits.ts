@@ -385,7 +385,8 @@ export const ORBITS_EXPECTED: Record<string, ExpectedFn> = {
   },
 
   circularize: (bag) => {
-    const b = circularizeBurn(num(bag, 'mu'), num(bag, 'a'), num(bag, 'e'), 'apo')
+    const at = bag.at === 'peri' ? 'peri' : 'apo'
+    const b = circularizeBurn(num(bag, 'mu'), num(bag, 'a'), num(bag, 'e'), at)
     if (!b) throw new Error('circularize: circularizeBurn returned null for the verification input bag')
     const out: Record<string, number> = {}
     put(out, ['r'], b.r)
@@ -737,6 +738,7 @@ export const ORBITS_EXPECTED: Record<string, ExpectedFn> = {
       perigeeAlt: h,
       mu,
       bodyR: R,
+      dwellHalfAngle: num(bag, 'delta'),
     })
     if (!o) throw new Error('molniya-tundra: heoOrbitFromPerigee returned null for the verification input bag')
     const out: Record<string, number> = {}
@@ -747,6 +749,7 @@ export const ORBITS_EXPECTED: Record<string, ExpectedFn> = {
     put(out, ['ra'], o.ra)
     put(out, ['e'], o.e)
     put(out, ['i'], o.inclination)
+    put(out, ['dwell'], o.dwell)
     return out
   },
 

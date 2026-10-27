@@ -41,7 +41,7 @@ export function MagnetorquerMomentTool() {
           <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
         ) : (
           <div className="sidus-results">
-            <ResultCard label={t('fields.disc_m')} value={formatNumber(res,6)} accent />
+            <ResultCard label={t('fields.magnetic_dipole_moment')} tip={t('fields.note_magnetorquer')} value={formatNumber(res,6)} unit="A·m²" accent />
           </div>
         )
       }

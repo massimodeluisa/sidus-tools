@@ -37,7 +37,7 @@ export function DiffractionLimitTool() {
           <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
         ) : (
           <div className="sidus-results">
-            <ResultCard label={t('fields.theta')} si={res} category="angle" unitId="deg" unitIds={TOOL_UNIT_SETS.angle} digits={4} accent />
+            <ResultCard label={t('fields.airy_half_angle')} tip={t('fields.note_diffraction')} si={res} category="angle" unitId="deg" unitIds={TOOL_UNIT_SETS.angle} digits={4} accent />
           </div>
         )
       }

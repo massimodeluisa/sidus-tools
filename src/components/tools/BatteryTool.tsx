@@ -41,6 +41,7 @@ export function BatteryTool() {
           />
           <UiField
             label={t('fields.bus_voltage')}
+            tip={t('fields.note_battery_ideal')}
             type="number"
             value={p.V}
             onChange={(e) => setP({ V: Number(e.target.value) })}
@@ -63,6 +64,7 @@ export function BatteryTool() {
           <div className="sidus-results">
             <ResultCard
               label={t('fields.stored_energy')}
+              tip={t('fields.note_battery_ideal')}
               si={res.E}
               category="energy"
               unitId="Wh"

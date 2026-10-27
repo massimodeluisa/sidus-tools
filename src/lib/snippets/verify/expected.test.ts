@@ -146,6 +146,7 @@ const SATELLITE_WAVE = [
   'gnss-geometry-gdop',
   'gnss-ionosphere-klobuchar',
   'gnss-pseudorange',
+  'gnss-troposphere-delay',
   'gravity-gradient-torque',
   'ground-track',
   'ground-track-shift',

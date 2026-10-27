@@ -9,16 +9,17 @@ import { TOOL_UNIT_SETS, planckSpectralRadiance, toSi } from '@/lib/physics'
 import { formatNumber } from '@/lib/physics/format'
 import { numParam, strParam, useToolSearchParams } from '@/lib/use-tool-search-params'
 
-const SCHEMA = {
+export const PLANCK_SCHEMA = {
   lam: numParam(500, { min: 0 }),
   lamu: strParam('nm', TOOL_UNIT_SETS.wavelength),
-  T: numParam(5800, { min: 0 }),
+  // Display-unit temperature. Do not clamp at 0: °C and °F are negative for T_K > 0.
+  T: numParam(5800),
   Tu: strParam('K', TOOL_UNIT_SETS.temperature),
 } as const
 
 export function PlanckRadianceTool() {
   const { t } = useTranslation()
-  const [p, setP] = useToolSearchParams(SCHEMA)
+  const [p, setP] = useToolSearchParams(PLANCK_SCHEMA)
   const res = useMemo(() => {
     const lam = toSi(p.lam, p.lamu)
     const T = toSi(p.T, p.Tu)
@@ -45,7 +46,7 @@ export function PlanckRadianceTool() {
             unitIds={TOOL_UNIT_SETS.temperature}
             unitId={p.Tu}
             value={p.T}
-            min={0}
+            min={p.Tu === 'K' ? 0 : undefined}
             onValueChange={(T) => setP({ T })}
             onUnitChange={(Tu, T) => setP({ Tu, T })}
           />

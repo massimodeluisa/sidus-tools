@@ -26,6 +26,7 @@ import {
   antennaBeamwidth,
   j2RaanRate,
   klobucharIonoDelayM,
+  saastamoinenTropoDelay,
   laserRangeFromRtt,
   laserRangeFromTof,
   laserSpotRadius,
@@ -67,10 +68,7 @@ import { num, put, type ExpectedFn } from './shared'
  * They return `{}` on purpose: the runner reports them as uncovered instead of
  * asserting numbers that shipped physics does not actually produce.
  */
-export const UNVERIFIABLE_RF: Readonly<Record<string, string>> = {
-  'gnss-troposphere-delay':
-    'snippet omits the "- tan(z)^2" term shipped saastamoinenTropoDelay subtracts inside the parens, and omits its height/latitude scale factor (exp(-h/7000) * (1+0.1 cos 2*lat)) entirely; the two formulas diverge for every input.',
-}
+export const UNVERIFIABLE_RF: Readonly<Record<string, string>> = {}
 
 export const RF_EXPECTED: Record<string, ExpectedFn> = {
   'link-budget': (bag) => {
@@ -132,8 +130,29 @@ export const RF_EXPECTED: Record<string, ExpectedFn> = {
     return out
   },
 
+  'gnss-troposphere-delay': (bag) => {
+    const out: Record<string, number> = {}
+    put(
+      out,
+      ['d'],
+      saastamoinenTropoDelay(num(bag, 'elev'), num(bag, 'p'), num(bag, 'T'), num(bag, 'e')),
+    )
+    return out
+  },
+
   'laser-link-budget': (bag) => {
     const out: Record<string, number> = {}
+    const rt = bag.rt
+    const rr = bag.rr
+    const radii =
+      typeof rt === 'number' &&
+      Number.isFinite(rt) &&
+      rt > 0 &&
+      typeof rr === 'number' &&
+      Number.isFinite(rr) &&
+      rr > 0
+        ? { txRadiusM: rt, rxRadiusM: rr }
+        : {}
     put(
       out,
       ['Pr'],
@@ -146,6 +165,7 @@ export const RF_EXPECTED: Record<string, ExpectedFn> = {
         wavelengthM: num(bag, 'lam'),
         rangeM: num(bag, 'R'),
         lossLin: num(bag, 'L'),
+        ...radii,
       }),
     )
     return out

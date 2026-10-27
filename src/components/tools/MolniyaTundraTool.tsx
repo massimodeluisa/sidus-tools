@@ -124,6 +124,7 @@ export function MolniyaTundraTool() {
             h: toSi(p.h, p.hu),
             mu: EARTH_MU,
             R: EARTH_RADIUS,
+            delta: toSi(p.dwell, p.du),
           }}
         />
       }

@@ -10,7 +10,7 @@ import {
   BODIES,
   circularOrbitVelocity,
   getBody,
-  semiMajorFromPeriod,
+  exteriorSemiMajorFromPeriod,
   TOOL_UNIT_SETS,
   toSi,
 } from '@/lib/physics'
@@ -28,7 +28,7 @@ export function PeriodMatchTool() {
   const body = getBody(p.body)
   const T = toSi(p.T, p.Tu)
   const res = useMemo(() => {
-    const a = semiMajorFromPeriod(body.mu, T)
+    const a = exteriorSemiMajorFromPeriod(body.mu, T, body.radius)
     if (a == null) return null
     const h = a - body.radius
     const v = circularOrbitVelocity(body.mu, a)

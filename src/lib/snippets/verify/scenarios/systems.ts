@@ -22,6 +22,21 @@ export const SYSTEMS_SCENARIOS: Record<string, Scenario[]> = {
       source: 'adversarial synthetic: distinct non-round Isp/m0/mf',
       bag: { isp: 417.3, m0: 83_456.2, mf: 9123.7 },
     },
+    {
+      name: 'inverse-target-dv',
+      source: 'shipped inverse-mode inputs: Isp 330 s, mf 100 t, target 9 km/s; stale m0 must not set Δv',
+      bag: { mode: 'm0', isp: 330, m0: 500_000, mf: 100_000, dv_si: 9000 },
+    },
+    {
+      name: 'inverse-tiny-dv',
+      source: 'Isp 320 s, mf 5000 kg, target Δv 1e-12 m/s; propellant is mf*expm1, not m0-mf',
+      bag: { mode: 'm0', isp: 320, m0: 6000, mf: 5000, dv_si: 1e-12 },
+    },
+    {
+      name: 'near-unity-mass-ratio',
+      source: 'Isp 320 s with m0 = 5000+1e-12 kg and mf = 5000 kg; forward Δv uses log1p',
+      bag: { isp: 320, m0: 5000 + 1e-12, mf: 5000 },
+    },
   ],
 
   'heat-flux': [
@@ -139,6 +154,7 @@ export const SYSTEMS_SCENARIOS: Record<string, Scenario[]> = {
         isp1: 282, m01: 500_000, mf1: 50_000,
         isp2: 311, m02: 100_000, mf2: 20_000,
         isp3: 320, m03: 20_000, mf3: 5_000,
+        stages: 3,
       },
     },
     {
@@ -148,6 +164,7 @@ export const SYSTEMS_SCENARIOS: Record<string, Scenario[]> = {
         isp1: 363, m01: 2_000_000, mf1: 200_000,
         isp2: 452, m02: 400_000, mf2: 40_000,
         isp3: 465, m03: 30_000, mf3: 6_000,
+        stages: 3,
       },
     },
     {
@@ -157,6 +174,43 @@ export const SYSTEMS_SCENARIOS: Record<string, Scenario[]> = {
         isp1: 273.4, m01: 417_235.6, mf1: 41_723.5,
         isp2: 298.7, m02: 83_456.2, mf2: 9_123.7,
         isp3: 315.9, m03: 15_642.3, mf3: 3_012.8,
+        stages: 3,
+      },
+    },
+    {
+      name: 'two-stage',
+      // Stage 3 is deliberately invalid (mf3 = 0): three-stage sums must never
+      // evaluate it, so this scenario proves the inactive-stage gate.
+      source: 'shipped UI defaults with two active stages, plus a deliberately invalid inactive third stage',
+      bag: {
+        isp1: 280, m01: 100_000, mf1: 30_000,
+        isp2: 310, m02: 25_000, mf2: 8_000,
+        isp3: 450, m03: 6_000, mf3: 0,
+        stages: 2,
+      },
+    },
+    {
+      name: 'one-stage',
+      // Stages 2 and 3 are deliberately invalid (mf2 = mf3 = 0): the one-stage
+      // sum must never evaluate either.
+      source: 'shipped UI defaults with one active stage, plus deliberately invalid inactive second and third stages',
+      bag: {
+        isp1: 280, m01: 100_000, mf1: 30_000,
+        isp2: 310, m02: 25_000, mf2: 0,
+        isp3: 450, m03: 6_000, mf3: 0,
+        stages: 1,
+      },
+    },
+    {
+      name: 'near-unity-stage',
+      source: 'one active stage with m0 = 5000+1e-12 kg and mf = 5000 kg; ve = 320 s * g0. Inactive stages are invalid and must not be evaluated',
+      bag: {
+        isp1: 320,
+        m01: 5000 + 1e-12,
+        mf1: 5000,
+        mf2: 0,
+        mf3: 0,
+        stages: 1,
       },
     },
   ],
@@ -176,6 +230,11 @@ export const SYSTEMS_SCENARIOS: Record<string, Scenario[]> = {
       name: 'synthetic',
       source: 'adversarial synthetic: distinct non-round mf/dv/isp',
       bag: { mf: 8_734.2, dv: 4_523.7, isp: 287.3, g0: 9.80665 },
+    },
+    {
+      name: 'tiny-delta-v',
+      source: 'Isp 320 s, mf 5000 kg, g0 9.80665, Δv 1e-12 m/s; propellant is mf*expm1',
+      bag: { mf: 5000, dv: 1e-12, isp: 320, g0: 9.80665 },
     },
   ],
 

@@ -30,7 +30,7 @@ export function BatteryDodTool() {
     <ToolShell
       parameters={
         <ParamsGrid>
-          <UiField label={t('fields.eused')} type="number" min={0}  step="any" value={p.eUsed} onChange={(e)=>setP({eUsed:Number(e.target.value)})} />
+          <UiField label={t('fields.eused')} type="number" min={0}  step="any" value={p.eUsed} hint={t('fields.hint_battery_dod')} onChange={(e)=>setP({eUsed:Number(e.target.value)})} />
           <UiField label={t('fields.ecap')} type="number" min={0.001}  step="any" value={p.eCap} onChange={(e)=>setP({eCap:Number(e.target.value)})} />
         </ParamsGrid>
       }
@@ -44,10 +44,12 @@ export function BatteryDodTool() {
         )
       }
       code={
-        <CodeExport
-          formulaId="battery-dod"
-          values={{ ...p }}
-        />
+        res == null ? undefined : (
+          <CodeExport
+            formulaId="battery-dod"
+            values={{ ...p }}
+          />
+        )
       }
     />
   )

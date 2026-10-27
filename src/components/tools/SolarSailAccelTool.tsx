@@ -39,7 +39,7 @@ export function SolarSailAccelTool() {
           <UiField label={t('fields.flux')} type="number" min={1}  step="any" value={p.flux} onChange={(e)=>setP({flux:Number(e.target.value)})} />
           <UiField label={t('fields.disc_a')} type="number" min={0.000001}  step="any" value={p.A} onChange={(e)=>setP({A:Number(e.target.value)})} />
           <UiUnitField label={t('fields.disc_m')} category="mass" unitIds={TOOL_UNIT_SETS.mass} unitId={p.mu} value={p.m} min={0} onValueChange={(m)=>setP({m})} onUnitChange={(mu,m)=>setP({mu,m})} />
-          <UiField label={t('fields.eta')} type="number" min={0.01}  step="any" value={p.eta} onChange={(e)=>setP({eta:Number(e.target.value)})} />
+          <UiField label={t('fields.sail_force_fraction')} tip={t('fields.note_sail_eta')} type="number" min={0.01} max={1} step="any" value={p.eta} hint={t('fields.note_sail_eta')} onChange={(e)=>setP({eta:Number(e.target.value)})} />
         </ParamsGrid>
       }
       results={
@@ -52,10 +52,12 @@ export function SolarSailAccelTool() {
         )
       }
       code={
-        <CodeExport
-          formulaId="solar-sail-accel"
-          values={{ ...p, m: toSi(p.m, p.mu) }}
-        />
+        res == null ? undefined : (
+          <CodeExport
+            formulaId="solar-sail-accel"
+            values={{ ...p, m: toSi(p.m, p.mu) }}
+          />
+        )
       }
     />
   )

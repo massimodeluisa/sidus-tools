@@ -22,6 +22,7 @@ import { getBody } from '../physics/bodies'
 import { isaAtmosphere, dynamicPressure } from '../physics/atmosphere'
 import { j2ArgpRate, j2RaanRate } from '../physics/j2'
 import { earthRotationBoost, launchAzimuth } from '../physics/launch'
+import { DEFAULT_LAUNCH_SITE } from '../physics/sites'
 import { ssoInclination } from '../physics/sso'
 import { linkBudget } from '../physics/link'
 import { phasingOrbit } from '../physics/phasing'
@@ -372,7 +373,9 @@ export function computeToolOg(
         const i = (num(q, 'i', 51.6) * Math.PI) / 180
         const az = launchAzimuth(lat, i)
         if (!az) return base
-        const boost = earthRotationBoost(lat, EARTH_RADIUS)
+        const hu = str(q, 'hu', 'm')
+        const hPad = Math.max(0, toSi(num(q, 'h', DEFAULT_LAUNCH_SITE.heightM), hu))
+        const boost = earthRotationBoost(lat, EARTH_RADIUS + hPad)
         return attach(
           base,
           [

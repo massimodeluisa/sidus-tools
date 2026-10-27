@@ -31,8 +31,8 @@ export function PanelEolPowerTool() {
     <ToolShell
       parameters={
         <ParamsGrid>
-          <UiField label={t('fields.disc_p0')} type="number" min={0.001}  step="any" value={p.p0} onChange={(e)=>setP({p0:Number(e.target.value)})} />
-          <UiField label={t('fields.disc_d_2')} type="number" min={0}  step="any" value={p.d} onChange={(e)=>setP({d:Number(e.target.value)})} />
+          <UiField label={t('fields.panel_bol_power')} type="number" min={0.001}  step="any" value={p.p0} onChange={(e)=>setP({p0:Number(e.target.value)})} />
+          <UiField label={t('fields.panel_degrade_fraction')} tip={t('fields.note_panel_eol')} type="number" min={0}  step="any" value={p.d} onChange={(e)=>setP({d:Number(e.target.value)})} />
           <UiField label={t('fields.years')} type="number" min={0}  step="any" value={p.years} onChange={(e)=>setP({years:Number(e.target.value)})} />
         </ParamsGrid>
       }

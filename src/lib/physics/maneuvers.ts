@@ -3,13 +3,11 @@
 import { hohmannTransfer, planeChangeDeltaV, visViva, circularOrbitVelocity } from './orbital'
 
 /**
- * Combined Hohmann + plane change split at apoapsis of transfer
- * (cheaper than pure plane change at LEO for large Δi).
- * Pure plane at r1: Δv_plane = 2 v1 sin(Δi/2)
- * Combined: do fraction of plane change with second burn at apo (simplified equal-split option).
- *
- * Educational: burn1 radial Hohmann only; burn2 at apo does remaining circularize + full plane change.
- * Δv2 = √(v_a² + v2² − 2 v_a v2 cos Δi)
+ * Combined Hohmann + plane change.
+ * Burn 1 is the Hohmann departure magnitude. Burn 2 is circularize plus the
+ * full plane change at the destination radius r2: apoapsis when raising,
+ * periapsis when lowering.
+ * Δv2 = √(v_t² + v2² − 2 v_t v2 cos Δi)
  */
 export function hohmannWithPlaneChange(
   mu: number,
@@ -24,7 +22,7 @@ export function hohmannWithPlaneChange(
   dv2: number
   savings: number
 } | null {
-  if (!(mu > 0) || !(r1 > 0) || !(r2 > 0)) return null
+  if (!(mu > 0) || !(r1 > 0) || !(r2 > 0) || !Number.isFinite(deltaIRad)) return null
   const h = hohmannTransfer(mu, r1, r2)
   const v1 = Math.sqrt(mu / r1)
   const v2 = Math.sqrt(mu / r2)
@@ -34,7 +32,7 @@ export function hohmannWithPlaneChange(
   const dvPlaneAtR1 = planeChangeDeltaV(v1, di)
   // Burn 1: pure Hohmann departure
   const dv1 = h.dv1
-  // Burn 2: combined circularize + plane change at r2
+  // Burn 2: combined circularize + plane change at the destination radius r2.
   const cos = Math.cos(di)
   const dv2 = Math.sqrt(Math.max(0, vApo * vApo + v2 * v2 - 2 * vApo * v2 * cos))
   const dvCombined = dv1 + dv2
@@ -109,12 +107,17 @@ export function planeChangeAtApsides(
   ra: number,
   deltaIRad: number,
 ): { dvPeri: number; dvApo: number; ratio: number } | null {
-  if (!(mu > 0) || !(rp > 0) || !(ra > rp)) return null
+  if (!(mu > 0) || !(rp > 0) || !(ra > rp) || !Number.isFinite(deltaIRad)) return null
   const a = (rp + ra) / 2
   const vp = visViva(mu, rp, a)
   const va = visViva(mu, ra, a)
+  if (!Number.isFinite(vp) || !(vp > 0) || !Number.isFinite(va) || !(va > 0)) return null
   const di = Math.abs(deltaIRad)
   const dvPeri = planeChangeDeltaV(vp, di)
   const dvApo = planeChangeDeltaV(va, di)
-  return { dvPeri, dvApo, ratio: dvApo / dvPeri }
+  if (!Number.isFinite(dvPeri) || !Number.isFinite(dvApo)) return null
+  // At zero included angle both burns vanish; the finite limit is v_apo/v_peri.
+  const ratio = dvPeri === 0 ? va / vp : dvApo / dvPeri
+  if (!Number.isFinite(ratio)) return null
+  return { dvPeri, dvApo, ratio }
 }

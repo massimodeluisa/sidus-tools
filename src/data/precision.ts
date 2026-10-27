@@ -13,6 +13,7 @@ export type PrecisionClass =
   | 'eclss-educational'
   | 'rf-friis'
   | 'radial-doppler'
+  | 'closed-form'
   | 'empirical-const'
   | 'utility'
 
@@ -94,8 +95,18 @@ export const DEFAULT_PRECISION: ToolPrecision = TWO_BODY
  * Unknown ids fall back to DEFAULT_PRECISION.
  */
 export const TOOL_PRECISION: Record<string, ToolPrecision> = {
-  'hoop-stress': TWO_BODY,
-  'exponential-density': TWO_BODY,
+  'hoop-stress': {
+    modelClass: 'closed-form',
+    errorClass: 'Thin-wall identity σ = p r / t. Not a thick-wall Lamé solution or a finite-element stress.',
+    limits: `Closed-form thin-wall hoop stress for a cylindrical pressure vessel. No joints and no material yield. ${IEEE}`,
+    referenceHint: 'Thin-wall pressure-vessel hoop stress σ = p r / t',
+  },
+  'exponential-density': {
+    modelClass: 'atmosphere-order',
+    errorClass: 'Constant scale height. A sea-level ρ0 and one H are not a thermosphere table.',
+    limits: `Isothermal fit ρ = ρ0 exp(−h/H). ρ0 is the density at the reference height of that fit, not a general Earth atmosphere. ${IEEE}`,
+    referenceHint: 'NASA EDL atmosphere note: a constant-H fit is local',
+  },
   'hill-sphere': TWO_BODY,
   'edelbaum-dv': {
     modelClass: 'two-body-exact',
@@ -105,12 +116,27 @@ export const TOOL_PRECISION: Record<string, ToolPrecision> = {
     referenceHint: 'Edelbaum 1961; Vallado low-thrust chapter',
   },
   'repeating-ground-track': TWO_BODY,
-  'pointing-budget-rss': TWO_BODY,
+  'pointing-budget-rss': {
+    modelClass: 'closed-form',
+    errorClass: 'Root-sum-square of independent zero-mean contributions. Not a covariance propagation.',
+    limits: `RSS of the supplied angular sigmas. Assumes uncorrelated errors. ${IEEE}`,
+    referenceHint: 'Root-sum-square pointing budget',
+  },
   'boiloff-rate': TWO_BODY,
   'residual-dipole-torque': TWO_BODY,
   'solar-flux-distance': TWO_BODY,
-  'nyquist-rate': TWO_BODY,
-  'data-volume': TWO_BODY,
+  'nyquist-rate': {
+    modelClass: 'closed-form',
+    errorClass: 'Ideal baseband bound fs = 2 f_max. Ignores anti-alias filters and quantization.',
+    limits: `Nyquist–Shannon rate for a band-limited baseband signal. Not a practical ADC design. ${IEEE}`,
+    referenceHint: 'Nyquist–Shannon sampling theorem',
+  },
+  'data-volume': {
+    modelClass: 'closed-form',
+    errorClass: 'Ideal product V = R · T · η. No coding or protocol loss beyond the supplied η.',
+    limits: `Closed-form contact volume. η is a lumped efficiency in (0, 1]. Not a link budget. ${IEEE}`,
+    referenceHint: 'Data volume = rate × contact time × efficiency',
+  },
   'earth-ir-flux': TWO_BODY,
   'molniya-tundra': {
     modelClass: 'heo-critical',
@@ -129,9 +155,19 @@ export const TOOL_PRECISION: Record<string, ToolPrecision> = {
       'J2+J3 frozen eccentricity, mean argument of perigee ±90°. Not a secular-rate calculator.',
   },
   'thrust-to-weight': TWO_BODY,
-  'planck-radiance': TWO_BODY,
+  'planck-radiance': {
+    modelClass: 'closed-form',
+    errorClass: 'Ideal blackbody spectral radiance B_λ. Real surfaces need emissivity and a band integral.',
+    limits: `Planck B_λ(λ, T) in W/(m²·sr·m). Not a band-integrated exitance and not a gray body. ${IEEE}`,
+    referenceHint: 'Planck law, spectral radiance per unit wavelength',
+  },
   'eirp-gt': TWO_BODY,
-  'quaternion-euler': TWO_BODY,
+  'quaternion-euler': {
+    modelClass: 'closed-form',
+    errorClass: 'Exact 3-2-1 conversion for a unit quaternion away from pitch gimbal lock.',
+    limits: `Aerospace yaw-pitch-roll (intrinsic 3-2-1) and the matching quaternion and DCM. Singular near pitch ±90°. Not an attitude propagator. ${IEEE}`,
+    referenceHint: 'Hamilton quaternion, intrinsic 3-2-1 Euler angles',
+  },
   'porkchop-earth-mars': {
     modelClass: 'two-body-exact',
     errorClass:
@@ -164,9 +200,20 @@ export const TOOL_PRECISION: Record<string, ToolPrecision> = {
   },
   'pump-crank': TWO_BODY,
   'schweighart-sedwick': J2,
-  'gnss-ionosphere-klobuchar': TWO_BODY,
+  'gnss-ionosphere-klobuchar': {
+    modelClass: 'empirical-const',
+    errorClass:
+      'First-order 40.3 TEC/f^2 group delay times the GPS obliquity factor. Not the broadcast alpha/beta Klobuchar model.',
+    limits: `Supplied vertical TEC only. Elevation must be in [0, 90] degrees. Obliquity F = 1 + 16(0.53 - E)^3 with E in semicircles. No geomagnetic latitude, local time, or alpha/beta coefficients. ${IEEE}`,
+    referenceHint: 'IS-GPS-200 ionospheric obliquity factor; first-order TEC group delay',
+  },
   'optical-gsd': TWO_BODY,
-  'solar-sail-accel': TWO_BODY,
+  'solar-sail-accel': {
+    modelClass: 'empirical-const',
+    errorClass: 'η is the fraction of ideal normal-incidence specular force, not material reflectance.',
+    limits: `a = 2 η P A / (c m). Attitude and detailed optical coefficients are omitted. ${IEEE}`,
+    referenceHint: 'NASA solar-sail pressure report: η here is a force fraction of a perfect reflector',
+  },
   'finite-burn-dv': TWO_BODY,
   'b-plane-impact': TWO_BODY,
   'cr3bp-jacobi': TWO_BODY,
@@ -174,18 +221,63 @@ export const TOOL_PRECISION: Record<string, ToolPrecision> = {
   'geo-drift-rate': TWO_BODY,
   'stefan-boltzmann': TWO_BODY,
   'wien-peak': TWO_BODY,
-  'thruster-impulse-bit': TWO_BODY,
+  'thruster-impulse-bit': {
+    modelClass: 'closed-form',
+    errorClass: 'Rectangular pulse: F is constant or the average force over t_on.',
+    limits: `I_bit = F · t_on. Not the integral of a shaped pulse with rise and decay. ${IEEE}`,
+    referenceHint: 'DESCANSO electric propulsion: impulse per pulse is the thrust-time integral; this page is the rectangular case',
+  },
   'arg-perigee-drift-j2': TWO_BODY,
-  'sar-azimuth-resolution': TWO_BODY,
-  'radar-range-resolution': TWO_BODY,
-  'link-margin': TWO_BODY,
-  'aerobraking-pass': TWO_BODY,
-  'diffraction-limit': TWO_BODY,
-  'panel-eol-power': TWO_BODY,
-  'magnetorquer-moment': TWO_BODY,
+  'sar-azimuth-resolution': {
+    modelClass: 'closed-form',
+    errorClass: 'Focused-SAR sketch. θ is the total processing beamwidth, not a half-angle.',
+    limits: `δx ≈ λ / (2 θ) with θ the total synthetic-aperture angular span in radians. Approximate. ${IEEE}`,
+    referenceHint: 'NASA SWOT User Handbook, focused-SAR azimuth resolution',
+  },
+  'radar-range-resolution': {
+    modelClass: 'closed-form',
+    errorClass: 'Bandwidth-limited slant-range estimate. Not the ideal-sinc 3 dB width and not ground range.',
+    limits: `δρ ≈ c / (2 B) for an ideal matched filter. Windowing changes the point-target width. No incidence angle, so this is not cross-track ground resolution. ${IEEE}`,
+    referenceHint: 'NASA SWOT User Handbook, range-compressed bandwidth approximation',
+  },
+  'link-margin': {
+    modelClass: 'closed-form',
+    errorClass: 'Difference of two C/N0 values. The margin is in dB, not dB-Hz.',
+    limits: `M = (C/N0) − (C/N0 required). Both inputs are dB-Hz; hertz cancels. ${IEEE}`,
+    referenceHint: 'Telecommunications link margin in dB relative to a C/N0 threshold',
+  },
+  'aerobraking-pass': {
+    modelClass: 'atmosphere-order',
+    errorClass: 'First-order drag-only loss. The linear estimate drifts once the speed change is not small.',
+    limits: `Δv ≈ ½ (Cd A/m) ρ v L with density, ballistic ratio, speed, and direction held constant. Not an integrated aeropass. ${IEEE}`,
+    referenceHint: 'Drag equation with a constant-state path; not a reconstructed entry trajectory',
+  },
+  'diffraction-limit': {
+    modelClass: 'closed-form',
+    errorClass: 'Small-angle Airy first-null radius for a clear circular aperture. The paraxial 1.22 λ/D form fails when λ/D is not small.',
+    limits: `θ ≈ 1.22 λ/D, the Airy first-null half-angle. Ideal far-field optics and a clear circular aperture. ${IEEE}`,
+    referenceHint: 'Rayleigh criterion for a clear circular aperture; Airy first-null angular radius',
+  },
+  'panel-eol-power': {
+    modelClass: 'empirical-const',
+    errorClass: 'Set by the user-supplied annual degradation fraction. This calculator does not predict or validate that rate.',
+    limits: `P = P0 (1-d)^years. The user-supplied degradation rate drives the result. This calculator does not predict or validate that rate. ${IEEE}`,
+    referenceHint: 'User-supplied degradation rate; the calculator does not predict or validate that rate',
+  },
+  'magnetorquer-moment': {
+    modelClass: 'closed-form',
+    errorClass: 'Scalar coil moment m = N I A. Direction (the coil normal) is omitted.',
+    limits: `Magnitude in A·m². Not a torque and not a mass. ${IEEE}`,
+    referenceHint: 'NASA SmallSat GNC: coil dipole moment m = N I A n',
+  },
   'hyperbolic-eccentricity': TWO_BODY,
   'capture-circularize': TWO_BODY,
-  'gravity-loss': TWO_BODY,
+  'gravity-loss': {
+    modelClass: 'closed-form',
+    errorClass: 'Constant g and a fixed flight-path angle above local horizontal.',
+    limits: `Gravity-only estimate Δv ≈ g t sin γ. Not a propagated ascent and not a full launch Δv budget. ${IEEE}`,
+    referenceHint: 'NASA launch-vehicle trajectory gravity term, constant-g and constant flight-path angle',
+  },
   'battery-dod': TWO_BODY,
   'umbra-length': TWO_BODY,
   'mean-anomaly-from-e': TWO_BODY,
@@ -225,7 +317,13 @@ export const TOOL_PRECISION: Record<string, ToolPrecision> = {
   'rain-attenuation-simple': TWO_BODY,
   'ttc-ebno': TWO_BODY,
   'optical-ber-q': TWO_BODY,
-  'gnss-troposphere-delay': TWO_BODY,
+  'gnss-troposphere-delay': {
+    modelClass: 'empirical-const',
+    errorClass:
+      'Saastamoinen 1972 direct equation. Not a modern mapping function or ray trace. The secant term is sensitive near the horizon, so the tool stops at 5 degrees.',
+    limits: `d = 0.002277 sec(z) [p + (1255/T + 0.05)e - 1.16 tan^2(z)], z = pi/2 - elevation. p and e are local surface pressures (pascals in the core, hPa on the page). T is kelvin. d is metres to subtract from the observed range. Defaults are illustrative meteorology, not live weather. Elevation is limited to 5-90 degrees. ${IEEE}`,
+    referenceHint: 'Saastamoinen 1972, AGU Geophysical Monograph 15',
+  },
   'free-fall-time': TWO_BODY,
   'ballistic-range': TWO_BODY,
   'terminal-velocity': TWO_BODY,
@@ -272,8 +370,8 @@ export const TOOL_PRECISION: Record<string, ToolPrecision> = {
   'geo-orbit': TWO_BODY,
   'delta-a-burn': {
     ...TWO_BODY,
-    errorClass: 'First-order Gauss linearization; accurate only for small Δv/v.',
-    limits: `Linearized tangential burn Δa ≈ 2a Δv/v: small maneuvers only. ${IEEE}`,
+    errorClass: 'First-order Gauss. For a circular prograde burn the exact change is a/(1−2x−x²)−a with x = Δv/v, while this page reports 2 a x.',
+    limits: `Linear result Δa ≈ 2 a Δv/v only, and only while Δv/v is small. This page does not report the exact finite-impulse semimajor axis. ${IEEE}`,
   },
   'plane-change-apo': TWO_BODY,
   'custom-body': TWO_BODY,
@@ -286,8 +384,8 @@ export const TOOL_PRECISION: Record<string, ToolPrecision> = {
   'synodic-period': TWO_BODY,
   coelliptic: {
     ...TWO_BODY,
-    errorClass: 'Clohessy-Wiltshire / first-order coelliptic; valid for small Δa/a.',
-    limits: `Linear relative motion assumptions. ${IEEE}`,
+    errorClass: 'Clohessy-Wiltshire / first-order coelliptic; valid for small Δa/a. n_rel is signed: n_chaser − n_target.',
+    limits: `Linear relative motion. Positive n_rel means the chaser is lower and faster; negative means the chaser is higher and slower. ${IEEE}`,
   },
   'los-range-rate': TWO_BODY,
   oberth: TWO_BODY,
@@ -401,13 +499,23 @@ export const TOOL_PRECISION: Record<string, ToolPrecision> = {
   },
   'geo-light-time': UTIL,
   'solar-pressure': EMP,
-  'solar-array': EMP,
+  'solar-array': {
+    modelClass: 'empirical-const',
+    errorClass: 'Ideal cosine and inverse-square law. η is a user-selected efficiency, not a named cell.',
+    limits: `P = S0 η A cos θ / r² with θ from the array normal only in [0, 90] degrees. No cell I–V curve. ${IEEE}`,
+    referenceHint: 'NASA SmallSat power chapter for inverse-square and cosine; 1 AU solar irradiance',
+  },
   diffraction: EMP,
   'angular-diameter': TWO_BODY,
   // Propulsion / power / ADCS
   rcs: EMP,
   'impulse-budget': EMP,
-  battery: UTIL,
+  battery: {
+    modelClass: 'closed-form',
+    errorClass: 'Ideal full-capacity product. Not a measured discharge integral.',
+    limits: `E = C_Ah · V · 3600 and t = E/P at one terminal voltage and a constant load. No cutoff, usable depth of discharge, converter loss, or aging. ${IEEE}`,
+    referenceHint: 'Nominal constant-voltage battery estimate; not a profiled watt-hour measurement',
+  },
   'reaction-wheel': UTIL,
   'thermal-rad': EMP,
   'mass-ratio-stack': {

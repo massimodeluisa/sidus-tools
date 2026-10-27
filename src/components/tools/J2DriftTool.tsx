@@ -50,13 +50,13 @@ export function J2DriftTool() {
     const Om = j2RaanRate(body.mu, a_m, p.e, i_rad, EARTH_J2, body.radius)
     const om = j2ArgpRate(body.mu, a_m, p.e, i_rad, EARTH_J2, body.radius)
     const n = meanMotion(body.mu, a_m)
-    if (Om == null || om == null || n == null) return null
+    // e = 0 leaves perigee undefined. Keep the RAAN result.
+    if (Om == null || n == null) return null
     return {
       Om,
       om,
       n,
       Om_deg_day: ((Om * 180) / Math.PI) * 86400,
-      om_deg_day: ((om * 180) / Math.PI) * 86400,
       T_raan: raanPeriodS(Om),
     }
   }, [a_m, body.mu, body.radius, i_rad, p.e])
@@ -83,6 +83,7 @@ export function J2DriftTool() {
             max={0.999}
             step="any"
             value={p.e}
+            hint={t('fields.hint_j2_argp_e0')}
             onChange={(e) => setP({ e: Number(e.target.value) })}
           />
           <UiUnitField
@@ -136,11 +137,13 @@ export function J2DriftTool() {
               unit="°/day"
               accent
             />
-            <ResultCard
-              label={t('fields.arg_periapsis')}
-              value={formatNumber(rates.om_deg_day, 5)}
-              unit="°/day"
-            />
+            {rates.om != null ? (
+              <ResultCard
+                label={t('fields.arg_periapsis')}
+                value={formatNumber(((rates.om * 180) / Math.PI) * 86400, 5)}
+                unit="°/day"
+              />
+            ) : null}
             <ResultCard
               label={t('fields.mean_motion_n')}
               value={formatNumber(((rates.n * 180) / Math.PI) * 86400, 4)}
@@ -155,7 +158,9 @@ export function J2DriftTool() {
               digits={4}
             />
             <ResultCard label={t('fields.si')} value={formatNumber(rates.Om, 6)} unit="rad/s" />
-            <ResultCard label={t('fields.si_2')} value={formatNumber(rates.om, 6)} unit="rad/s" />
+            {rates.om != null ? (
+              <ResultCard label={t('fields.si_2')} value={formatNumber(rates.om, 6)} unit="rad/s" />
+            ) : null}
           </div>
         )
       }

@@ -16,6 +16,7 @@ const CLASS_KEY: Record<PrecisionClass, string> = {
   'eclss-educational': 'eclss_educational',
   'rf-friis': 'rf_friis',
   'radial-doppler': 'radial_doppler',
+  'closed-form': 'closed_form',
   'empirical-const': 'empirical_const',
   utility: 'utility',
 }

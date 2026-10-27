@@ -83,3 +83,108 @@ describe('optical link budget physical input domain', () => {
     }
   })
 })
+
+describe('optical link far-field validity domain', () => {
+  const WAVELENGTH_M = 1.55e-6
+  const TX_RADIUS_M = 0.1
+  const RX_RADIUS_M = 0.25
+  const GT = 164322237687.23178
+  const GR = 1027013985545.1985
+  const THRESHOLD_M = 101341.69850289656
+  const FAR_FIELD = {
+    ptW: 1,
+    etaT: 1,
+    etaR: 1,
+    gt: GT,
+    gr: GR,
+    wavelengthM: WAVELENGTH_M,
+    lossLin: 1,
+  }
+
+  it('withholds the far-field result below k Rt Rr', () => {
+    expect(opticalLinkReceivedPower({ ...FAR_FIELD, rangeM: 1000 })).toBeNull()
+    expect(
+      opticalLinkReceivedPower({
+        ...FAR_FIELD,
+        rangeM: 1000,
+        txRadiusM: TX_RADIUS_M,
+        rxRadiusM: RX_RADIUS_M,
+      }),
+    ).toBeNull()
+    expect(opticalLinkReceivedPower({ ...FAR_FIELD, rangeM: 1000 })).not.toBe(
+      2567.5349638629964,
+    )
+  })
+
+  it('matches the unchanged Friis expression above the threshold', () => {
+    const rangeM = 200_000
+    const expected =
+      (FAR_FIELD.ptW *
+        FAR_FIELD.etaT *
+        FAR_FIELD.etaR *
+        GT *
+        GR *
+        (WAVELENGTH_M / (4 * Math.PI * rangeM)) ** 2) /
+      FAR_FIELD.lossLin
+    const actual = opticalLinkReceivedPower({
+      ...FAR_FIELD,
+      rangeM,
+      txRadiusM: TX_RADIUS_M,
+      rxRadiusM: RX_RADIUS_M,
+    })
+    expect(actual).not.toBeNull()
+    expect(Math.abs(actual! / expected - 1)).toBeLessThan(1e-14)
+  })
+
+  it('uses the circular-aperture gains to derive the threshold when radii are absent', () => {
+    expect(opticalLinkReceivedPower({ ...FAR_FIELD, rangeM: 200_000 })).not.toBeNull()
+    expect(opticalLinkReceivedPower({ ...FAR_FIELD, rangeM: THRESHOLD_M })).not.toBeNull()
+    expect(
+      opticalLinkReceivedPower({ ...FAR_FIELD, rangeM: THRESHOLD_M * (1 - 1e-12) }),
+    ).toBeNull()
+  })
+
+  it('places the boundary exactly at the provided-aperture threshold', () => {
+    expect(
+      opticalLinkReceivedPower({
+        ...FAR_FIELD,
+        rangeM: THRESHOLD_M,
+        txRadiusM: TX_RADIUS_M,
+        rxRadiusM: RX_RADIUS_M,
+      }),
+    ).not.toBeNull()
+    expect(
+      opticalLinkReceivedPower({
+        ...FAR_FIELD,
+        rangeM: THRESHOLD_M * (1 - 1e-12),
+        txRadiusM: TX_RADIUS_M,
+        rxRadiusM: RX_RADIUS_M,
+      }),
+    ).toBeNull()
+  })
+
+  it('rejects a lone or non-positive aperture radius', () => {
+    expect(
+      opticalLinkReceivedPower({ ...FAR_FIELD, rangeM: 200_000, txRadiusM: TX_RADIUS_M }),
+    ).toBeNull()
+    expect(
+      opticalLinkReceivedPower({ ...FAR_FIELD, rangeM: 200_000, rxRadiusM: RX_RADIUS_M }),
+    ).toBeNull()
+    expect(
+      opticalLinkReceivedPower({
+        ...FAR_FIELD,
+        rangeM: 200_000,
+        txRadiusM: 0,
+        rxRadiusM: RX_RADIUS_M,
+      }),
+    ).toBeNull()
+    expect(
+      opticalLinkReceivedPower({
+        ...FAR_FIELD,
+        rangeM: 200_000,
+        txRadiusM: Number.NaN,
+        rxRadiusM: RX_RADIUS_M,
+      }),
+    ).toBeNull()
+  })
+})

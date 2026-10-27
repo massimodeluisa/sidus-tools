@@ -19,16 +19,14 @@ const SCHEMA = {
 export function RepeatingGroundTrackTool() {
   const { t } = useTranslation()
   const [p, setP] = useToolSearchParams(SCHEMA)
-  const res = useMemo(() => {
-    
-    return repeatingGroundTrackPeriod(Math.round(p.k),p.days)
-  }, [p])
+  const k = Math.round(p.k)
+  const res = useMemo(() => repeatingGroundTrackPeriod(k, p.days), [k, p.days])
 
   return (
     <ToolShell
       parameters={
         <ParamsGrid>
-          <UiField label={t('fields.disc_k')} type="number" min={1}  step="any" value={p.k} onChange={(e)=>setP({k:Number(e.target.value)})} />
+          <UiField label={t('fields.disc_k')} type="number" min={1} step={1} value={p.k} hint={t('fields.hint_repeat_k')} onChange={(e)=>setP({k:Number(e.target.value)})} />
           <UiField label={t('fields.days')} type="number" min={0.001}  step="any" value={p.days} onChange={(e)=>setP({days:Number(e.target.value)})} />
         </ParamsGrid>
       }
@@ -42,10 +40,12 @@ export function RepeatingGroundTrackTool() {
         )
       }
       code={
-        <CodeExport
-          formulaId="repeating-ground-track"
-          values={{ ...p }}
-        />
+        res == null ? undefined : (
+          <CodeExport
+            formulaId="repeating-ground-track"
+            values={{ ...p, k }}
+          />
+        )
       }
     />
   )

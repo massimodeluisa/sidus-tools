@@ -40,6 +40,8 @@ export function j2ArgpRate(
   rEq = EARTH_RADIUS,
 ): number | null {
   if (!(a > 0) || e < 0 || e >= 1) return null
+  // Perigee is undefined on a circular orbit. RAAN rate at e = 0 stays defined.
+  if (e === 0) return null
   if (!(mu > 0) || !(rEq > 0)) return null
   const p = a * (1 - e * e)
   if (!(p > 0)) return null

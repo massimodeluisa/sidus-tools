@@ -35,7 +35,7 @@ export function UmbraLengthTool() {
     <ToolShell
       parameters={
         <ParamsGrid>
-          <UiUnitField label={t('fields.disc_d_2')} category="length" unitIds={TOOL_UNIT_SETS.length} unitId={p.du} value={p.d} min={0} onValueChange={(d)=>setP({d})} onUnitChange={(du,d)=>setP({du,d})} />
+          <UiUnitField label={t('fields.disc_d_2')} category="length" unitIds={TOOL_UNIT_SETS.length} unitId={p.du} value={p.d} min={0} hint={t('fields.hint_umbra_separation')} onValueChange={(d)=>setP({d})} onUnitChange={(du,d)=>setP({du,d})} />
           <UiUnitField label={t('fields.disc_rs')} category="length" unitIds={TOOL_UNIT_SETS.length} unitId={p.Rsu} value={p.Rs} min={0} onValueChange={(Rs)=>setP({Rs})} onUnitChange={(Rsu,Rs)=>setP({Rsu,Rs})} />
           <UiUnitField label={t('fields.disc_rb_2')} category="length" unitIds={TOOL_UNIT_SETS.length} unitId={p.Rbu} value={p.Rb} min={0} onValueChange={(Rb)=>setP({Rb})} onUnitChange={(Rbu,Rb)=>setP({Rbu,Rb})} />
         </ParamsGrid>
@@ -50,10 +50,12 @@ export function UmbraLengthTool() {
         )
       }
       code={
-        <CodeExport
-          formulaId="umbra-length"
-          values={{ ...p, d: toSi(p.d, p.du), Rs: toSi(p.Rs, p.Rsu), Rb: toSi(p.Rb, p.Rbu) }}
-        />
+        res == null ? undefined : (
+          <CodeExport
+            formulaId="umbra-length"
+            values={{ ...p, d: toSi(p.d, p.du), Rs: toSi(p.Rs, p.Rsu), Rb: toSi(p.Rb, p.Rbu) }}
+          />
+        )
       }
     />
   )

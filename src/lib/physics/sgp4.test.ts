@@ -297,6 +297,141 @@ describe('TLE parsing', () => {
       expect(p.line2).toBe(caseA.l2)
     }
   })
+
+  /**
+   * Replace 1-based inclusive columns `startCol`-`endCol` of a 69-column TLE
+   * line with `field`, then recompute the column-69 modulo-10 checksum (digits
+   * add their value, '-' adds 1, every other character adds 0).
+   */
+  const withFieldAndChecksum = (
+    line: string,
+    startCol: number,
+    endCol: number,
+    field: string,
+  ): string => {
+    expect(field.length).toBe(endCol - startCol + 1)
+    const replaced = `${line.slice(0, startCol - 1)}${field}${line.slice(endCol)}`
+    let sum = 0
+    for (const ch of replaced.slice(0, 68)) {
+      if (ch >= '0' && ch <= '9') sum += Number(ch)
+      else if (ch === '-') sum += 1
+    }
+    const rebuilt = `${replaced.slice(0, 68)}${sum % 10}`
+    expect(rebuilt.length).toBe(69)
+    return rebuilt
+  }
+
+  const sampleIssLines = (): { line1: string; line2: string } => {
+    const lines = SAMPLE_ISS_TLE.split('\n')
+    const line1 = lines[1]
+    const line2 = lines[2]
+    if (!line1 || !line2) throw new Error('unreachable: SAMPLE_ISS_TLE has three lines')
+    return { line1, line2 }
+  }
+
+  it('rejects a checksum-valid line 2 with an out-of-range inclination', () => {
+    const { line1, line2 } = sampleIssLines()
+    // Columns 9-16 hold the inclination [0, 180] deg.
+    const badLine2 = withFieldAndChecksum(line2, 9, 16, '999.9999')
+    const p = parseTle(`${line1}\n${badLine2}`)
+    expect(p.ok).toBe(false)
+    if (p.ok) throw new Error('unreachable: narrowed by expect above')
+    expect(p.error).toBe('Invalid TLE (checksum or format).')
+    expect(parseTle(SAMPLE_ISS_TLE).ok).toBe(true)
+  })
+
+  it('rejects a checksum-valid line 2 with an out-of-range mean anomaly', () => {
+    const { line1, line2 } = sampleIssLines()
+    // Columns 44-51 hold the mean anomaly [0, 360] deg.
+    const badLine2 = withFieldAndChecksum(line2, 44, 51, '999.9999')
+    const p = parseTle(`${line1}\n${badLine2}`)
+    expect(p.ok).toBe(false)
+    if (p.ok) throw new Error('unreachable: narrowed by expect above')
+    expect(p.error).toBe('Invalid TLE (checksum or format).')
+    expect(parseTle(SAMPLE_ISS_TLE).ok).toBe(true)
+  })
+})
+
+describe('look angle singularities', () => {
+  const date = new Date('2024-01-01T00:00:00Z')
+
+  function eciFromEcfKm(
+    ecfKm: { x: number; y: number; z: number },
+  ): [number, number, number] {
+    const eci = ecfToEci(ecfKm, gstime(date))
+    return [eci.x * 1000, eci.y * 1000, eci.z * 1000]
+  }
+
+  it('returns null when the satellite sits on the observer', () => {
+    const observer = { latDeg: 34, lonDeg: -118, heightM: 100 }
+    const r = observerEciPosition(observer, date)
+    expect(lookAnglesFromEci(observer, r, date)).toBeNull()
+    const near: [number, number, number] = [r[0] + 1.46e-9, r[1], r[2]]
+    expect(lookAnglesFromEci(observer, near, date)).toBeNull()
+    const offset: [number, number, number] = [r[0] + 10, r[1], r[2]]
+    const look = lookAnglesFromEci(observer, offset, date)
+    expect(look).not.toBeNull()
+    expect(look!.azimuthRad).not.toBeNull()
+    expect(Number.isFinite(look!.elevationRad)).toBe(true)
+  })
+
+  it('leaves azimuth undefined at exact zenith and defined just off zenith', () => {
+    const observer = { latDeg: 0, lonDeg: 0, heightM: 0 }
+    const zenith = lookAnglesFromEci(observer, eciFromEcfKm({ x: 7078.137, y: 0, z: 0 }), date)
+    expect(zenith).not.toBeNull()
+    expect(zenith!.azimuthRad).toBeNull()
+    expect(zenith!.elevationRad).toBeCloseTo(Math.PI / 2, 12)
+    expect(zenith!.rangeM).toBeCloseTo(700_000, 6)
+    expect(zenith!.azimuthRad).not.toBe(Math.PI)
+
+    const off = lookAnglesFromEci(
+      observer,
+      eciFromEcfKm({ x: 7078.137, y: 0.001, z: 0 }),
+      date,
+    )
+    expect(off).not.toBeNull()
+    expect(off!.azimuthRad).toBeCloseTo(Math.PI / 2, 8)
+    expect(off!.elevationRad).toBeLessThan(Math.PI / 2)
+    expect(off!.elevationRad).toBeGreaterThan(Math.PI / 2 - 1e-4)
+  })
+
+  it('keeps north, east, south, and west azimuths at an equatorial observer', () => {
+    const observer = { latDeg: 0, lonDeg: 0, heightM: 0 }
+    const xKm = 6379.137
+    const cases = [
+      { name: 'north', ecf: { x: xKm, y: 0, z: 1 }, az: 0 },
+      { name: 'east', ecf: { x: xKm, y: 1, z: 0 }, az: Math.PI / 2 },
+      { name: 'south', ecf: { x: xKm, y: 0, z: -1 }, az: Math.PI },
+      { name: 'west', ecf: { x: xKm, y: -1, z: 0 }, az: (3 * Math.PI) / 2 },
+    ]
+    for (const row of cases) {
+      const look = lookAnglesFromEci(observer, eciFromEcfKm(row.ecf), date)
+      expect(look, row.name).not.toBeNull()
+      expect(look!.azimuthRad, row.name).toBeCloseTo(row.az, 8)
+      expect(look!.elevationRad, row.name).toBeCloseTo(Math.PI / 4, 6)
+    }
+  })
+})
+
+describe('observer latitude domain', () => {
+  it('rejects a latitude outside [-90, 90] in look angles and pass search', () => {
+    const parsed = parseTle(SAMPLE_ISS_TLE)
+    expect(parsed.ok).toBe(true)
+    if (!parsed.ok) throw new Error('unreachable: narrowed by expect above')
+    const date = new Date(Date.UTC(2024, 0, 1))
+    const r: [number, number, number] = [6778137, 0, 0]
+    expect(lookAnglesFromEci({ latDeg: 90.1, lonDeg: 0, heightM: 0 }, r, date)).toBeNull()
+    expect(lookAnglesFromEci({ latDeg: -90.1, lonDeg: 0, heightM: 0 }, r, date)).toBeNull()
+    expect(lookAnglesFromEci({ latDeg: 0, lonDeg: 0, heightM: 0 }, r, date)).not.toBeNull()
+    expect(
+      findNextPass({
+        satrec: parsed.satrec,
+        observer: { latDeg: 91, lonDeg: 0, heightM: 0 },
+        start: date,
+        horizonH: 1,
+      }),
+    ).toBeNull()
+  })
 })
 
 describe('findNextPass refineS: bisected AOS/LOS/peak vs coarse scan', () => {
@@ -720,5 +855,124 @@ describe('findPasses', () => {
     expect(samples.length).toBeGreaterThan(1)
     expect(samples[samples.length - 1]!.date.getTime()).toBe(passes[0]!.los.getTime())
     expect(samplePassLookAngles(parsed.satrec, observer, passes[0]!.los, passes[0]!.aos, 30)).toEqual([])
+  })
+})
+
+const CASE_A_L1 = '1 00005U 58002B   00179.78495062  .00000023  00000-0  28098-4 0  4753'
+const CASE_A_L2 = '2 00005  34.2682 348.7242 1859667 331.7664  19.3264 10.82419157413667'
+
+describe('findNextPass: search start is not AOS when the pass is already up', () => {
+  it('recovers the rising crossing for a start 60 s after AOS (Vallado 00005)', () => {
+    const parsed = parseTle(`${CASE_A_L1}\n${CASE_A_L2}`)
+    expect(parsed.ok).toBe(true)
+    if (!parsed.ok) throw new Error('unreachable')
+
+    const observer = { latDeg: 34, lonDeg: -118, heightM: 100 }
+    const epoch = new Date(Math.round((parsed.satrec.jdsatepoch - 2440587.5) * 86400000))
+    const reference = findNextPass({
+      satrec: parsed.satrec,
+      observer,
+      start: epoch,
+      horizonH: 48,
+      stepS: 30,
+      minElDeg: 10,
+      refineS: 1,
+    })
+    expect(reference?.aosIsRise).toBe(true)
+    expect(reference?.losIsSet).toBe(true)
+    if (!reference) throw new Error('unreachable')
+
+    const inside = new Date(reference.aos.getTime() + 60_000)
+    const mid = findNextPass({
+      satrec: parsed.satrec,
+      observer,
+      start: inside,
+      horizonH: 48,
+      stepS: 30,
+      minElDeg: 10,
+      refineS: 1,
+    })
+    expect(mid?.aosIsRise).toBe(true)
+    if (!mid) throw new Error('unreachable')
+    expect(mid.aos.getTime()).not.toBe(inside.getTime())
+    expect(mid.aos.getTime()).toBeLessThan(inside.getTime())
+    expect(Math.abs(mid.aos.getTime() - reference.aos.getTime())).toBeLessThanOrEqual(2000)
+    expect(Math.abs(mid.los.getTime() - reference.los.getTime())).toBeLessThanOrEqual(2000)
+    expect(Math.abs(mid.durationS - reference.durationS)).toBeLessThanOrEqual(5)
+    expect(Number.isNaN(mid.durationS)).toBe(false)
+
+    const atAos = propagateEci(parsed.satrec, mid.aos)
+    expect(atAos).toBeTruthy()
+    if (!atAos) throw new Error('unreachable')
+    const lookAos = lookAnglesFromEci(observer, atAos.r, mid.aos)
+    expect(lookAos).toBeTruthy()
+    if (!lookAos) throw new Error('unreachable')
+    expect(lookAos.elevationRad).toBeGreaterThanOrEqual((10 * Math.PI) / 180)
+    const before = new Date(mid.aos.getTime() - 2000)
+    const stBefore = propagateEci(parsed.satrec, before)
+    expect(stBefore).toBeTruthy()
+    if (!stBefore) throw new Error('unreachable')
+    const lookBefore = lookAnglesFromEci(observer, stBefore.r, before)
+    expect(lookBefore).toBeTruthy()
+    if (!lookBefore) throw new Error('unreachable')
+    expect(lookBefore.elevationRad).toBeLessThan((10 * Math.PI) / 180)
+  })
+})
+
+describe('findNextPass: search horizon is not LOS while still above the mask', () => {
+  it('keeps the setting crossing when the 1 h horizon ends during the pass (Vallado 00005)', () => {
+    const parsed = parseTle(`${CASE_A_L1}\n${CASE_A_L2}`)
+    expect(parsed.ok).toBe(true)
+    if (!parsed.ok) throw new Error('unreachable')
+
+    const observer = { latDeg: 34, lonDeg: -118, heightM: 100 }
+    const epoch = new Date(Math.round((parsed.satrec.jdsatepoch - 2440587.5) * 86400000))
+    const reference = findNextPass({
+      satrec: parsed.satrec,
+      observer,
+      start: epoch,
+      horizonH: 48,
+      stepS: 30,
+      minElDeg: 10,
+      refineS: 1,
+    })
+    expect(reference).toBeTruthy()
+    if (!reference) throw new Error('unreachable')
+
+    const early = new Date(reference.aos.getTime() - 30 * 60 * 1000)
+    const horizonEnd = early.getTime() + 3600 * 1000
+    const clipped = findNextPass({
+      satrec: parsed.satrec,
+      observer,
+      start: early,
+      horizonH: 1,
+      stepS: 30,
+      minElDeg: 10,
+      refineS: 1,
+    })
+    expect(clipped?.losIsSet).toBe(true)
+    if (!clipped) throw new Error('unreachable')
+    expect(clipped.los.getTime()).not.toBe(horizonEnd)
+    expect(clipped.los.getTime()).toBeGreaterThan(horizonEnd)
+    expect(Math.abs(clipped.los.getTime() - reference.los.getTime())).toBeLessThanOrEqual(2000)
+    expect(clipped.durationS).toBeGreaterThan(2000)
+    expect(Math.abs(clipped.durationS - reference.durationS)).toBeLessThanOrEqual(5)
+    expect(clipped.durationS).not.toBeCloseTo(1800, 0)
+
+    const atLos = propagateEci(parsed.satrec, clipped.los)
+    expect(atLos).toBeTruthy()
+    if (!atLos) throw new Error('unreachable')
+    const lookLos = lookAnglesFromEci(observer, atLos.r, clipped.los)
+    expect(lookLos).toBeTruthy()
+    if (!lookLos) throw new Error('unreachable')
+    expect(lookLos.elevationRad).toBeLessThan((10 * Math.PI) / 180)
+    const beforeLos = new Date(clipped.los.getTime() - 2000)
+    const stBefore = propagateEci(parsed.satrec, beforeLos)
+    expect(stBefore).toBeTruthy()
+    if (!stBefore) throw new Error('unreachable')
+    const lookBefore = lookAnglesFromEci(observer, stBefore.r, beforeLos)
+    expect(lookBefore).toBeTruthy()
+    if (!lookBefore) throw new Error('unreachable')
+    expect(lookBefore.elevationRad).toBeGreaterThanOrEqual((10 * Math.PI) / 180)
   })
 })

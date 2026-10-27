@@ -91,49 +91,71 @@ function invert4(a: number[][]): number[][] | null {
   return inv
 }
 
-/** Saastamoinen-class dry troposphere delay [m] (educational). elev rad, lat rad, height m. */
+/** Pascals in one hPa. Saastamoinen 1972 writes pressures in mbar. */
+const PA_PER_HPA = 100
+
+/** Operational cutoff: the 1972 secant term is sensitive near the horizon. */
+const TROPO_ELEV_MIN_RAD = (5 * Math.PI) / 180
+
+/**
+ * Saastamoinen 1972 microwave tropospheric range correction [m].
+ *
+ * d = 0.002277 sec(z) [p + (1255/T + 0.05) e - 1.16 tan²(z)], z = π/2 - elevation.
+ * `pPa` and `ePa` are local surface pressures in pascals (divided by 100 to
+ * enter the mbar form). There is no separate latitude or height factor.
+ * Elevation is limited to [5°, 90°]. This is the 1972 equation, not a modern
+ * mapping function. `d` is metres to subtract from the observed range.
+ */
 export function saastamoinenTropoDelay(
   elevRad: number,
-  latRad: number,
-  heightM: number,
-  pHpa = 1013.25,
-  tK = 288.15,
-  eHpa = 11.0,
+  pPa: number,
+  tK: number,
+  ePa: number,
 ): number | null {
-  if (!(elevRad > 0.05) || elevRad > Math.PI / 2) return null
-  if (!(heightM >= -500) || heightM > 1e5) return null
+  if (![elevRad, pPa, tK, ePa].every(Number.isFinite)) return null
+  if (elevRad < TROPO_ELEV_MIN_RAD || elevRad > Math.PI / 2) return null
+  if (!(pPa > 0) || !(tK > 0) || ePa < 0 || ePa > pPa) return null
   const z = Math.PI / 2 - elevRad
-  // Simplified form used in textbooks (meters)
-  const d =
+  const pHpa = pPa / PA_PER_HPA
+  const eHpa = ePa / PA_PER_HPA
+  const delay =
     (0.002277 / Math.cos(z)) *
-    (pHpa +
-      (1255 / tK + 0.05) * eHpa -
-      Math.tan(z) ** 2)
-  // crude height scaling
-  const scale = Math.exp(-heightM / 7000)
-  const delay = d * scale * (1 + 0.1 * Math.cos(2 * latRad))
-  return Number.isFinite(delay) && delay > 0 ? delay : null
+    (pHpa + (1255 / tK + 0.05) * eHpa - 1.16 * Math.tan(z) ** 2)
+  return Number.isFinite(delay) ? delay : null
 }
 
-/** Klobuchar-like vertical iono delay [m] at L1: 40.3 TEC / f² educational TECU. */
+/**
+ * First-order ionospheric group delay [m] from a supplied vertical TEC.
+ *
+ * Not the complete GPS broadcast Klobuchar correction: no alpha/beta
+ * coefficients, receiver time, or geomagnetic latitude. The slant factor is
+ * the GPS Klobuchar obliquity factor from IS-GPS-200,
+ * F = 1 + 16 (0.53 - E)³, with E in semicircles. Elevation must be finite
+ * and inside [0, π/2].
+ */
 export function klobucharIonoDelayM(
   elevRad: number,
   tecu: number,
   fHz = 1.57542e9,
 ): number | null {
-  if (!(elevRad > 0.05) || !(tecu >= 0) || !(fHz > 0)) return null
-  // slant factor ~ 1/sqrt(1 - (cos elev * Re/(Re+h))^2) simplified as 1/sin(elev)
-  const mf = 1 / Math.sin(elevRad)
-  const dVert = (40.3e16 * tecu) / (fHz * fHz) // meters if TEC in m^-2; TECU = 1e16
-  // tecu is TECU → electrons/m² = tecu * 1e16
-  const dV = (40.3 * tecu * 1e16) / (fHz * fHz)
-  const d = dV * mf
-  return Number.isFinite(d) && d >= 0 ? d : Number.isFinite(dVert) ? dVert * mf : null
+  if (![elevRad, tecu, fHz].every(Number.isFinite)) return null
+  if (elevRad < 0 || elevRad > Math.PI / 2) return null
+  if (!(tecu >= 0) || !(fHz > 0)) return null
+  const elevSemi = elevRad / Math.PI
+  const obliquity = 1 + 16 * (0.53 - elevSemi) ** 3
+  const delay = ((40.3 * tecu * 1e16) / (fHz * fHz)) * obliquity
+  return Number.isFinite(delay) && delay >= 0 ? delay : null
 }
 
 /**
  * Far-field optical received power: Pr = Pt ηt ηr Gt Gr (λ/(4π R))² / L.
  * ηt and ηr are passive efficiencies in (0, 1]; L is a passive linear loss factor ≥ 1.
+ *
+ * The Friis form is only meaningful in the far field (NASA/TM-2016-219120):
+ * R >= k Rt Rr with k = 2π/λ and Rt/Rr the transmitter/receiver aperture radii.
+ * Callers may supply both radii; otherwise they are derived for the threshold
+ * only from the circular-aperture gain mapping G = (k R)². A lone or invalid
+ * radius, or a range below the threshold, returns null.
  */
 export function opticalLinkReceivedPower(opts: {
   ptW: number
@@ -144,6 +166,8 @@ export function opticalLinkReceivedPower(opts: {
   wavelengthM: number
   rangeM: number
   lossLin?: number
+  txRadiusM?: number
+  rxRadiusM?: number
 }): number | null {
   const { ptW, etaT, etaR, gt, gr, wavelengthM: lam, rangeM: R } = opts
   const L = opts.lossLin ?? 1
@@ -159,6 +183,26 @@ export function opticalLinkReceivedPower(opts: {
     !(L >= 1)
   )
     return null
+
+  const k = (2 * Math.PI) / lam
+  const hasTxRadius = opts.txRadiusM !== undefined
+  const hasRxRadius = opts.rxRadiusM !== undefined
+  if (hasTxRadius !== hasRxRadius) return null
+
+  let rt: number
+  let rr: number
+  if (hasTxRadius) {
+    const tx = opts.txRadiusM as number
+    const rx = opts.rxRadiusM as number
+    if (!(Number.isFinite(tx) && tx > 0) || !(Number.isFinite(rx) && rx > 0)) return null
+    rt = tx
+    rr = rx
+  } else {
+    rt = Math.sqrt(gt) / k
+    rr = Math.sqrt(gr) / k
+  }
+  if (!(R >= k * rt * rr)) return null
+
   const fspl = (lam / (4 * Math.PI * R)) ** 2
   const pr = ptW * etaT * etaR * gt * gr * fspl / L
   return Number.isFinite(pr) && pr > 0 ? pr : null

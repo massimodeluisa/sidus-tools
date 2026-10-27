@@ -37,7 +37,7 @@ export function ExponentialDensityTool() {
     <ToolShell
       parameters={
         <ParamsGrid>
-          <UiField label={t('fields.rho0')} type="number" min={1e-9}  step="any" value={p.rho0} onChange={(e)=>setP({rho0:Number(e.target.value)})} />
+          <UiField label={t('fields.rho0')} tip={t('fields.note_exp_density')} type="number" min={1e-9}  step="any" value={p.rho0} onChange={(e)=>setP({rho0:Number(e.target.value)})} />
           <UiUnitField label={t('fields.disc_h')} category="length" unitIds={TOOL_UNIT_SETS.length} unitId={p.hu} value={p.h} min={0} onValueChange={(h)=>setP({h})} onUnitChange={(hu,h)=>setP({hu,h})} />
           <UiUnitField label={t('fields.disc_h_2')} category="length" unitIds={TOOL_UNIT_SETS.length} unitId={p.Hu} value={p.H} min={0} onValueChange={(H)=>setP({H})} onUnitChange={(Hu,H)=>setP({Hu,H})} />
         </ParamsGrid>

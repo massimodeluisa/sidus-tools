@@ -1,21 +1,31 @@
 import { describe, expect, it } from 'vitest'
-import { EARTH_MU, EARTH_RADIUS, G0 } from './constants'
+import { AU, EARTH_MU, EARTH_RADIUS, G0, SUN_MU } from './constants'
 import { wienPeakWavelength } from './discovery-wave'
+import { lambertSolve } from './lambert'
+import { vnorm, vsub } from './vector'
 import {
   applyDcm,
   conjunctionPc2d,
   conjunctionPcFoster,
   conjunctionPcReport,
   criticalInclinationRad,
+  EARTH_HELIO_L0,
   eirpLinear,
   euler321ToQuat,
   figureOfMeritGT,
   frozenEccentricityJ2J3,
   heoOrbitFromPerigee,
   heoPeriodS,
+  heliocentricCircularState,
+  J2000_UNIX_S,
+  MARS_HELIO_L0,
+  MARS_SMA_M,
+  parseUtcDayStart,
   planckSpectralRadiance,
   porkchopEarthMarsGrid,
+  porkchopTransfer,
   quatToDcm,
+  samplesInsideInterval,
   thrustToWeight,
 } from './wave10'
 
@@ -194,6 +204,137 @@ describe('conjunction Pc (Chan / Alfriend-class)', () => {
     expect(fat).not.toBeNull()
     expect(fat!.chanOk).toBe(false)
     expect(fat!.foster).toBeGreaterThan(fat!.chan)
+  })
+})
+
+describe('Molniya apogee dwell (#195)', () => {
+  it('matches the 600 km, 30° true-anomaly window', () => {
+    const orbit = heoOrbitFromPerigee({
+      kind: 'molniya',
+      perigeeAlt: 600_000,
+      dwellHalfAngle: (30 * Math.PI) / 180,
+    })
+    expect(orbit).not.toBeNull()
+    expect(orbit!.dwell).toBeCloseTo(25995.420865, 3)
+  })
+})
+
+describe('porkchop Lambert branch (#188)', () => {
+  it('keeps the cheaper valid arc for 2026-11-17 and 260 days', () => {
+    const tDep = Date.parse('2026-11-17T00:00:00Z') / 1000
+    const tof = 260 * 86400
+    const earth = heliocentricCircularState(AU, EARTH_HELIO_L0, tDep, SUN_MU)
+    const mars = heliocentricCircularState(MARS_SMA_M, MARS_HELIO_L0, tDep + tof, SUN_MU)
+    expect(earth).not.toBeNull()
+    expect(mars).not.toBeNull()
+    const short = lambertSolve(SUN_MU, earth!.r, mars!.r, tof, true)
+    const long = lambertSolve(SUN_MU, earth!.r, mars!.r, tof, false)
+    expect(short).not.toBeNull()
+    expect(long).not.toBeNull()
+    const totals = [short!, long!].map((sol) => {
+      const dvDep = vnorm(vsub(sol.v1, earth!.v))
+      const dvArr = vnorm(vsub(sol.v2, mars!.v))
+      return { dvDep, dvArr, dvTot: dvDep + dvArr, c3: dvDep * dvDep }
+    })
+    const shortTot = totals[0]!
+    const longTot = totals[1]!
+    expect(shortTot.dvTot / 1000).toBeCloseTo(108.124, 2)
+    expect(longTot.dvTot / 1000).toBeCloseTo(5.595, 2)
+    expect(shortTot.c3 / 1e6).toBeCloseTo(3908, 0)
+    expect(longTot.c3 / 1e6).toBeCloseTo(8.674, 2)
+    const picked = porkchopTransfer(tDep, tDep + tof)
+    expect(picked).not.toBeNull()
+    expect(picked!.dvTot).toBeCloseTo(longTot.dvTot, 6)
+    expect(picked!.c3).toBeCloseTo(longTot.c3, 6)
+    const grid = porkchopEarthMarsGrid({
+      depStart: tDep,
+      depCount: 1,
+      depStep: 86400,
+      depEnd: tDep,
+      tofMin: tof,
+      tofCount: 1,
+      tofStep: 86400,
+      tofMax: tof,
+    })
+    expect(grid).not.toBeNull()
+    expect(grid!.bestDv!.dvTot).toBeCloseTo(longTot.dvTot, 6)
+    expect(grid!.bestC3!.c3).toBeCloseTo(Math.min(shortTot.c3, longTot.c3), 6)
+  })
+})
+
+describe('parseUtcDayStart (#190)', () => {
+  it('rejects impossible calendar dates instead of rolling them forward', () => {
+    expect(parseUtcDayStart('2026-02-30')).toBeNull()
+    expect(parseUtcDayStart('2026-02-31')).toBeNull()
+    expect(parseUtcDayStart('2026-04-31')).toBeNull()
+    expect(parseUtcDayStart('2025-02-29')).toBeNull()
+    expect(parseUtcDayStart('1900-02-29')).toBeNull()
+    expect(Date.parse('2026-02-30T00:00:00Z')).toBe(Date.parse('2026-03-02T00:00:00Z'))
+  })
+
+  it('accepts leap days and month boundaries that round-trip in UTC', () => {
+    expect(parseUtcDayStart('2024-02-29')).toBe(Date.parse('2024-02-29T00:00:00Z') / 1000)
+    expect(parseUtcDayStart('2000-02-29')).toBe(Date.parse('2000-02-29T00:00:00Z') / 1000)
+    expect(parseUtcDayStart('2026-02-28')).toBe(Date.parse('2026-02-28T00:00:00Z') / 1000)
+    expect(parseUtcDayStart('2026-01-01')).toBe(Date.parse('2026-01-01T00:00:00Z') / 1000)
+    expect(parseUtcDayStart('2026-12-31')).toBe(Date.parse('2026-12-31T00:00:00Z') / 1000)
+    expect(parseUtcDayStart('2026/02/28')).toBeNull()
+    expect(parseUtcDayStart('')).toBeNull()
+  })
+})
+
+describe('samplesInsideInterval (#191)', () => {
+  it('keeps a step larger than the span on the lower bound', () => {
+    expect(samplesInsideInterval(0, 40, 60)).toEqual([0])
+  })
+
+  it('keeps a narrow TOF window inside its maximum', () => {
+    expect(samplesInsideInterval(120, 125, 20)).toEqual([120])
+  })
+
+  it('swaps reversed TOF bounds and stays inside them', () => {
+    const samples = samplesInsideInterval(500, 80, 20)
+    expect(samples[0]).toBe(80)
+    expect(samples.at(-1)).toBe(500)
+    expect(samples.every((x) => x >= 80 && x <= 500)).toBe(true)
+    expect(samples).not.toContain(520)
+  })
+
+  it('stops a non-divisible range on the last interior sample', () => {
+    expect(samplesInsideInterval(0, 50, 20)).toEqual([0, 20, 40])
+    expect(samplesInsideInterval(120, 120, 20)).toEqual([120])
+  })
+
+  it('does not let the porkchop grid step past the displayed window', () => {
+    const depStart = Date.parse('2026-11-01T00:00:00Z') / 1000
+    const depSpan = 40 * 86400
+    const depStep = 60 * 86400
+    const tofMin = 120 * 86400
+    const tofMax = 125 * 86400
+    const tofStep = 20 * 86400
+    const grid = porkchopEarthMarsGrid({
+      depStart,
+      depCount: 9,
+      depStep,
+      depEnd: depStart + depSpan,
+      tofMin,
+      tofCount: 9,
+      tofStep,
+      tofMax,
+    })
+    expect(grid).not.toBeNull()
+    for (const cell of grid!.cells) {
+      expect(cell.tDep).toBe(depStart)
+      expect(cell.tof).toBe(tofMin)
+    }
+  })
+})
+
+describe('porkchop epoch (#192)', () => {
+  it('is 2000-01-01 12:00:00 UTC, 64.184 s after J2000.0 TT', () => {
+    expect(J2000_UNIX_S).toBe(Date.UTC(2000, 0, 1, 12, 0, 0) / 1000)
+    const j2000TtMs = Date.UTC(2000, 0, 1, 11, 58, 55) + 816
+    expect(J2000_UNIX_S - j2000TtMs / 1000).toBeCloseTo(64.184, 6)
   })
 })
 

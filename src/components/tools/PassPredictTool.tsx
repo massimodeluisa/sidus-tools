@@ -45,6 +45,7 @@ import {
   type Vec3,
 } from '@/lib/physics'
 import { formatNumber } from '@/lib/physics/format'
+import { namedSatellite } from '@/lib/satellite-display-name'
 import {
   browserTimeZone,
   formatCountdown,
@@ -236,8 +237,10 @@ export function PassPredictTool() {
     [dLat, dLon, dH],
   )
 
+  const latValid = Number.isFinite(dLat) && dLat >= -90 && dLat <= 90
+
   const passes = useMemo(() => {
-    if (!parsed.ok) return []
+    if (!parsed.ok || !latValid) return []
     return findPasses({
       satrec: parsed.satrec,
       observer: searchObserver,
@@ -249,7 +252,7 @@ export function PassPredictTool() {
       favorableLightingOnly: p.vis === '1',
       maxCount: PASS_LIST_MAX,
     })
-  }, [dHours, dMinEl, p.vis, parsed, effectiveStart, searchObserver])
+  }, [dHours, dMinEl, latValid, p.vis, parsed, effectiveStart, searchObserver])
 
   const pass: PassWindow | null = passes[Math.min(selectedIdx, Math.max(0, passes.length - 1))] ?? null
 
@@ -309,6 +312,7 @@ export function PassPredictTool() {
     const label = (date: Date) => {
       const look = at(date)
       if (!look) return ''
+      if (look.azimuthRad == null) return t('fields.azimuth_undefined_zenith')
       const deg = ((look.azimuthRad * 180) / Math.PI + 360) % 360
       return `${t(COMPASS_KEY[compassOctant(look.azimuthRad)])} ${formatNumber(deg, 0)}°`
     }
@@ -332,7 +336,7 @@ export function PassPredictTool() {
   const pinnedPast = Boolean(pass && startPinned && nowMs >= pass.los.getTime())
 
   const headline = useMemo(() => {
-    if (!pass || !localFmt || !bearings) return ''
+    if (!pass || !localFmt || !bearings || !pass.aosIsRise || !pass.losIsSet) return ''
     const el = `${formatNumber(pass.maxElDeg, 1)}°`
     const vars = {
       date: localFmt.aos.date,
@@ -363,17 +367,21 @@ export function PassPredictTool() {
     return t('fields.count_in_pass', { los: formatHms(pass.los.getTime() - nowMs) })
   }, [pass, nowMs, t])
 
+  const lightingName = parsed.ok
+    ? (namedSatellite(parsed.name) ?? t('fields.satellite_unnamed'))
+    : t('fields.satellite_unnamed')
+
   const lightingLine = useMemo(() => {
     if (!pass || !parsed.ok) return ''
     if (pass.favorableLighting && pass.favorableLightingAt) {
       const vfmt = formatInZone(pass.favorableLightingAt, zone, i18n.language)
       return t('fields.pass_lighting_favorable', {
-        name: parsed.name,
+        name: lightingName,
         time: `${vfmt.time} ${vfmt.zoneAbbr}`,
       })
     }
-    return t('fields.pass_lighting_not_favorable', { name: parsed.name })
-  }, [pass, parsed, zone, i18n.language, t])
+    return t('fields.pass_lighting_not_favorable', { name: lightingName })
+  }, [pass, parsed.ok, lightingName, zone, i18n.language, t])
 
   const rawMark = p.mark === 'now' || p.mark === 'peak' ? p.mark : 'aos'
   const effectiveMark: 'now' | 'aos' | 'peak' = pass ? rawMark : 'now'
@@ -582,7 +590,7 @@ export function PassPredictTool() {
     downloadText(`pass-${pass.aos.toISOString().slice(0, 16)}.ics`, body, 'text/calendar')
   }
 
-  const showResults = parsedLive.ok && parsed.ok && pass && localFmt && bearings
+  const showResults = parsedLive.ok && parsed.ok && latValid && pass && localFmt && bearings
 
   return (
     <ToolShell
@@ -653,6 +661,8 @@ export function PassPredictTool() {
             tip={t('fields.tip_lat')}
             unit="°"
             type="number"
+            min={-90}
+            max={90}
             step="any"
             value={p.lat}
             onChange={(e) => setP({ lat: Number(e.target.value) })}
@@ -766,6 +776,8 @@ export function PassPredictTool() {
       results={
         !parsedLive.ok ? (
           <p className="font-mono text-sm text-muted">{parsedLive.error}</p>
+        ) : !latValid ? (
+          <p className="font-mono text-sm text-muted">{t('fields.invalid_latitude')}</p>
         ) : !showResults ? (
           <p className="font-mono text-sm text-muted">
             {t('fields.no_pass_above', { el: formatNumber(dMinEl, 1), hours: dHours })}
@@ -781,17 +793,25 @@ export function PassPredictTool() {
               <p className="font-mono text-[11px] leading-relaxed text-warn">{t('fields.pass_pinned_past')}</p>
             ) : null}
             <p className="font-mono text-sm text-muted">{lightingLine}</p>
+            {!pass.aosIsRise ? (
+              <p className="font-mono text-sm text-muted">{t('fields.pass_in_progress')}</p>
+            ) : null}
+            {!pass.losIsSet ? (
+              <p className="font-mono text-sm text-muted">{t('fields.pass_open_horizon')}</p>
+            ) : null}
             <div className="sidus-results">
               <ResultCard
                 label={t('fields.aos_local')}
                 tip={t('fields.tip_aos')}
-                value={`${localFmt.aos.time} ${localFmt.aos.zoneAbbr}`}
+                value={
+                  pass.aosIsRise ? `${localFmt.aos.time} ${localFmt.aos.zoneAbbr}` : '—'
+                }
                 accent
               />
               <ResultCard
                 label={t('fields.los_local')}
                 tip={t('fields.tip_los')}
-                value={`${localFmt.los.time} ${localFmt.los.zoneAbbr}`}
+                value={pass.losIsSet ? `${localFmt.los.time} ${localFmt.los.zoneAbbr}` : '—'}
               />
               <ResultCard
                 label={t('fields.max_elevation')}
@@ -807,34 +827,46 @@ export function PassPredictTool() {
                 tip={t('fields.tip_max_el_at')}
                 value={`${localFmt.peak.time} ${localFmt.peak.zoneAbbr}`}
               />
-              <ResultCard
-                label={t('fields.duration')}
-                tip={t('fields.tip_pass_duration')}
-                si={pass.durationS}
-                category="time"
-                unitId="pretty"
-                unitIds={TOOL_UNIT_SETS.timePretty}
-                digits={4}
-              />
+              {pass.aosIsRise && pass.losIsSet ? (
+                <ResultCard
+                  label={t('fields.duration')}
+                  tip={t('fields.tip_pass_duration')}
+                  si={pass.durationS}
+                  category="time"
+                  unitId="pretty"
+                  unitIds={TOOL_UNIT_SETS.timePretty}
+                  digits={4}
+                />
+              ) : (
+                <ResultCard
+                  label={t('fields.duration')}
+                  tip={t('fields.tip_pass_duration')}
+                  value="—"
+                />
+              )}
               <ResultCard label={t('fields.az_aos')} tip={t('fields.tip_az')} value={bearings.aos} />
               <ResultCard label={t('fields.az_peak')} tip={t('fields.tip_az')} value={bearings.peak} />
               <ResultCard label={t('fields.az_los')} tip={t('fields.tip_az')} value={bearings.los} />
             </div>
-            <p className="font-mono text-[10px] text-subtle">
-              {t('fields.pass_utc_line', {
-                aos: pass.aos.toISOString(),
-                los: pass.los.toISOString(),
-              })}
-            </p>
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={onExportIcs}
-                className="inline-flex h-9 items-center border border-border-strong bg-bg-elevated px-3 font-mono text-[10px] uppercase tracking-wider text-muted transition-colors hover:text-fg"
-              >
-                {t('fields.export_ics')}
-              </button>
-            </div>
+            {pass.aosIsRise && pass.losIsSet ? (
+              <p className="font-mono text-[10px] text-subtle">
+                {t('fields.pass_utc_line', {
+                  aos: pass.aos.toISOString(),
+                  los: pass.los.toISOString(),
+                })}
+              </p>
+            ) : null}
+            {pass.aosIsRise && pass.losIsSet ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={onExportIcs}
+                  className="inline-flex h-9 items-center border border-border-strong bg-bg-elevated px-3 font-mono text-[10px] uppercase tracking-wider text-muted transition-colors hover:text-fg"
+                >
+                  {t('fields.export_ics')}
+                </button>
+              </div>
+            ) : null}
             {passes.length > 1 ? (
               <div className="min-w-0 overflow-x-auto">
                 <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-subtle">
@@ -865,13 +897,15 @@ export function PassPredictTool() {
                               className="grid w-full grid-cols-5 text-left"
                             >
                               <span>
-                                {aos.time} {aos.zoneAbbr}
+                                {row.aosIsRise ? `${aos.time} ${aos.zoneAbbr}` : '—'}
                               </span>
                               <span>
-                                {los.time} {los.zoneAbbr}
+                                {row.losIsSet ? `${los.time} ${los.zoneAbbr}` : '—'}
                               </span>
                               <span>{formatNumber(row.maxElDeg, 1)}°</span>
-                              <span>{formatHms(row.durationS * 1000)}</span>
+                              <span>
+                                {row.aosIsRise && row.losIsSet ? formatHms(row.durationS * 1000) : '—'}
+                              </span>
                               <span>
                                 {row.favorableLighting
                                   ? t('fields.pass_lighting_yes')

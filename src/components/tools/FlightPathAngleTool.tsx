@@ -15,7 +15,7 @@ import { numParam, strParam, useToolSearchParams } from '@/lib/use-tool-search-p
 
 const SCHEMA = {
   e: numParam(0.2,{min:0}),
-  nu: numParam(45,{min:0}),
+  nu: numParam(45),
   nuu: strParam('deg', TOOL_UNIT_SETS.angle),
 } as const
 
@@ -31,8 +31,8 @@ export function FlightPathAngleTool() {
     <ToolShell
       parameters={
         <ParamsGrid>
-          <UiField label={t('fields.disc_e')} type="number" min={0}  step="any" value={p.e} onChange={(e)=>setP({e:Number(e.target.value)})} />
-          <UiUnitField label={t('fields.disc_nu')} category="angle" unitIds={TOOL_UNIT_SETS.angle} unitId={p.nuu} value={p.nu} min={0} onValueChange={(nu)=>setP({nu})} onUnitChange={(nuu,nu)=>setP({nuu,nu})} />
+          <UiField label={t('fields.disc_e')} type="number" min={0}  step="any" value={p.e} hint={t('fields.hint_flight_conic')} onChange={(e)=>setP({e:Number(e.target.value)})} />
+          <UiUnitField label={t('fields.disc_nu')} category="angle" unitIds={TOOL_UNIT_SETS.angle} unitId={p.nuu} value={p.nu} onValueChange={(nu)=>setP({nu})} onUnitChange={(nuu,nu)=>setP({nuu,nu})} />
         </ParamsGrid>
       }
       results={
@@ -45,10 +45,12 @@ export function FlightPathAngleTool() {
         )
       }
       code={
-        <CodeExport
-          formulaId="flight-path-angle"
-          values={{ ...p, nu: toSi(p.nu, p.nuu) }}
-        />
+        res == null ? undefined : (
+          <CodeExport
+            formulaId="flight-path-angle"
+            values={{ ...p, nu: toSi(p.nu, p.nuu) }}
+          />
+        )
       }
     />
   )

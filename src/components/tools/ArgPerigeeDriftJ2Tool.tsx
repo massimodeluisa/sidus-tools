@@ -44,7 +44,7 @@ export function ArgPerigeeDriftJ2Tool() {
           <UiField label={t('fields.disc_n')} type="number" min={1e-9}  step="any" value={p.n} onChange={(e)=>setP({n:Number(e.target.value)})} />
           <UiField label={t('fields.disc_j2')} type="number" min={0}  step="any" value={p.j2} onChange={(e)=>setP({j2:Number(e.target.value)})} />
           <UiUnitField label={t('fields.disc_r')} category="length" unitIds={TOOL_UNIT_SETS.length} unitId={p.Ru} value={p.R} min={0} onValueChange={(R)=>setP({R})} onUnitChange={(Ru,R)=>setP({Ru,R})} />
-          <UiUnitField label={t('fields.sma_p')} category="length" unitIds={TOOL_UNIT_SETS.length} unitId={p.sma_pu} value={p.sma_p} min={0} onValueChange={(sma_p)=>setP({sma_p})} onUnitChange={(sma_pu,sma_p)=>setP({sma_pu,sma_p})} />
+          <UiUnitField label={t('fields.sma_p')} category="length" unitIds={TOOL_UNIT_SETS.length} unitId={p.sma_pu} value={p.sma_p} min={0} hint={t('fields.hint_argp_e0')} onValueChange={(sma_p)=>setP({sma_p})} onUnitChange={(sma_pu,sma_p)=>setP({sma_pu,sma_p})} />
           <UiUnitField label={t('fields.disc_i_2')} category="angle" unitIds={TOOL_UNIT_SETS.angle} unitId={p.iu} value={p.i} min={0} onValueChange={(i)=>setP({i})} onUnitChange={(iu,i)=>setP({iu,i})} />
         </ParamsGrid>
       }

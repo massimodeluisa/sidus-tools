@@ -37,7 +37,7 @@ export function DeltaABurnTool() {
       parameters={<ParamsGrid>
         <BodySelect value={p.body} onChange={(body) => setP({ body })} />
         <UiUnitField label={t('fields.altitude')} category="length" unitIds={TOOL_UNIT_SETS.altitude} unitId={p.hu} value={p.h} min={0} onValueChange={(h) => setP({ h })} onUnitChange={(hu, h) => setP({ hu, h })} />
-        <UiUnitField label={t('fields.tangential_v')} category="velocity" unitIds={TOOL_UNIT_SETS.velocity} unitId={p.dvu} value={p.dv} min={0} onValueChange={(dv) => setP({ dv })} onUnitChange={(dvu, dv) => setP({ dvu, dv })} />
+        <UiUnitField label={t('fields.tangential_v')} tip={t('fields.note_delta_a_first_order')} category="velocity" unitIds={TOOL_UNIT_SETS.velocity} unitId={p.dvu} value={p.dv} min={0} onValueChange={(dv) => setP({ dv })} onUnitChange={(dvu, dv) => setP({ dvu, dv })} />
         <UiUnitField label={t('fields.desired_a')} category="length" unitIds={TOOL_UNIT_SETS.length} unitId={p.dau} value={p.da} min={0} onValueChange={(da) => setP({ da })} onUnitChange={(dau, da) => setP({ dau, da })} />
       </ParamsGrid>}
       results={res ? <div className="sidus-results">

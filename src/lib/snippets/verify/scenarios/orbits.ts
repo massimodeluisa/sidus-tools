@@ -81,6 +81,16 @@ export const ORBITS_SCENARIOS: Record<string, Scenario[]> = {
       source: 'adversarial synthetic: distinct non-round Δi/v, away from 0°/90°',
       bag: { di_deg: 37.283, diDeg: 37.283, v: 5432.17 },
     },
+    {
+      name: 'full-turn-540',
+      source: '540 deg at 7.5 km/s folds to a 180 deg included angle; Δv magnitude is +2v',
+      bag: { di_deg: 540, diDeg: 540, v: 7500 },
+    },
+    {
+      name: 'negative-speed',
+      source: 'speed is a magnitude; v = -7500 m/s is outside the contract and must not return a negative Δv',
+      bag: { di_deg: 28.5, diDeg: 28.5, v: -7500 },
+    },
   ],
 
   'j2-drift': [
@@ -255,8 +265,8 @@ export const ORBITS_SCENARIOS: Record<string, Scenario[]> = {
   'launch-azimuth': [
     {
       name: 'ksc-iss',
-      source: 'well-known Kennedy Space Center latitude (28.5 deg) launching to the ISS inclination (51.6 deg)',
-      bag: { lat: 28.5 * (Math.PI / 180), i: 51.6 * (Math.PI / 180), h: 200_000 },
+      source: 'Kennedy Space Center latitude (28.5 deg) to ISS inclination (51.6 deg); h is the pad altitude (3 m), not an orbital radius',
+      bag: { lat: 28.5 * (Math.PI / 180), i: 51.6 * (Math.PI / 180), h: 3 },
     },
     {
       name: 'baikonur-retrograde',
@@ -358,6 +368,11 @@ export const ORBITS_SCENARIOS: Record<string, Scenario[]> = {
       source: 'adversarial synthetic: large plane change (edge-adjacent to 90 deg), non-round radii',
       bag: { mu: 3.6e14, R: 6_390_000, h1: 350_123, h2: 21_456_789, di: 85 * (Math.PI / 180) },
     },
+    {
+      name: 'inward-400-to-200-plane-28p5',
+      source: 'Earth inward Hohmann from 400 km to 200 km with a 28.5 deg plane change; first burn is a nonnegative magnitude at the destination apsis',
+      bag: { h1: 400_000, h2: 200_000, di: 28.5 * (Math.PI / 180) },
+    },
   ],
 
   soi: [
@@ -412,6 +427,11 @@ export const ORBITS_SCENARIOS: Record<string, Scenario[]> = {
       source: 'adversarial synthetic: moderate eccentricity, non-round a',
       bag: { mu: 3.7e14, a: 9_876_543, e: 0.35 },
     },
+    {
+      name: 'periapsis-8000-km',
+      source: 'a = 8000 km, e = 0.1, burn at periapsis; Δv is about 363.16 m/s',
+      bag: { a: 8_000_000, e: 0.1, at: 'peri' },
+    },
   ],
 
   'geo-orbit': [
@@ -465,6 +485,11 @@ export const ORBITS_SCENARIOS: Record<string, Scenario[]> = {
       name: 'synthetic',
       source: 'adversarial synthetic: large plane change (edge-adjacent to 90 deg), non-round radii',
       bag: { mu: 3.7e14, R: 6_400_000, hp: 250_123, ha: 21_456_789, di: 82 * (Math.PI / 180) },
+    },
+    {
+      name: 'negative-inclination',
+      source: 'signed -28.5 deg on the default GTO-class apogee burn; the export magnitude matches the positive included angle',
+      bag: { hp: 200_000, ha: 35_786_000, di: -28.5 * (Math.PI / 180) },
     },
   ],
 

@@ -39,7 +39,7 @@ export function LinkMarginTool() {
           <p className="font-mono text-sm text-muted">{t('fields.invalid_params')}</p>
         ) : (
           <div className="sidus-results">
-            <ResultCard label={t('fields.margin')} value={formatNumber(res,4)} unit="dB" accent />
+            <ResultCard label={t('fields.margin')} tip={t('fields.note_link_margin')} value={formatNumber(res,4)} unit="dB" accent />
           </div>
         )
       }
